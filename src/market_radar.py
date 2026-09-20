@@ -53,12 +53,12 @@ class ThematicStockItem:
 
 
 # =============================================================================
-# ACTIVE INSTITUTIONAL CANDIDATE UNIVERSES (50+ Verified Liquid Tickers per Market)
+# EXPANDED ACTIVE INSTITUTIONAL CANDIDATE UNIVERSES (100+ Tickers per Market)
 # =============================================================================
 
 INDIAN_SCAN_UNIVERSE = [
-    # Safe Havens / Market Pillars
-    {"ticker": "RELIANCE.NS", "name": "Reliance Industries", "base_category": "safe", "why_it_matters": "Dominant conglomerate anchoring Nifty 50 with leading telecom and retail cash flows."},
+    # Safe Havens & Fortress Blue-Chips
+    {"ticker": "RELIANCE.NS", "name": "Reliance Industries", "base_category": "safe", "why_it_matters": "Conglomerate anchoring Nifty 50 with leading telecom, oil-to-chemicals, and retail cash flows."},
     {"ticker": "TCS.NS", "name": "Tata Consultancy Services", "base_category": "safe", "why_it_matters": "Zero-debt balance sheet, 35%+ ROE, and mission-critical multi-billion enterprise contracts."},
     {"ticker": "HDFCBANK.NS", "name": "HDFC Bank", "base_category": "safe", "why_it_matters": "Premier private banking franchise with conservative underwriting and systemic retail presence."},
     {"ticker": "INFY.NS", "name": "Infosys", "base_category": "safe", "why_it_matters": "High cash generation, global digital consulting, and enterprise AI modernization programs."},
@@ -73,9 +73,29 @@ INDIAN_SCAN_UNIVERSE = [
     {"ticker": "SBIN.NS", "name": "State Bank of India", "base_category": "safe", "why_it_matters": "India's largest bank by assets, driving national credit expansion with declining NPAs."},
     {"ticker": "NTPC.NS", "name": "NTPC Limited", "base_category": "safe", "why_it_matters": "Largest power generator in India, expanding into massive utility-scale green renewables."},
     {"ticker": "COALINDIA.NS", "name": "Coal India", "base_category": "safe", "why_it_matters": "Near-monopoly in domestic thermal coal supply with double-digit dividend distributions."},
+    {"ticker": "MARUTI.NS", "name": "Maruti Suzuki India", "base_category": "safe", "why_it_matters": "Market leader in domestic passenger vehicles with unmatched distribution and service reach."},
+    {"ticker": "BAJFINANCE.NS", "name": "Bajaj Finance", "base_category": "safe", "why_it_matters": "Omnichannel consumer lending giant commanding industry-leading return on equity."},
+    {"ticker": "BAJAJFINSV.NS", "name": "Bajaj Finserv", "base_category": "safe", "why_it_matters": "Holding company for consumer finance, general insurance, and health protection."},
+    {"ticker": "AXISBANK.NS", "name": "Axis Bank", "base_category": "safe", "why_it_matters": "Large-scale private bank with strong digital adoption and expanding corporate credit margins."},
+    {"ticker": "SUNPHARMA.NS", "name": "Sun Pharma", "base_category": "safe", "why_it_matters": "India's largest pharmaceutical company with global specialty dermatology leadership."},
+    {"ticker": "TITAN.NS", "name": "Titan Company", "base_category": "safe", "why_it_matters": "Tata luxury consumption flagship dominating organized jewelry and lifestyle accessories."},
+    {"ticker": "ULTRACEMCO.NS", "name": "UltraTech Cement", "base_category": "safe", "why_it_matters": "India's cement titan benefiting from national highway and urban real estate construction."},
+    {"ticker": "WIPRO.NS", "name": "Wipro Limited", "base_category": "safe", "why_it_matters": "Global IT consulting and cloud modernization provider with steady enterprise cash flows."},
+    {"ticker": "HCLTECH.NS", "name": "HCL Technologies", "base_category": "safe", "why_it_matters": "IT leader in digital engineering software and infrastructure management with high dividend yields."},
+    {"ticker": "POWERGRID.NS", "name": "Power Grid Corp of India", "base_category": "safe", "why_it_matters": "Sovereign electricity transmission utility with regulated return on equity and steady dividends."},
+    {"ticker": "ONGC.NS", "name": "Oil & Natural Gas Corp", "base_category": "safe", "why_it_matters": "Primary crude oil and natural gas producer in India with high dividend yield payouts."},
+    {"ticker": "JSWSTEEL.NS", "name": "JSW Steel", "base_category": "safe", "why_it_matters": "High-efficiency private steelmaker expanding domestic capacity across infrastructure products."},
+    {"ticker": "ADANIPORTS.NS", "name": "Adani Ports & SEZ", "base_category": "safe", "why_it_matters": "Private port operator handling nearly 25% of India's maritime cargo logistics volume."},
+    {"ticker": "GRASIM.NS", "name": "Grasim Industries", "base_category": "safe", "why_it_matters": "Aditya Birla flagship commanding viscose staple fiber, chemicals, and new Birla Opus paints."},
+    {"ticker": "NESTLEIND.NS", "name": "Nestle India", "base_category": "safe", "why_it_matters": "Premium packaged foods leader with iconic brands (Maggi, Nescafe) and high pricing power."},
+    {"ticker": "HINDALCO.NS", "name": "Hindalco Industries", "base_category": "safe", "why_it_matters": "Global aluminum giant with captive bauxite mines and Novelis beverage can recycling."},
+    {"ticker": "CIPLA.NS", "name": "Cipla Limited", "base_category": "safe", "why_it_matters": "Defensive pharmaceutical major specializing in respiratory inhalers and anti-retrovirals."},
+    {"ticker": "DRREDDY.NS", "name": "Dr. Reddy's Laboratories", "base_category": "safe", "why_it_matters": "Global generic pharmaceutical manufacturer with expanding biosimilar pipeline in US and Europe."},
+    {"ticker": "EICHERMOT.NS", "name": "Eicher Motors", "base_category": "safe", "why_it_matters": "Parent of Royal Enfield commanding the middleweight premium motorcycle segment in India."},
+    {"ticker": "BRITANNIA.NS", "name": "Britannia Industries", "base_category": "safe", "why_it_matters": "Defensive biscuit and bakery FMCG leader with extensive rural and urban distribution reach."},
 
     # New & Emerging Disruptors
-    {"ticker": "JIOFIN.NS", "name": "Jio Financial Services", "base_category": "new", "why_it_matters": "BlackRock JV partner with balance sheet depth to disrupt lending and asset management."},
+    {"ticker": "JIOFIN.NS", "name": "Jio Financial Services", "base_category": "new", "why_it_matters": "BlackRock JV partner with balance sheet depth to disrupt lending, broking, and asset management."},
     {"ticker": "SWIGGY.NS", "name": "Swiggy Ltd", "base_category": "new", "why_it_matters": "Urban food delivery and quick-commerce duopoly with expanding dark store operating margins."},
     {"ticker": "TATATECH.NS", "name": "Tata Technologies", "base_category": "new", "why_it_matters": "Pure-play engineering R&D services powering OEM transitions to software-defined EVs."},
     {"ticker": "POLICYBZR.NS", "name": "PB Fintech", "base_category": "new", "why_it_matters": "Online insurance aggregator commanding near-monopoly market share in health and life cover."},
@@ -85,24 +105,33 @@ INDIAN_SCAN_UNIVERSE = [
     {"ticker": "PAYTM.NS", "name": "One97 Communications", "base_category": "new", "why_it_matters": "Merchant payment checkout network generating high-margin recurring soundbox rental fees."},
     {"ticker": "NAUKRI.NS", "name": "Info Edge (India)", "base_category": "new", "why_it_matters": "Dominant white-collar recruitment platform (Naukri) and premier incubator for Indian tech."},
     {"ticker": "KALYANKJIL.NS", "name": "Kalyan Jewellers", "base_category": "new", "why_it_matters": "Aggressive retail footprint capturing consumer shift from unorganized to hallmarked jewelry."},
+    {"ticker": "CDSL.NS", "name": "Central Depository Services", "base_category": "new", "why_it_matters": "Securities depository tollbooth profiting from hundreds of millions of retail demat accounts."},
+    {"ticker": "MCX.NS", "name": "Multi Commodity Exchange", "base_category": "new", "why_it_matters": "Dominant monopoly in Indian bullion and energy commodity futures and options trading."},
+    {"ticker": "PERSISTENT.NS", "name": "Persistent Systems", "base_category": "new", "why_it_matters": "High-growth digital engineering and enterprise modernization software specialist."},
+    {"ticker": "COFORGE.NS", "name": "Coforge Limited", "base_category": "new", "why_it_matters": "Digital services provider delivering consistent double-digit growth in insurance and banking tech."},
 
     # Defense, Engineering & Momentum
     {"ticker": "BEL.NS", "name": "Bharat Electronics", "base_category": "trending", "why_it_matters": "Sovereign defense electronics champion securing naval radar and missile avionics orders."},
     {"ticker": "HAL.NS", "name": "Hindustan Aeronautics", "base_category": "trending", "why_it_matters": "Sole manufacturer of indigenous fighter aircraft and combat helicopters with multi-year order backlog."},
-    {"ticker": "TRENT.NS", "name": "Trent Ltd", "base_category": "trending", "why_it_matters": "Tata Group retail phenomenon driven by exponential store expansions across Zudio."},
+    {"ticker": "BDL.NS", "name": "Bharat Dynamics", "base_category": "trending", "why_it_matters": "Premier manufacturer of surface-to-air missiles and torpedoes for the Indian Armed Forces."},
     {"ticker": "COCHINSHIP.NS", "name": "Cochin Shipyard", "base_category": "trending", "why_it_matters": "Aircraft carrier shipyard expanding into green commercial vessels and high-margin ship repair."},
     {"ticker": "MAZDOCK.NS", "name": "Mazagon Dock Shipbuilders", "base_category": "trending", "why_it_matters": "Submarine and guided-missile destroyer builder with massive multi-billion sovereign orders."},
+    {"ticker": "PARAS.NS", "name": "Paras Defence & Space", "base_category": "trending", "why_it_matters": "Optics, electro-magnetic pulse protection, and drone technologies for defense and space."},
+    {"ticker": "DATAPATTNS.NS", "name": "Data Patterns (India)", "base_category": "trending", "why_it_matters": "Vertically integrated defense and aerospace electronics provider for radars and electronic warfare."},
+    {"ticker": "TRENT.NS", "name": "Trent Ltd", "base_category": "trending", "why_it_matters": "Tata Group retail phenomenon driven by exponential store expansions across Zudio."},
     {"ticker": "DIXON.NS", "name": "Dixon Technologies", "base_category": "trending", "why_it_matters": "Premier domestic EMS contractor assembling smartphones and consumer electronics under PLI."},
     {"ticker": "BSE.NS", "name": "BSE Ltd", "base_category": "trending", "why_it_matters": "Surging market share in index derivatives and retail trading on Asia's oldest exchange."},
     {"ticker": "RVNL.NS", "name": "Rail Vikas Nigam", "base_category": "trending", "why_it_matters": "Primary executing arm for Indian Railways modernization and high-speed freight corridors."},
     {"ticker": "ADANIENT.NS", "name": "Adani Enterprises", "base_category": "trending", "why_it_matters": "Flagship private infrastructure incubator executing sovereign airports, solar, and data centers."},
 
-    # Future Supercycles (Energy Transition, Grid, EVs)
+    # Future Supercycles (Clean Energy, Grid, Mobility)
     {"ticker": "SUZLON.NS", "name": "Suzlon Energy", "base_category": "future", "why_it_matters": "Debt-free market leader in domestic wind turbines powering India's 500 GW renewable mandate."},
     {"ticker": "IREDA.NS", "name": "IREDA", "base_category": "future", "why_it_matters": "State-owned non-banking finance institution underwriting sovereign green energy infrastructure."},
+    {"ticker": "JSWENERGY.NS", "name": "JSW Energy", "base_category": "future", "why_it_matters": "Rapidly pivoting toward utility-scale renewable power and multi-gigawatt battery storage (BESS)."},
+    {"ticker": "TATAPOWER.NS", "name": "Tata Power", "base_category": "future", "why_it_matters": "Integrated utility rolling out national EV fast-charging networks, solar EPC, and rooftop solar."},
+    {"ticker": "ADANIGREEN.NS", "name": "Adani Green Energy", "base_category": "future", "why_it_matters": "Developing Khavda, the world's largest renewable energy park (30 GW capacity)."},
     {"ticker": "EXIDEIND.NS", "name": "Exide Industries", "base_category": "future", "why_it_matters": "Building India's premier lithium-ion cell gigafactory with global supply ties to Hyundai & Kia."},
     {"ticker": "TITAGARH.NS", "name": "Titagarh Rail Systems", "base_category": "future", "why_it_matters": "Builder of high-speed Vande Bharat trainsets and smart city metro coaches."},
-    {"ticker": "JSWENERGY.NS", "name": "JSW Energy", "base_category": "future", "why_it_matters": "Rapidly pivoting toward utility-scale renewable power and multi-gigawatt battery storage (BESS)."},
     {"ticker": "KPITTECH.NS", "name": "KPIT Technologies", "base_category": "future", "why_it_matters": "Global software architecture specialist for electric powertrains and autonomous mobility."},
     {"ticker": "TATAELXSI.NS", "name": "Tata Elxsi", "base_category": "future", "why_it_matters": "High-margin automotive engineering design and AI solutions for medical and tech OEMs."},
     {"ticker": "DEEPAKFERT.NS", "name": "Deepak Fertilisers", "base_category": "future", "why_it_matters": "Key supplier of industrial nitric acid and electronic-grade chemicals for semiconductors."},
@@ -121,6 +150,14 @@ INDIAN_SCAN_UNIVERSE = [
     {"ticker": "IDFCFIRSTB.NS", "name": "IDFC First Bank", "base_category": "penny", "why_it_matters": "High-CASA retail banking franchise with rapid branch expansion and clean underwriting."},
     {"ticker": "PNB.NS", "name": "Punjab National Bank", "base_category": "penny", "why_it_matters": "Major state lender benefiting from corporate credit demand and low credit costs."},
     {"ticker": "BANKBARODA.NS", "name": "Bank of Baroda", "base_category": "penny", "why_it_matters": "Top-tier public bank delivering double-digit ROE and international trade finance."},
+    {"ticker": "CANBK.NS", "name": "Canara Bank", "base_category": "penny", "why_it_matters": "Strong public sector lender with expanding retail loan books and attractive valuation."},
+    {"ticker": "UNIONBANK.NS", "name": "Union Bank of India", "base_category": "penny", "why_it_matters": "Public bank delivering steady improvements in return on assets and clean provision coverage."},
+    {"ticker": "CENTRALBK.NS", "name": "Central Bank of India", "base_category": "penny", "why_it_matters": "Rapidly reviving public lender with sovereign deposit franchise and falling credit costs."},
+    {"ticker": "IRFC.NS", "name": "Indian Railway Finance Corp", "base_category": "penny", "why_it_matters": "Monopolistic financing arm of Indian Railways with zero gross non-performing assets."},
+    {"ticker": "IRCON.NS", "name": "Ircon International", "base_category": "penny", "why_it_matters": "Specialized railway and highway construction PSU with deep international projects pipeline."},
+    {"ticker": "HUDCO.NS", "name": "Housing & Urban Dev Corp", "base_category": "penny", "why_it_matters": "Sovereign financing institution funding affordable housing and municipal smart city infrastructure."},
+    {"ticker": "HFCL.NS", "name": "HFCL Limited", "base_category": "penny", "why_it_matters": "Optical fiber and telecom network equipment manufacturer exporting 5G equipment globally."},
+    {"ticker": "TRIDENT.NS", "name": "Trident Limited", "base_category": "penny", "why_it_matters": "Integrated home textiles and paper exporter benefiting from global supply chain diversification."},
 ]
 
 US_SCAN_UNIVERSE = [
@@ -134,9 +171,15 @@ US_SCAN_UNIVERSE = [
     {"ticker": "PG", "name": "Procter & Gamble", "base_category": "safe", "why_it_matters": "Unmatched consumer goods pricing power across household essentials with 60+ years of dividend hikes."},
     {"ticker": "JPM", "name": "JPMorgan Chase", "base_category": "safe", "why_it_matters": "Premier global financial fortress benefiting from corporate dealmaking and net interest margins."},
     {"ticker": "V", "name": "Visa Inc.", "base_category": "safe", "why_it_matters": "Duopoly payments tollbooth processing trillions in global electronic transactions at 50%+ margins."},
+    {"ticker": "MA", "name": "Mastercard Inc.", "base_category": "safe", "why_it_matters": "Global card payment network benefiting from international travel and cross-border transactions."},
     {"ticker": "COST", "name": "Costco Wholesale", "base_category": "safe", "why_it_matters": "Unshakable membership-based warehouse moat with 90%+ renewal rates and relentless customer traffic."},
     {"ticker": "WMT", "name": "Walmart Inc.", "base_category": "safe", "why_it_matters": "World's largest retailer commanding grocery distribution and scaling high-margin retail media ads."},
     {"ticker": "UNH", "name": "UnitedHealth Group", "base_category": "safe", "why_it_matters": "Vertically integrated healthcare giant combining health insurance with Optum clinical care."},
+    {"ticker": "HD", "name": "Home Depot", "base_category": "safe", "why_it_matters": "Home improvement retail giant with defensive professional contractor business."},
+    {"ticker": "ABBV", "name": "AbbVie Inc.", "base_category": "safe", "why_it_matters": "Biopharmaceutical leader with blockbuster immunology (Skyrizi, Rinvoq) and oncology pipelines."},
+    {"ticker": "KO", "name": "Coca-Cola Company", "base_category": "safe", "why_it_matters": "Legendary beverage moat with global brand distribution and decades of uninterrupted dividend growth."},
+    {"ticker": "PEP", "name": "PepsiCo Inc.", "base_category": "safe", "why_it_matters": "Resilient consumer staples giant combining beverage leadership with Frito-Lay snacks monopoly."},
+    {"ticker": "MCD", "name": "McDonald's Corporation", "base_category": "safe", "why_it_matters": "Global fast-food real estate tollbooth with recession-proof consumer demand."},
 
     # New & Emerging Disruptors
     {"ticker": "ARM", "name": "Arm Holdings", "base_category": "new", "why_it_matters": "Dominant low-power chip architecture powering 99% of smartphones and expanding into AI datacenters."},
@@ -149,13 +192,20 @@ US_SCAN_UNIVERSE = [
     {"ticker": "CART", "name": "Maplebear (Instacart)", "base_category": "new", "why_it_matters": "Leading grocery technology platform expanding into digital shopping carts and retail ad networks."},
     {"ticker": "MNDY", "name": "Monday.com", "base_category": "new", "why_it_matters": "Cloud work management platform delivering high net retention and expanding enterprise contracts."},
     {"ticker": "CELH", "name": "Celsius Holdings", "base_category": "new", "why_it_matters": "Fast-growing fitness energy drink brand leveraging PepsiCo's nationwide distribution channels."},
+    {"ticker": "SNOW", "name": "Snowflake Inc.", "base_category": "new", "why_it_matters": "Enterprise data cloud platform enabling corporate data sharing, analytics, and AI model training."},
+    {"ticker": "DDOG", "name": "Datadog Inc.", "base_category": "new", "why_it_matters": "Cloud monitoring and observability SaaS essential for cloud application uptime and cybersecurity."},
+    {"ticker": "NET", "name": "Cloudflare Inc.", "base_category": "new", "why_it_matters": "Global edge network providing cybersecurity, CDN speed, and serverless AI inferencing."},
 
     # High Beta / Trending / Momentum Leaders
     {"ticker": "NVDA", "name": "NVIDIA Corporation", "base_category": "trending", "why_it_matters": "Global monopoly in AI GPUs and CUDA software stack powering hyperscale datacenters."},
     {"ticker": "TSLA", "name": "Tesla Inc.", "base_category": "trending", "why_it_matters": "Electric vehicle volume leader scaling Full Self-Driving neural networks and Cybercab robotics."},
     {"ticker": "PLTR", "name": "Palantir Technologies", "base_category": "trending", "why_it_matters": "Commercial and defense AI ontology platform seeing explosive demand from US government and Fortune 500."},
     {"ticker": "AMD", "name": "Advanced Micro Devices", "base_category": "trending", "why_it_matters": "Primary competitor in x86 CPUs and emerging alternative in datacenter AI accelerators (MI300)."},
+    {"ticker": "AVGO", "name": "Broadcom Inc.", "base_category": "trending", "why_it_matters": "Custom AI ASIC silicon designer (for Google TPU and Meta) and enterprise infrastructure software giant."},
+    {"ticker": "QCOM", "name": "Qualcomm Inc.", "base_category": "trending", "why_it_matters": "5G wireless modem leader expanding into Snapdragon X Elite on-device AI processors for PCs."},
     {"ticker": "META", "name": "Meta Platforms", "base_category": "trending", "why_it_matters": "Advertising cash engine funding open-source Llama AI models and smart glasses technology."},
+    {"ticker": "NFLX", "name": "Netflix Inc.", "base_category": "trending", "why_it_matters": "Streaming entertainment giant delivering operating margin expansion and growing ad-tier subs."},
+    {"ticker": "CRM", "name": "Salesforce Inc.", "base_category": "trending", "why_it_matters": "Enterprise CRM giant launching Agentforce autonomous enterprise customer service AI agents."},
     {"ticker": "SMCI", "name": "Super Micro Computer", "base_category": "trending", "why_it_matters": "Direct liquid cooling and modular server architecture built for dense GPU computing clusters."},
     {"ticker": "COIN", "name": "Coinbase Global", "base_category": "trending", "why_it_matters": "Leading US regulated digital asset custodian and exchange benefiting from institutional crypto ETF inflows."},
     {"ticker": "MSTR", "name": "MicroStrategy", "base_category": "trending", "why_it_matters": "Algorithmic treasury vehicle accumulating institutional Bitcoin reserves with software cash flow."},
@@ -167,12 +217,16 @@ US_SCAN_UNIVERSE = [
     {"ticker": "CEG", "name": "Constellation Energy", "base_category": "future", "why_it_matters": "Largest US clean nuclear fleet securing multi-decade power purchase agreements with hyperscalers."},
     {"ticker": "ETN", "name": "Eaton Corporation", "base_category": "future", "why_it_matters": "Essential switchgear and power distribution equipment modernizing aging electrical grids."},
     {"ticker": "NVO", "name": "Novo Nordisk", "base_category": "future", "why_it_matters": "Ozempic and Wegovy pioneer transforming metabolic health and cardiovascular disease prevention."},
+    {"ticker": "LLY", "name": "Eli Lilly and Co", "base_category": "future", "why_it_matters": "Mounjaro and Zepbound pharmaceutical pioneer expanding into Alzheimer's disease treatments."},
     {"ticker": "GEV", "name": "GE Vernova", "base_category": "future", "why_it_matters": "Gas turbines, wind power, and grid electrification software meeting soaring electricity demand."},
     {"ticker": "CRWD", "name": "CrowdStrike Holdings", "base_category": "future", "why_it_matters": "AI-native cloud security platform protecting enterprise endpoints against sophisticated cyber attacks."},
+    {"ticker": "PANW", "name": "Palo Alto Networks", "base_category": "future", "why_it_matters": "Leading enterprise network cybersecurity platform delivering platformized security architectures."},
     {"ticker": "AXON", "name": "Axon Enterprise", "base_category": "future", "why_it_matters": "TASER devices, body cameras, and cloud evidence management modernizing global law enforcement."},
     {"ticker": "OKLO", "name": "Oklo Inc.", "base_category": "future", "why_it_matters": "Developing fast fission micro-reactors to provide emission-free power directly to data center sites."},
     {"ticker": "SMR", "name": "NuScale Power", "base_category": "future", "why_it_matters": "Pioneering certified small modular nuclear reactors for clean commercial baseload electricity."},
     {"ticker": "BWXT", "name": "BWX Technologies", "base_category": "future", "why_it_matters": "Manufactures nuclear reactor components for US Navy submarines and medical radioisotopes."},
+    {"ticker": "CCJ", "name": "Cameco Corporation", "base_category": "future", "why_it_matters": "World's largest commercial uranium producer supplying clean nuclear fuel to western utilities."},
+    {"ticker": "ISRG", "name": "Intuitive Surgical", "base_category": "future", "why_it_matters": "Monopolistic da Vinci robotic surgical systems transforming minimally invasive healthcare."},
 
     # Small-Priced Candidates (< $15 Target)
     {"ticker": "SOUN", "name": "SoundHound AI", "base_category": "penny", "why_it_matters": "Conversational voice AI powering automotive dashboards and restaurant drive-thrus."},
@@ -188,6 +242,10 @@ US_SCAN_UNIVERSE = [
     {"ticker": "DNA", "name": "Ginkgo Bioworks", "base_category": "penny", "why_it_matters": "Biological cell programming foundry serving commercial pharmaceutical and agricultural clients."},
     {"ticker": "RGTI", "name": "Rigetti Computing", "base_category": "penny", "why_it_matters": "Full-stack quantum computing systems developing superconducting quantum processors."},
     {"ticker": "IONQ", "name": "IonQ Inc.", "base_category": "penny", "why_it_matters": "Commercial quantum computer manufacturer developing trapped-ion hardware architectures."},
+    {"ticker": "MARA", "name": "MARA Holdings", "base_category": "penny", "why_it_matters": "Digital asset infrastructure and energy harvesting provider with institutional Bitcoin reserves."},
+    {"ticker": "RIOT", "name": "Riot Platforms", "base_category": "penny", "why_it_matters": "Vertically integrated digital infrastructure and Bitcoin mining operator in Texas."},
+    {"ticker": "LCID", "name": "Lucid Group", "base_category": "penny", "why_it_matters": "Luxury electric vehicle manufacturer backed by the Saudi Public Investment Fund."},
+    {"ticker": "RIVN", "name": "Rivian Automotive", "base_category": "penny", "why_it_matters": "Pure-play adventure electric vehicle and commercial delivery van maker partnered with Amazon & VW."},
 ]
 
 
@@ -222,7 +280,7 @@ def _fetch_news_concurrently(tickers: List[str]) -> Dict[str, tuple[str, str]]:
     if not tickers:
         return results
 
-    max_workers = min(12, max(2, len(tickers)))
+    max_workers = min(16, max(2, len(tickers)))
     try:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             for sym, driver, url in executor.map(_fetch_single_news, tickers):
@@ -233,17 +291,17 @@ def _fetch_news_concurrently(tickers: List[str]) -> Dict[str, tuple[str, str]]:
     return results
 
 
-def scan_live_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicStockItem]]:
+def scan_live_market_radar(is_indian: bool = True) -> Dict[str, List[ThematicStockItem]]:
     """
-    Executes a pure live quantitative market scan across the candidate universe.
+    Executes a pure live quantitative market scan across the expanded candidate universe.
     
-    1. Downloads 5-day OHLCV in a single batch via yf.download.
+    1. Downloads 5-day OHLCV in a single batch via yf.download across 100+ candidates.
     2. Calculates live price, day change %, 5-day average volume, and relative volume.
-    3. Dynamically screens and sorts candidates into 5 categories:
-       - 'penny': Live price < ₹100 (IN) or < $15 (US), sorted by relative volume.
+    3. Dynamically screens and sorts candidates into 5 categories without artificial limits:
+       - 'penny': Live price <= ₹100 (IN) or <= $15 (US), sorted by relative volume surge.
        - 'safe': Fortress blue-chips, sorted by 5-day stability/low volatility.
        - 'new': Disruptors & new listings, sorted by momentum.
-       - 'trending': Market-wide top gainers & volume breakouts (all scanned stocks).
+       - 'trending': Market-wide top gainers & volume breakouts across all scanned stocks.
        - 'future': Secular megatrends, sorted by relative strength.
     4. Concurrently extracts live financial news headlines.
     """
@@ -350,20 +408,22 @@ def scan_live_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicSt
     trending_candidates.sort(key=lambda x: x[0], reverse=True)   # Best trend score first
     future_items.sort(key=lambda x: x[0], reverse=True)          # Highest relative strength first
 
-    # Pick top 10 for each category
-    selected_penny = penny_items[:10]
-    selected_safe = safe_items[:10]
-    selected_new = new_items[:10]
-    selected_trending = trending_candidates[:10]
-    selected_future = future_items[:10]
+    # Return full depth for each category (up to 40 per category for rich scrollable tables)
+    selected_penny = penny_items[:40]
+    selected_safe = safe_items[:40]
+    selected_new = new_items[:40]
+    selected_trending = trending_candidates[:40]
+    selected_future = future_items[:40]
 
-    # Collect unique tickers to fetch live news for
-    all_selected_tickers = list({
-        row[1] for row in (selected_penny + selected_safe + selected_new + selected_trending + selected_future)
+    # Collect top tickers across each category to fetch real-time news for
+    top_news_tickers = list({
+        row[1] for row in (
+            selected_penny[:6] + selected_safe[:6] + selected_new[:6] + selected_trending[:8] + selected_future[:6]
+        )
     })
 
     # Step 3: Concurrently fetch real-time news articles
-    news_map = _fetch_news_concurrently(all_selected_tickers)
+    news_map = _fetch_news_concurrently(top_news_tickers)
 
     # Step 4: Build ThematicStockItem records with live data
     def build_items(raw_rows, cat_id: str, cat_title: str) -> List[ThematicStockItem]:
@@ -417,9 +477,10 @@ def scan_live_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicSt
     return result
 
 
-def get_thematic_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicStockItem]]:
+def get_thematic_market_radar(is_indian: bool = True) -> Dict[str, List[ThematicStockItem]]:
     """
     Primary interface for fetching the thematic market radar.
-    Executes a real-time dynamic market scan without any hardcoded data.
+    Executes a real-time dynamic market scan across the expanded universe.
+    Defaults to Indian Markets (NSE/BSE).
     """
     return scan_live_market_radar(is_indian=is_indian)

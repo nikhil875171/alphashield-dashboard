@@ -309,10 +309,13 @@ with col_brand:
     st.caption("Intermarket transmission, multi-horizon scarcity models, and directed supply chain ripple mapping.")
 
 with col_market_selector:
+    if "is_indian" not in st.session_state:
+        st.session_state["is_indian"] = True
+
     selected_market = st.radio(
         "Select Stock Market Exchange",
-        options=["🇺🇸 US Markets (NYSE / NASDAQ)", "🇮🇳 Indian Markets (NSE / BSE)"],
-        index=0 if st.session_state.get("is_indian", False) is False else 1,
+        options=["🇮🇳 Indian Markets (NSE / BSE)", "🇺🇸 US Markets (NYSE / NASDAQ)"],
+        index=0 if st.session_state.get("is_indian", True) else 1,
         horizontal=True,
         help="Instantly reloads currency ($ vs ₹), benchmark index (S&P 500 vs Nifty 50), and market telemetry."
     )
@@ -840,6 +843,57 @@ if audit_results and audit_results[0] is not None:
             """, unsafe_allow_html=True)
 
     # =========================================================================
+    # MODAL DIALOG: INSTITUTIONAL STOCK PROFILE & 1-CLICK AUDIT
+    # =========================================================================
+    @st.dialog("🏢 Company Profile & Live Catalyst", width="large")
+    def show_stock_inspection_modal(stock: ThematicStockItem):
+        chg_val = getattr(stock, "change_pct", 0.0)
+        chg_str = getattr(stock, "change_str", f"{chg_val:+.2f}%")
+        rel_vol = getattr(stock, "volume_multiple", 1.0)
+        r_badge = getattr(stock, "risk_badge", "🟢 Normal")
+        n_url = getattr(stock, "news_url", "")
+
+        chg_pill = f"<span class='pastel-pill-mint'>▲ {chg_str} Today</span>" if chg_val >= 0 else f"<span class='pastel-pill-rose'>▼ {chg_str} Today</span>"
+        vol_pill = f"<span class='pastel-pill-lilac'>⚡ {rel_vol:.1f}x ADV</span>"
+        risk_pill = f"<span class='pastel-pill-amber'>{r_badge}</span>"
+
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #121A2B 0%, #162238 100%); border-radius: 14px; padding: 18px 20px; border: 1px solid rgba(147, 197, 253, 0.25); margin-bottom: 16px;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;'>
+                <div>
+                    <div style='font-size: 1.50rem; font-weight: 800; color: #F8FAFC;'>{stock.name}</div>
+                    <div style='font-size: 1.05rem; font-weight: 700; color: #93C5FD; margin-top: 2px;'>{stock.ticker} <span style='font-size: 0.85rem; color: #94A3B8; font-weight: 500;'>• {stock.category_title}</span></div>
+                </div>
+                <div style='text-align: right;'>
+                    <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Live Market Price</div>
+                    <div style='font-size: 1.65rem; font-weight: 800; color: #38BDF8;'>{stock.approx_price}</div>
+                </div>
+            </div>
+            <div style='display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap;'>
+                {chg_pill}
+                {vol_pill}
+                {risk_pill}
+                <span class='pastel-pill'>{stock.risk_level}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("#### 📰 **Live Catalyst & Market Action**")
+        news_link = f" <a href='{n_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600;'>[Open Full Article ↗]</a>" if n_url else ""
+        st.info(f"{stock.catalyst_driver}{news_link}")
+
+        st.markdown("#### 🔗 **Institutional Role & Strategic Thesis**")
+        st.markdown(f"""
+        <div style='background: rgba(255, 255, 255, 0.03); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.95rem; color: #CBD5E1; line-height: 1.55; margin-bottom: 20px;'>
+            <strong>Macro & Supply Chain Context:</strong> {stock.why_it_matters}
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button(f"⚡ Run Full AlphaShield Audit on {stock.ticker}", key=f"modal_audit_btn_{stock.ticker}", type="primary", use_container_width=True):
+            st.session_state["active_ticker"] = stock.ticker
+            st.rerun()
+
+    # =========================================================================
     # TAB 3: THEMATIC MARKET RADAR (100% LIVE DYNAMIC QUANTITATIVE SCREENER)
     # =========================================================================
     with tabs[2]:
@@ -847,7 +901,7 @@ if audit_results and audit_results[0] is not None:
 
         with col_rad_head:
             st.markdown(f"### 🧭 **Live Institutional Market Radar ({'India NSE' if is_indian else 'US Markets'})**")
-            st.caption("100% real-time quantitative screening across 50+ institutional candidates. Zero hardcoding: live prices, % deltas, relative volume surges, and live financial news.")
+            st.caption("100% real-time quantitative screening across 100+ institutional candidates. High-density data tables with scrollbars, live sorting, and 1-click inspection popup modals.")
 
         with col_rad_act:
             if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
@@ -863,7 +917,7 @@ if audit_results and audit_results[0] is not None:
         radar_search = st.text_input(
             "🔎 Filter live screened stocks by name, ticker, or catalyst keyword:",
             "",
-            placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV...",
+            placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV, Bank...",
             key="radar_filter_input"
         ).strip().lower()
 
@@ -894,58 +948,65 @@ if audit_results and audit_results[0] is not None:
                 if not stock_list:
                     st.info(f"No live stocks found matching '{radar_search}' in this category.")
                 else:
-                    for i in range(0, len(stock_list), 2):
-                        col_left, col_right = st.columns(2)
-                        pair = [col_left] if i + 1 >= len(stock_list) else [col_left, col_right]
+                    # Build tabular DataFrame for scrollable display
+                    table_rows = []
+                    for s in stock_list:
+                        chg_val = getattr(s, "change_pct", 0.0)
+                        rel_vol = getattr(s, "volume_multiple", 1.0)
+                        table_rows.append({
+                            "Ticker": s.ticker,
+                            "Company Name": s.name,
+                            "Live Price": s.approx_price,
+                            "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
+                            "Volume Surge": f"{rel_vol:.1f}x ADV",
+                            "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
+                            "Live Catalyst": s.catalyst_driver,
+                        })
+                    table_df = pd.DataFrame(table_rows)
 
-                        for offset, col in enumerate(pair):
-                            stock = stock_list[i + offset]
-                            with col:
-                                # Safe attribute access with fallbacks
-                                chg_pct = getattr(stock, "change_pct", 0.0)
-                                chg_str = getattr(stock, "change_str", f"{chg_pct:+.2f}%")
-                                rel_vol = getattr(stock, "volume_multiple", 1.0)
-                                n_url = getattr(stock, "news_url", "")
-                                r_badge = getattr(stock, "risk_badge", "🟢 Normal")
+                    col_hint, col_quick_sel = st.columns([2.8, 1.4])
+                    with col_hint:
+                        st.caption("💡 **Tip:** Click any row in the table below to open its full profile popup window and run an immediate 1-click audit.")
+                    with col_quick_sel:
+                        sel_sym = st.selectbox(
+                            "Quick Inspect:",
+                            options=[s.ticker for s in stock_list],
+                            format_func=lambda t: f"{t} — {next((s.name for s in stock_list if s.ticker == t), t)[:20]}",
+                            key=f"select_inspect_{cat_key}",
+                            label_visibility="collapsed",
+                        )
 
-                                # Real-time change pill
-                                if chg_pct >= 0:
-                                    chg_pill = f"<span class='pastel-pill-mint'>▲ {chg_str}</span>"
-                                else:
-                                    chg_pill = f"<span class='pastel-pill-rose'>▼ {chg_str}</span>"
+                    # Interactive Scrollable Table with Row Selection
+                    table_event = st.dataframe(
+                        table_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=440,
+                        on_select="rerun",
+                        selection_mode="single-row",
+                        column_config={
+                            "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                            "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
+                            "Live Price": st.column_config.TextColumn("Live Price", width="small"),
+                            "Change %": st.column_config.TextColumn("Change %", width="small"),
+                            "Volume Surge": st.column_config.TextColumn("Volume Multiple", width="small"),
+                            "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
+                            "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
+                        },
+                        key=f"radar_table_{cat_key}",
+                    )
 
-                                # Relative volume multiplier pill
-                                vol_pill = f"<span class='pastel-pill-lilac'>⚡ {rel_vol:.1f}x Vol</span>"
+                    # Open modal popup if a row is clicked
+                    if table_event and table_event.selection and len(table_event.selection.rows) > 0:
+                        clicked_idx = table_event.selection.rows[0]
+                        if 0 <= clicked_idx < len(stock_list):
+                            show_stock_inspection_modal(stock_list[clicked_idx])
 
-                                # Clickable live news link
-                                news_link = f"<a href='{n_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600; margin-left: 6px;'>[Read Story ↗]</a>" if n_url else ""
-
-                                st.markdown(f"""
-                                <div class='radar-card'>
-                                    <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;'>
-                                        <div>
-                                            <span style='font-size: 1.18rem; font-weight: 800; color: #93C5FD;'>{stock.ticker}</span>
-                                            <span style='font-size: 0.92rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
-                                            <span style='margin-left: 10px; font-weight: 700; color: #F8FAFC; font-size: 1.05rem;'>{stock.approx_price}</span>
-                                        </div>
-                                        <div style='display: flex; gap: 6px; align-items: center; flex-wrap: wrap;'>
-                                            {chg_pill}
-                                            {vol_pill}
-                                            <span class='pastel-pill-amber'>{r_badge}</span>
-                                        </div>
-                                    </div>
-                                    <div style='margin-top: 10px; font-size: 0.90rem; color: #CBD5E1; line-height: 1.45;'>
-                                        <strong>Catalyst:</strong> {stock.catalyst_driver} {news_link}
-                                    </div>
-                                    <div style='margin-top: 5px; font-size: 0.85rem; color: #94A3B8; line-height: 1.4;'>
-                                        <strong>Institutional Role:</strong> {stock.why_it_matters}
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-
-                                if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{cat_key}_{stock.ticker}_{i + offset}", use_container_width=True):
-                                    st.session_state["active_ticker"] = stock.ticker
-                                    st.rerun()
+                    # Action button for quick select
+                    if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key=f"btn_quick_inspect_{cat_key}", use_container_width=True):
+                        matched_stock = next((s for s in stock_list if s.ticker == sel_sym), None)
+                        if matched_stock:
+                            show_stock_inspection_modal(matched_stock)
 
     # =========================================================================
     # TAB 4: SUPPLY CHAIN & RIPPLE GRAPH
