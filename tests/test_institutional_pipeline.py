@@ -74,8 +74,19 @@ def test_full_pipeline():
     assert risk.max_equity_at_risk == 10_000.0  # Exactly 1.0%
     print(f"      [+] Stop Loss: ₹{risk.algorithmic_stop_loss} | Shares: {risk.calculated_shares} (Allocated: ₹{risk.allocated_capital:,.2f}) | R:R: {risk.risk_reward_ratio}:1")
 
-    # 7. Gemini AI Agent
-    print("[7/7] Testing Gemini Pro Structured Decision Pipeline...")
+    # 7. Thematic & Supply Chain Ripple Test
+    print("[7/8] Testing Thematic Horizons & Ancillary Ripple Screener...")
+    from src.thematic_engine import audit_thematic_profile
+    from src.supply_chain_graph import get_supplier_ripple_effect
+    from src.ancillary_screener import screen_ancillary_supplier
+    thematic = audit_thematic_profile(symbol)
+    ripple = get_supplier_ripple_effect(symbol)
+    ancillary = screen_ancillary_supplier(symbol)
+    print(f"      [+] Horizon: {thematic.horizon_title} ({thematic.timeframe})")
+    print(f"      [+] Supply Role: {ripple.role} | DOL Multiplier: {ancillary.operating_leverage_multiplier}x")
+
+    # 8. Gemini AI Agent (FullInstitutionalTradePlan)
+    print("[8/8] Testing Full Institutional Decision Pipeline...")
     plan = generate_institutional_trade_plan(
         ticker=symbol,
         macro=macro,
@@ -84,11 +95,16 @@ def test_full_pipeline():
         traps=traps,
         spillovers=spillovers,
         risk=risk,
+        thematic=thematic,
+        ancillary=ancillary,
+        ripple=ripple,
     )
-    assert isinstance(plan, InstitutionalTradePlan)
-    assert plan.action in ["BUY", "SELL", "HOLD", "AVOID"]
+    assert plan.action in ["BUY", "ACCUMULATE", "SELL", "HOLD", "AVOID"]
     assert 0.0 <= plan.conviction_score <= 1.0
+    assert plan.thematic_horizon in ["1_YEAR", "3_YEARS", "5_YEARS", "10_YEARS", "20_YEARS"]
+    assert plan.supply_chain_role in ["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"]
     print(f"      [+] Mandate: [{plan.action}] with {plan.conviction_score * 100:.0f}% Conviction")
+    print(f"      [+] Plain-English Verdict: {plan.plain_english_verdict}")
     print(f"      [+] Entry Range: ₹{plan.entry_price_range[0]} - ₹{plan.entry_price_range[1]}")
     print(f"      [+] Target Ladder: {plan.target_ladder}")
     print(f"      [+] Kill-Switches: {len(plan.execution_kill_switches)} configured")

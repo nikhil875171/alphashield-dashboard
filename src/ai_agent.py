@@ -7,26 +7,57 @@ from src.macro_engine import MacroRegimeState
 from src.microstructure import MicrostructureValidation
 from src.factor_model import FactorScoreSummary
 from src.risk_engine import ExecutionRiskReport
+from src.thematic_engine import ThematicProfile, audit_thematic_profile
+from src.supply_chain_graph import SupplierRippleResult, get_supplier_ripple_effect
+from src.ancillary_screener import AncillaryMetrics, screen_ancillary_supplier
 
 load_dotenv()
 
 
-class InstitutionalTradePlan(BaseModel):
-    """Institutional Trade Plan schema for Gemini Pro."""
+class FullInstitutionalTradePlan(BaseModel):
+    """Unified Institutional Trade Plan schema enforcing macro, thematic, and supply chain intelligence."""
     ticker: str
-    action: Literal["BUY", "SELL", "HOLD", "AVOID"]
+    market: Literal["US", "INDIA"]
+    currency: Literal["$", "₹"]
+    action: Literal["BUY", "ACCUMULATE", "HOLD", "AVOID"]
+    plain_english_verdict: str = Field(description="Max 25-word jargon-free summary for beginners")
+    primary_danger: str = Field(description="The #1 danger to watch out for in plain English")
     conviction_score: float = Field(ge=0.0, le=1.0)
-    macro_regime: str
-    factor_grades: Dict[str, float]  # Value, Quality, Momentum, Microstructure
-    solvency_audit: Dict[str, float]  # Z-score, F-score, Sloan Accruals
+    thematic_horizon: Literal["1_YEAR", "3_YEARS", "5_YEARS", "10_YEARS", "20_YEARS"]
+    thematic_driver: str = Field(description="e.g., AI Edge, Power Grid, Nuclear Baseload, Water Scarcity, Humanoid Robotics")
+    supply_chain_role: Literal["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"]
+    anchor_oem_dependencies: List[str] = Field(description="List of anchor OEMs driving demand to this company")
+    operating_leverage_multiplier: float = Field(ge=0.0, le=5.0)
+    customer_concentration_pct: float = Field(description="Percentage of revenue tied to primary anchor OEM")
+    resource_scarcity_exposure: Literal["WATER", "CLEAN_AIR", "ORE_DEPLETION", "POWER_GRID", "NONE"]
+    solvency_status: Literal["PRISTINE", "STABLE", "DEBT_BURDENED", "INSOLVENT_DISTRESS"]
+    altman_z_score: float
+    piotroski_f_score: int
+    sloan_accrual_ratio: float
     entry_price_range: Tuple[float, float]
     algorithmic_stop_loss: float
     target_ladder: List[float]
     calculated_shares: int
-    risk_reward_ratio: float
-    detected_traps_or_warnings: List[str]
-    supply_chain_spillovers: List[str]
+    max_capital_at_risk: float
     execution_kill_switches: List[str]
+    detected_traps: List[str]
+
+    # Backwards compatibility property
+    @property
+    def macro_regime(self) -> str:
+        return "EXPANSION"
+
+    @property
+    def risk_reward_ratio(self) -> float:
+        if self.entry_price_range and self.target_ladder and self.algorithmic_stop_loss:
+            risk = abs(self.entry_price_range[0] - self.algorithmic_stop_loss)
+            reward = abs(self.target_ladder[0] - self.entry_price_range[0])
+            return round(reward / max(risk, 0.01), 2)
+        return 2.5
+
+
+# Backwards compatibility alias
+InstitutionalTradePlan = FullInstitutionalTradePlan
 
 
 def generate_institutional_trade_plan(
@@ -37,99 +68,98 @@ def generate_institutional_trade_plan(
     traps: List[str],
     spillovers: Dict[str, List[str]],
     risk: ExecutionRiskReport,
-    model_name: str = "gemini-flash-lite-latest"
-) -> InstitutionalTradePlan:
+    thematic: Optional[ThematicProfile] = None,
+    ancillary: Optional[AncillaryMetrics] = None,
+    ripple: Optional[SupplierRippleResult] = None,
+    model_name: str = "gemini-flash-lite-latest",
+) -> FullInstitutionalTradePlan:
     """
-    Submits aggregated institutional quant telemetry to Gemini Pro and validates against InstitutionalTradePlan schema.
+    Submits aggregated institutional quant, macro, and supply-chain telemetry to Gemini Pro
+    and validates against FullInstitutionalTradePlan schema.
     Provides automated model cascading and algorithmic fallback.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    # Ensure helper profiles exist
+    if thematic is None:
+        thematic = audit_thematic_profile(ticker)
+    if ancillary is None:
+        ancillary = screen_ancillary_supplier(ticker)
+    if ripple is None:
+        ripple = get_supplier_ripple_effect(ticker)
 
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or api_key.strip() == "YOUR_GEMINI_API_KEY_HERE":
-        return _build_algorithmic_trade_plan(ticker, macro, micro, factors, traps, spillovers, risk)
+        return _build_algorithmic_trade_plan(ticker, macro, micro, factors, traps, spillovers, risk, thematic, ancillary, ripple)
 
     from google import genai
     from google.genai import types
 
     client = genai.Client(api_key=api_key)
 
+    is_indian = ticker.endswith(".NS") or ticker.endswith(".BO")
+    market_str = "INDIA" if is_indian else "US"
+    currency_str = "₹" if is_indian else "$"
+
     prompt = f"""
     Act as the Chief Investment Officer (CIO) and Head of Quantitative Risk.
-    Analyze the multi-asset transmission signals, order flow microstructure, and quantitative factor sieve below for {ticker}.
+    Analyze the multi-asset transmission signals, order flow microstructure, supply chain position, and factor sieve below for {ticker}.
     Synthesize an institutional trade plan strictly adhering to our zero-ruin capital preservation policy.
 
     === 1. CROSS-ASSET & MACRO TRANSMISSION ===
     - Macro Regime: {macro.regime_label} (Liquidity Bias: {macro.liquidity_bias:+.2f})
     - Volatility Status: VIX={macro.vix} [{macro.vix_tier}] (Position Scale: {macro.position_scale_factor}x)
     - Yield Curve Spread: {macro.yield_spread}% [{macro.yield_curve_state}]
-    - DXY RoC (20d): {macro.dxy_20d_roc}% | Crude Oil: ${macro.crude_oil} (Demand Destruction: {macro.crude_demand_destruction})
-    - Copper/Gold Ratio: {macro.copper_gold_ratio} ({macro.industrial_momentum})
-    - High-Yield Credit Spread Proxy: {macro.hy_credit_spread_proxy} ({macro.systemic_credit_risk})
+    - Benchmark: {macro.benchmark_name} at {macro.benchmark_price} ({macro.benchmark_change_pct:+.2f}%)
     - Active Macro Headwinds: {'; '.join(macro.active_macro_headwinds) if macro.active_macro_headwinds else 'None'}
 
     === 2. CAPITAL PRESERVATION SIEVE & MULTI-FACTOR MODEL ===
     - Sieve Verdict: {factors.sieve_verdict}
-    - Altman Z-Score (Bankruptcy): {factors.altman_z_score} (Threshold: < 1.81 is Insolvent)
-    - Piotroski F-Score (Health): {factors.piotroski_f_score}/9 (Threshold: >= 6 Long, <= 3 Reject)
+    - Altman Z-Score: {factors.altman_z_score} (Distress < 1.81)
+    - Piotroski F-Score: {factors.piotroski_f_score}/9
     - Sloan Accrual Ratio: {factors.sloan_accrual_ratio * 100:.2f}% (Threshold: > 10% is Earnings Hazard)
-    - Factor Grades: Value={factors.factor_grades.get('Value')}, Quality={factors.factor_grades.get('Quality')}, Momentum={factors.factor_grades.get('Momentum')}, Microstructure={factors.factor_grades.get('Microstructure')}
-    - Sieve Rejections: {'; '.join(factors.sieve_rejection_reasons) if factors.sieve_rejection_reasons else 'None'}
 
-    === 3. MICROSTRUCTURE & INSTITUTIONAL FLOW ===
-    - Estimated Delivery %: {micro.delivery_pct}% (Valid: {micro.delivery_valid})
-    - Institutional Confluence: {micro.institutional_confluence} ({micro.institutional_confluence_msg})
-    - Options Flow: PCR={micro.put_call_ratio} [{micro.pcr_regime}]
-    - Max Pain Strike: ₹{micro.max_pain_strike} | Call Resistance Wall: ₹{micro.call_resistance_wall} | Put Wall: ₹{micro.put_support_wall}
-    - Estimated Bid-Ask Spread: {micro.estimated_bid_ask_spread_pct}% (Liquidity Valid: {micro.liquidity_passed})
-    - Microstructure Warnings: {'; '.join(micro.microstructure_warnings) if micro.microstructure_warnings else 'None'}
+    === 3. SUPPLY CHAIN & THEMATIC HORIZON ===
+    - Thematic Wave: {thematic.horizon_title} ({thematic.timeframe})
+    - Supply Chain Role: {ripple.role} in {ripple.case_name}
+    - Connected Anchor OEMs: {', '.join(ripple.connected_anchors)}
+    - Operating Leverage: {ancillary.operating_leverage_multiplier}x ({ancillary.operating_leverage_grade})
+    - Customer Concentration: {ancillary.customer_concentration_pct}%
+    - Resource Scarcity Exposure: {thematic.resource_scarcity_exposure}
 
-    === 4. HEURISTIC TRAP & FAILURE MODE DETECTOR ===
-    - Active Traps Detected: {'; '.join(traps) if traps else 'None (Clean Setup)'}
+    === 4. MICROSTRUCTURE & RISK EXECUTION ===
+    - Delivery Validation: {micro.delivery_valid} (Delivery: {micro.delivery_pct:.1f}%)
+    - Entry Price: {currency_str}{risk.entry_price} | Hard Stop: {currency_str}{risk.algorithmic_stop_loss}
+    - Targets: {[f"{currency_str}{t}" for t in risk.target_ladder]}
+    - Risk/Reward: {risk.risk_reward_ratio:.2f}:1 (Gate: >= 2.5:1, Passed: {risk.asymmetric_rr_passed})
+    - Maximum Shares to Allocate: {risk.calculated_shares}
+    - Max Equity at Risk: {currency_str}{risk.max_equity_at_risk:.2f}
 
-    === 5. SECTORAL SPILLOVER & SUPPLY CHAIN TREE ===
-    - Theme: {', '.join(spillovers.get('theme', []))}
-    - Upstream Beneficiaries: {', '.join(spillovers.get('upstream_positive', [])[:2])}
-    - Downstream Beneficiaries: {', '.join(spillovers.get('downstream_positive', [])[:2])}
-    - Negative Spillovers: {', '.join(spillovers.get('negative_spillovers', [])[:2])}
-
-    === 6. MATHEMATICAL RISK & POSITION SIZING ===
-    - Entry Price: ₹{risk.entry_price}
-    - Algorithmic Hard Stop Loss (ATR Scaled): ₹{risk.algorithmic_stop_loss}
-    - Calculated Position Size: {risk.calculated_shares:,} shares (Allocating ₹{risk.allocated_capital:,.2f} = {risk.portfolio_allocation_pct}% of equity)
-    - Maximum Portfolio Equity at Risk: ₹{risk.max_equity_at_risk:,.2f} (Strictly 1.0% cap)
-    - Asymmetric Risk-to-Reward Ratio: {risk.risk_reward_ratio}:1 (Passed >= 2.5: {risk.asymmetric_rr_passed})
-    - Execution Verdict: {risk.execution_verdict}
-
-    === STRICT INSTITUTIONAL MANDATES ===
-    1. If factors.sieve_verdict != 'PASS', ACTION MUST BE 'AVOID'.
-    2. If macro.regime_label == 'VOLATILITY_HALT', ACTION MUST BE 'AVOID' and calculated_shares must be 0.
-    3. If any fatal trap (Exhaustion Trap or Cyclical Value Trap) is active, downgrade BUY to HOLD or AVOID.
-    4. Provide entry_price_range as a tight tuple [low_entry, high_entry] around current spot price.
-    5. List 2-4 concrete, falsifiable kill-switches that immediately invalidate the trade.
+    Format response strictly as JSON compliant with the requested FullInstitutionalTradePlan schema.
+    Provide a plain-English, beginner-friendly verdict under 25 words and a clear primary danger statement.
     """
 
-    models_to_try = [model_name, "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+    candidate_models = [model_name, "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest"]
     unique_models = []
-    for m in models_to_try:
+    for m in candidate_models:
         if m and m not in unique_models:
             unique_models.append(m)
 
-    for m in unique_models:
+    for model in unique_models:
         try:
             response = client.models.generate_content(
-                model=m,
+                model=model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    response_json_schema=InstitutionalTradePlan.model_json_schema(),
-                    temperature=0.15,
+                    response_schema=FullInstitutionalTradePlan,
+                    temperature=0.1,
                 ),
             )
-            return InstitutionalTradePlan.model_validate_json(response.text)
+            if response.parsed:
+                return response.parsed
         except Exception:
             continue
 
-    return _build_algorithmic_trade_plan(ticker, macro, micro, factors, traps, spillovers, risk)
+    return _build_algorithmic_trade_plan(ticker, macro, micro, factors, traps, spillovers, risk, thematic, ancillary, ripple)
 
 
 def _build_algorithmic_trade_plan(
@@ -139,63 +169,82 @@ def _build_algorithmic_trade_plan(
     factors: FactorScoreSummary,
     traps: List[str],
     spillovers: Dict[str, List[str]],
-    risk: ExecutionRiskReport
-) -> InstitutionalTradePlan:
-    """Algorithmic fallback rule engine producing an InstitutionalTradePlan without API dependency."""
-    # Sieve & Trap rejection conditions
-    all_warnings = list(traps) + list(micro.microstructure_warnings) + list(factors.sieve_rejection_reasons)
-    
-    # Kill switch formulation
-    kill_switches = [
-        f"Breach of algorithmic hard stop at ₹{risk.algorithmic_stop_loss}",
-        "Volume drop below 50% of 20-day ADV on breakout candle",
-        f"Macro regime shift to VOLATILITY_HALT (VIX > 32)"
-    ]
+    risk: ExecutionRiskReport,
+    thematic: ThematicProfile,
+    ancillary: AncillaryMetrics,
+    ripple: SupplierRippleResult,
+) -> FullInstitutionalTradePlan:
+    """Algorithmic fallback rule engine producing a FullInstitutionalTradePlan without external API dependency."""
+    is_indian = ticker.endswith(".NS") or ticker.endswith(".BO")
+    m_code: Literal["US", "INDIA"] = "INDIA" if is_indian else "US"
+    curr_code: Literal["$", "₹"] = "₹" if is_indian else "$"
+
+    # Solvency status determination
+    if factors.altman_z_score >= 2.99 and factors.piotroski_f_score >= 7:
+        solv: Literal["PRISTINE", "STABLE", "DEBT_BURDENED", "INSOLVENT_DISTRESS"] = "PRISTINE"
+    elif factors.altman_z_score >= 1.81 and factors.piotroski_f_score >= 5:
+        solv = "STABLE"
+    elif factors.altman_z_score >= 1.81:
+        solv = "DEBT_BURDENED"
+    else:
+        solv = "INSOLVENT_DISTRESS"
 
     # Action determination
     if factors.sieve_verdict != "PASS" or macro.regime_label == "VOLATILITY_HALT":
-        action = "AVOID"
+        action: Literal["BUY", "ACCUMULATE", "HOLD", "AVOID"] = "AVOID"
         conviction = 0.85
-    elif len(traps) > 0 or not micro.delivery_valid or not risk.asymmetric_rr_passed:
+        verdict = f"High solvency or macro volatility hazard detected. Capital preservation rules strictly forbid entering {ticker} now."
+        danger = f"Financial stress or volatility halt: {factors.sieve_rejection_reasons[0] if factors.sieve_rejection_reasons else 'VIX panic'}"
+    elif len(traps) > 0 or not risk.asymmetric_rr_passed:
         action = "HOLD"
         conviction = 0.65
-    elif (
-        factors.composite_factor_score >= 60.0
-        and risk.asymmetric_rr_passed
-        and macro.regime_label in ["EXPANSION", "NEUTRAL"]
-    ):
+        verdict = f"{ticker} has solid fundamentals, but wait for a clean pullback into safe entry range before buying."
+        danger = f"Active market trap or sub-2.5x odds: {traps[0] if traps else 'Upside does not justify downside'}"
+    elif factors.composite_factor_score >= 65.0 and risk.asymmetric_rr_passed and micro.delivery_valid:
         action = "BUY"
         conviction = round(min(0.92, (factors.composite_factor_score / 100.0) + 0.15), 2)
+        verdict = f"High-conviction buy: {ticker} passed all solvency sieves with strong institutional accumulation and {risk.risk_reward_ratio:.1f}x odds."
+        danger = f"If price breaches algorithmic stop at {curr_code}{risk.algorithmic_stop_loss}, exit immediately without hesitation."
     else:
-        action = "HOLD"
-        conviction = 0.50
+        action = "ACCUMULATE"
+        conviction = 0.60
+        verdict = f"Accumulate gradually in the entry zone; company benefits from the {thematic.horizon_title} secular wave."
+        danger = f"Monitor the {thematic.resource_scarcity_exposure} supply bottleneck and maintain strict stop at {curr_code}{risk.algorithmic_stop_loss}."
 
-    entry_low = round(risk.entry_price * 0.995, 2)
-    entry_high = round(risk.entry_price * 1.005, 2)
-
-    # Flatten spillovers
-    spillover_summary = []
-    if "upstream_positive" in spillovers:
-        spillover_summary.extend(spillovers["upstream_positive"][:2])
-    if "downstream_positive" in spillovers:
-        spillover_summary.extend(spillovers["downstream_positive"][:2])
-    if "negative_spillovers" in spillovers:
-        spillover_summary.extend(spillovers["negative_spillovers"][:1])
-
-    return InstitutionalTradePlan(
-        ticker=ticker,
-        action=action,
-        conviction_score=conviction,
-        macro_regime=macro.regime_label,
-        factor_grades=factors.factor_grades,
-        solvency_audit=factors.solvency_audit,
-        entry_price_range=(entry_low, entry_high),
-        algorithmic_stop_loss=risk.algorithmic_stop_loss,
-        target_ladder=risk.target_ladder,
-        calculated_shares=risk.calculated_shares if action == "BUY" else 0,
-        risk_reward_ratio=risk.risk_reward_ratio,
-        detected_traps_or_warnings=all_warnings if all_warnings else ["No active structural traps detected."],
-        supply_chain_spillovers=spillover_summary if spillover_summary else ["Direct sector transmission."],
-        execution_kill_switches=kill_switches,
+    role_val: Literal["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"] = (
+        ripple.role if ripple.role in ["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"] else "TIER_1"
     )
 
+    kill_switches = [
+        f"Breach of algorithmic hard stop at {curr_code}{risk.algorithmic_stop_loss}",
+        "Volume drop below 50% of 20-day ADV on breakout candle",
+        "Macro regime shift to VOLATILITY_HALT (VIX > 32)"
+    ]
+
+    return FullInstitutionalTradePlan(
+        ticker=ticker,
+        market=m_code,
+        currency=curr_code,
+        action=action,
+        plain_english_verdict=verdict,
+        primary_danger=danger,
+        conviction_score=conviction,
+        thematic_horizon=thematic.horizon_code,
+        thematic_driver=thematic.thematic_driver,
+        supply_chain_role=role_val,
+        anchor_oem_dependencies=ripple.connected_anchors,
+        operating_leverage_multiplier=ancillary.operating_leverage_multiplier,
+        customer_concentration_pct=ancillary.customer_concentration_pct,
+        resource_scarcity_exposure=thematic.resource_scarcity_exposure,
+        solvency_status=solv,
+        altman_z_score=factors.altman_z_score,
+        piotroski_f_score=factors.piotroski_f_score,
+        sloan_accrual_ratio=factors.sloan_accrual_ratio,
+        entry_price_range=(round(risk.entry_price * 0.995, 2), round(risk.entry_price * 1.005, 2)),
+        algorithmic_stop_loss=risk.algorithmic_stop_loss,
+        target_ladder=risk.target_ladder,
+        calculated_shares=risk.calculated_shares if action in ["BUY", "ACCUMULATE"] else 0,
+        max_capital_at_risk=risk.max_equity_at_risk,
+        execution_kill_switches=kill_switches,
+        detected_traps=traps if traps else ["No active structural traps detected."],
+    )

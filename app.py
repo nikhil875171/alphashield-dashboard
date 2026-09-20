@@ -14,14 +14,22 @@ from core.auth import (
 from core.technical_engine import compute_technical_snapshot
 from core.visualizer import build_interactive_chart
 
-# Import institutional quantitative modules
+# Import institutional quantitative & thematic modules
 from src.macro_engine import compute_macro_transmission, MacroRegimeState
 from src.transmission_tree import detect_company_catalyst, get_supply_chain_spillover
+from src.thematic_engine import audit_thematic_profile, ThematicProfile
+from src.supply_chain_graph import (
+    build_supply_chain_network,
+    get_supplier_ripple_effect,
+    render_interactive_network_graph,
+    SupplierRippleResult,
+)
+from src.ancillary_screener import screen_ancillary_supplier, AncillaryMetrics
 from src.microstructure import validate_microstructure, MicrostructureValidation
 from src.factor_model import evaluate_factor_model, FactorScoreSummary
 from src.trap_guards import evaluate_all_traps
 from src.risk_engine import calculate_algorithmic_execution, ExecutionRiskReport
-from src.ai_agent import generate_institutional_trade_plan, InstitutionalTradePlan
+from src.ai_agent import generate_institutional_trade_plan, FullInstitutionalTradePlan
 from src.market_radar import get_thematic_market_radar, ThematicStockItem
 
 load_dotenv()
@@ -35,7 +43,7 @@ except Exception:
 
 # Page configuration
 st.set_page_config(
-    page_title="AlphaShield | Beginner-Friendly Stock Intelligence",
+    page_title="AlphaShield | Quantitative & Thematic Intelligence",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -49,18 +57,6 @@ st.markdown("""
         background-color: #0B0E14;
         color: #E2E8F0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    
-    /* Top Global Switcher */
-    .market-switch-banner {
-        background: linear-gradient(90deg, #1E293B 0%, #0F172A 100%);
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 12px 20px;
-        margin-bottom: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
     /* Metric Cards */
@@ -152,7 +148,7 @@ st.markdown("""
         background-color: #151B26;
         border: 1px solid #232D3F;
         border-radius: 12px;
-        padding: 16px;
+        padding: 14px;
         height: 100%;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
         transition: transform 0.15s ease, border-color 0.15s ease;
@@ -162,26 +158,26 @@ st.markdown("""
         transform: translateY(-2px);
     }
     .tile-header {
-        font-size: 0.85rem;
+        font-size: 0.78rem;
         color: #94A3B8;
         text-transform: uppercase;
         font-weight: 600;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     .tile-status-safe {
         color: #10B981;
         font-weight: 700;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
     .tile-status-caution {
         color: #F59E0B;
         font-weight: 700;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
     .tile-status-danger {
         color: #EF4444;
         font-weight: 700;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
 
     /* Thematic Discovery Card */
@@ -204,12 +200,11 @@ if not render_login_gate():
 
 
 # --- 2. TOP GLOBAL MARKET & EXCHANGE SELECTOR ---
-# We provide a clean, prominent segmented control at the top of the interface
 col_brand, col_market_selector = st.columns([1.6, 1.4])
 
 with col_brand:
-    st.markdown("## 🛡️ **AlphaShield** | Intelligent Stock Decision Engine")
-    st.caption("Simplified institutional quantitative intelligence for beginner & modern investors.")
+    st.markdown("## 🛡️ **AlphaShield** | Quantitative & Thematic Intelligence")
+    st.caption("Intermarket transmission, multi-horizon scarcity models, and directed supply chain ripple mapping.")
 
 with col_market_selector:
     selected_market = st.radio(
@@ -257,8 +252,7 @@ with st.sidebar:
         if is_indian
         else ["NVDA", "AAPL", "MSFT", "TSLA", "PLTR", "AMZN"]
     )
-    
-    # Render quick pick buttons in 3 columns
+
     qp_cols = st.columns(3)
     for idx, q_sym in enumerate(quick_tickers):
         col_target = qp_cols[idx % 3]
@@ -300,7 +294,7 @@ with st.sidebar:
         max_value=2.0,
         value=1.0,
         step=0.1,
-        help="Golden Rule of Investing: Never risk losing more than 1% of your total account on a single bad stock."
+        help="Institutional Zero-Ruin Rule: Never risk losing more than 1% of your total account on a single trade."
     )
 
     st.markdown("---")
@@ -316,7 +310,7 @@ with st.sidebar:
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or api_key.strip() == "YOUR_GEMINI_API_KEY_HERE":
-        st.info("ℹ️ Running on Institutional Rule Engine (No Gemini API Key found).", icon="ℹ️")
+        st.info("ℹ️ Running on Institutional Rule Engine (No Gemini API Key configured).", icon="ℹ️")
     else:
         st.success("🟢 Gemini Pro Decision AI Active", icon="✅")
 
@@ -376,13 +370,13 @@ st.markdown("<hr style='margin: 14px 0; border-color: #232D3F;'>", unsafe_allow_
 ticker_to_run = st.session_state["active_ticker"]
 
 def run_full_audit(ticker: str):
-    with st.spinner(f"Auditing company health and market signals for {ticker}..."):
+    with st.spinner(f"Auditing company health, secular horizons, and supply chain ripple for {ticker}..."):
         try:
             # 1. Technical Data
             tech, df = compute_technical_snapshot(ticker, period="1y", interval="1d")
             if df.empty:
-                st.error(f"Could not retrieve stock data for '{ticker}'. Please verify the symbol.")
-                return None, None, None, None, None, None, None, None
+                st.error(f"Could not retrieve market data for '{ticker}'. Please verify the symbol.")
+                return None, None, None, None, None, None, None, None, None, None, None
 
             # 2. Company Info
             try:
@@ -400,11 +394,14 @@ def run_full_audit(ticker: str):
             # 5. Trap Guards
             traps = evaluate_all_traps(df, info=info)
 
-            # 6. Sector Spillovers
+            # 6. Sector Spillovers & Thematic Profile
             sec = info.get("sector", "")
             ind = info.get("industry", "")
             cat_key = detect_company_catalyst(ticker, sector=sec, industry=ind)
             spill = get_supply_chain_spillover(cat_key)
+            thematic = audit_thematic_profile(ticker, sector=sec, industry=ind)
+            ripple = get_supplier_ripple_effect(ticker)
+            ancillary = screen_ancillary_supplier(ticker, info=info)
 
             # 7. Risk Engine
             cash_defense = st.session_state.get("emergency_cash_lock", False)
@@ -426,7 +423,7 @@ def run_full_audit(ticker: str):
                 risk.execution_verdict = "REJECT_EMERGENCY_CASH_LOCK"
                 risk.risk_guardrail_notes.append("Emergency 100% Cash Lock active.")
 
-            # 8. AI Decision Plan
+            # 8. AI Decision Plan (FullInstitutionalTradePlan)
             trade_plan = generate_institutional_trade_plan(
                 ticker=ticker,
                 macro=macro,
@@ -435,6 +432,9 @@ def run_full_audit(ticker: str):
                 traps=traps,
                 spillovers=spill,
                 risk=risk,
+                thematic=thematic,
+                ancillary=ancillary,
+                ripple=ripple,
                 model_name=model_choice,
             )
 
@@ -442,46 +442,40 @@ def run_full_audit(ticker: str):
                 trade_plan.action = "AVOID"
                 trade_plan.calculated_shares = 0
 
-            return tech, df, factors, micro, traps, spill, risk, trade_plan
+            return tech, df, factors, micro, traps, spill, risk, trade_plan, thematic, ripple, ancillary
 
         except Exception as e:
             st.error(f"Analysis encountered an unexpected issue: {e}")
-            return None, None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None, None, None, None
 
 
-tech, df, factors, micro, traps, spill, risk, plan = run_full_audit(ticker_to_run)
+audit_results = run_full_audit(ticker_to_run)
+if audit_results and audit_results[0] is not None:
+    tech, df, factors, micro, traps, spill, risk, plan, thematic, ripple, ancillary = audit_results
 
-
-if tech and df is not None and plan:
     # --- 3. THE 30-SECOND "BOTTOM LINE" SUMMARY STRIP ---
-    # Determine summary theme
-    if plan.action == "BUY":
+    if plan.action in ["BUY", "ACCUMULATE"]:
         box_class = "bottom-line-container"
-        badge_html = "<span class='badge-buy'>🟢 BUY RECOMMENDATION</span>"
+        badge_html = f"<span class='badge-buy'>🟢 {plan.action} RECOMMENDATION</span>"
         action_headline = "A favorable setup with high reward and protected risk."
-        why_text = f"The company passed our strict financial safety sieve with strong operational health ({factors.piotroski_f_score}/9) and active institutional buying. Projected upside is more than {risk.risk_reward_ratio:.1f}x your downside risk."
+        why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {factors.piotroski_f_score}/9)."
     elif plan.action == "HOLD":
         box_class = "bottom-line-container bottom-line-caution"
         badge_html = "<span class='badge-hold'>🟡 HOLD / WAIT FOR DIP</span>"
         action_headline = "Good company, but not the ideal moment to enter."
-        why_text = "The price is currently consolidating or resting near resistance. Beginners should wait for a slight pullback into the safe entry zone before buying."
+        why_text = f"{plan.plain_english_verdict} Wait for a clean pullback into the recommended entry zone."
     elif plan.action == "SELL":
         box_class = "bottom-line-container bottom-line-danger"
         badge_html = "<span class='badge-sell'>🔴 EXIT / TAKE PROFIT</span>"
         action_headline = "Momentum is breaking down or targets have been reached."
-        why_text = "Technical indicators show sellers taking control. Protect your profits or cut your losses."
+        why_text = plan.plain_english_verdict
     else:
         box_class = "bottom-line-container bottom-line-danger"
         badge_html = "<span class='badge-avoid'>🔴 AVOID (HIGH RISK)</span>"
         action_headline = "High risk of capital loss detected. Do not invest now."
-        if factors.sieve_verdict != "PASS":
-            why_text = f"Capital Preservation Alert: {factors.sieve_rejection_reasons[0] if factors.sieve_rejection_reasons else 'Weak balance sheet'}. The company failed our solvency checks."
-        elif len(traps) > 0:
-            why_text = f"Market Trap Detected: {traps[0]}. High probability of a sharp pullback or rumor sell-off."
-        else:
-            why_text = "The trade does not provide enough reward to justify risking your capital. Stay safe in cash."
+        why_text = plan.plain_english_verdict
 
-    risk_rule_text = f"If the price falls below **{currency_sym}{plan.algorithmic_stop_loss}**, sell immediately. This strictly caps your total loss to **{currency_sym}{risk.max_equity_at_risk:,.2f}** (exactly {risk.risk_pct:.1f}% of your budget)."
+    risk_rule_text = f"{plan.primary_danger}. Automatic stop-loss at **{currency_sym}{plan.algorithmic_stop_loss}** caps loss to exactly **{currency_sym}{risk.max_equity_at_risk:,.2f}** ({risk.risk_pct:.1f}% of budget)."
 
     st.markdown(f"""
     <div class='{box_class}'>
@@ -491,7 +485,7 @@ if tech and df is not None and plan:
                 <span style='margin-left: 14px; font-size: 1.25rem; font-weight: 700; color: #F8FAFC;'>{plan.ticker} — {action_headline}</span>
             </div>
             <div style='font-size: 0.95rem; color: #94A3B8; font-weight: 600;'>
-                Conviction: <strong style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong>
+                Conviction: <strong style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong> | Role: <strong style='color: #38BDF8;'>{plan.supply_chain_role}</strong>
             </div>
         </div>
         <div style='font-size: 1.02rem; line-height: 1.55; color: #CBD5E1; margin-bottom: 10px;'>
@@ -504,110 +498,121 @@ if tech and df is not None and plan:
     """, unsafe_allow_html=True)
 
 
-    # --- 4. FIVE INTERACTIVE EXPLANATORY TILES (CARDS) ---
-    t_c1, t_c2, t_c3, t_c4, t_c5 = st.columns(5)
+    # --- 4. SIX INTERACTIVE EXPLANATORY TILES (CARDS) ---
+    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
 
     # TILE 1: MARKET MOOD
     with t_c1:
-        mood_status = "🟢 Calm & Supportive" if macro.market_mood_color == "green" else ("🟡 Choppy Waters" if macro.market_mood_color == "yellow" else "🔴 Stormy Seas")
+        mood_status = "🟢 Calm & Safe" if macro.market_mood_color == "green" else ("🟡 Choppy Waters" if macro.market_mood_color == "yellow" else "🔴 Stormy Seas")
         st.markdown(f"""
         <div class='interactive-tile'>
             <div class='tile-header'>1. 🌡️ Market Mood</div>
             <div class='tile-status-{"safe" if macro.market_mood_color == "green" else ("caution" if macro.market_mood_color == "yellow" else "danger")}'>{mood_status}</div>
-            <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>VIX Volatility: <strong>{macro.vix:.1f}</strong></div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>VIX: <strong>{macro.vix:.1f}</strong></div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Explain Like I'm 5"):
-            st.markdown("**In Plain Words:** Think of market mood like flying an airplane. When the VIX is low, skies are clear and smooth. When volatility spikes above 20, you're flying into a storm.")
-            st.markdown("**Why It Matters:** When the overall market is stormy, even great companies get dragged down. In calm markets, your trades are much more likely to succeed.")
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown("**In Plain Words:** Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.")
             st.markdown(f"**The Verdict:** {macro.market_mood_desc}")
 
     # TILE 2: COMPANY HEALTH
     with t_c2:
         z_score = factors.altman_z_score
-        health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Bankruptcy Hazard")
+        health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Insolvent Risk")
         health_class = "safe" if z_score >= 2.99 else ("caution" if z_score >= 1.81 else "danger")
         st.markdown(f"""
         <div class='interactive-tile'>
             <div class='tile-header'>2. 🏥 Company Health</div>
             <div class='tile-status-{health_class}'>{health_status}</div>
-            <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Safety Score: <strong>{z_score:.2f}</strong> (Min 1.81)</div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Z-Score: <strong>{z_score:.2f}</strong></div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Explain Like I'm 5"):
-            st.markdown("**In Plain Words:** Does this company generate real cash from real customers, or are they borrowing money just to survive and using tricky accounting?")
-            st.markdown("**Why It Matters:** Companies with high debt or fake accounting numbers can crash unexpectedly. Our system checks their balance sheet to make sure your money is safe.")
-            st.markdown(f"**The Verdict:** Piotroski Business Health: **{factors.piotroski_f_score}/9**. {'Financials are sound and resilient.' if factors.sieve_verdict == 'PASS' else factors.sieve_rejection_reasons[0]}")
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money just to survive?")
+            st.markdown(f"**The Verdict:** Status: **{plan.solvency_status}**. Piotroski score: {factors.piotroski_f_score}/9.")
 
     # TILE 3: PRICE MOMENTUM
     with t_c3:
         is_uptrend = tech.current_price > tech.ema_50 and tech.rsi_14 < 70
         is_overheated = tech.rsi_14 >= 70
-        mom_status = "🟢 Strong Uptrend" if is_uptrend else ("🟡 Resting / Pullback" if is_overheated else "🔴 Slipping Downward")
+        mom_status = "🟢 Strong Uptrend" if is_uptrend else ("🟡 Resting" if is_overheated else "🔴 Downtrend")
         mom_class = "safe" if is_uptrend else ("caution" if is_overheated else "danger")
         st.markdown(f"""
         <div class='interactive-tile'>
-            <div class='tile-header'>3. 🚀 Price Momentum</div>
+            <div class='tile-header'>3. 🚀 Price Trend</div>
             <div class='tile-status-{mom_class}'>{mom_status}</div>
-            <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Buyer Meter (RSI): <strong>{tech.rsi_14:.1f}</strong></div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>RSI: <strong>{tech.rsi_14:.1f}</strong></div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Explain Like I'm 5"):
-            st.markdown("**In Plain Words:** Are more buyers rushing in to buy, or are investors quietly heading for the exits?")
-            st.markdown("**Why It Matters:** It's much easier to make money swimming with the current than against it. We avoid buying when buyers are exhausted (RSI > 75) or when price is falling below trend lines.")
-            st.markdown(f"**The Verdict:** Current price ({currency_sym}{tech.current_price}) is {'above its 50-day average trend' if tech.current_price > tech.ema_50 else 'below its 50-day average trend'}.")
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown("**In Plain Words:** Are more buyers rushing in, or are investors quietly heading for the exits?")
+            st.markdown(f"**The Verdict:** Price is {'above 50-day average' if tech.current_price > tech.ema_50 else 'below 50-day average'}.")
 
     # TILE 4: SMART MONEY FLOW
     with t_c4:
-        smart_status = "🟢 Whales Buying" if micro.delivery_valid else "🟡 Mixed / Day Trading"
+        smart_status = "🟢 Whales Buying" if micro.delivery_valid else "🟡 Day Trading"
         smart_class = "safe" if micro.delivery_valid else "caution"
         st.markdown(f"""
         <div class='interactive-tile'>
-            <div class='tile-header'>4. 🐋 Smart Money Flow</div>
+            <div class='tile-header'>4. 🐋 Smart Money</div>
             <div class='tile-status-{smart_class}'>{smart_status}</div>
-            <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Real Delivery: <strong>{micro.delivery_pct:.1f}%</strong></div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong></div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Explain Like I'm 5"):
-            st.markdown("**In Plain Words:** Everyday retail traders don't move markets—massive investment banks and mutual funds ('whales') do. Delivery percentage shows if they are quietly filling their vaults or just day-trading.")
-            st.markdown("**Why It Matters:** Riding on the coattails of giant institutional buyers gives you the strongest tailwind. When they buy, prices tend to stay supported.")
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown("**In Plain Words:** Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.")
             st.markdown(f"**The Verdict:** {micro.delivery_status_msg}")
 
-    # TILE 5: SAFETY & RISK GAUGE
+    # TILE 5: THEMATIC HORIZON TILE
     with t_c5:
+        st.markdown(f"""
+        <div class='interactive-tile'>
+            <div class='tile-header'>5. ⏳ Secular Horizon</div>
+            <div class='tile-status-safe' style='font-size: 0.98rem;'>{thematic.timeframe}</div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Wave: <strong>{thematic.horizon_code}</strong></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown(f"**Macro Wave:** {thematic.horizon_title}")
+            st.markdown(f"**Driver:** {thematic.thematic_driver}")
+            st.markdown(f"**Resource Scarcity Bottleneck:** `{thematic.resource_scarcity_exposure}`")
+            st.markdown(f"**Takeaway:** {thematic.plain_english_takeaway}")
+
+    # TILE 6: SAFETY & RISK GAUGE
+    with t_c6:
         risk_status = "🟢 Asymmetric Win" if risk.asymmetric_rr_passed else "🔴 Poor Odds"
         risk_class = "safe" if risk.asymmetric_rr_passed else "danger"
         st.markdown(f"""
         <div class='interactive-tile'>
-            <div class='tile-header'>5. 🛡️ Safety & Risk Gauge</div>
+            <div class='tile-header'>6. 🛡️ Safety Gauge</div>
             <div class='tile-status-{risk_class}'>{risk_status}</div>
-            <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Reward / Risk: <strong>{risk.risk_reward_ratio:.2f}x</strong></div>
+            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Odds: <strong>{risk.risk_reward_ratio:.1f}x</strong></div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Explain Like I'm 5"):
-            st.markdown("**In Plain Words:** If you risk $1 of downside, can you make at least $2.50 of upside? Professional investors never take a trade where the upside isn't at least 2.5x larger than the risk.")
-            st.markdown("**Why It Matters:** The #1 secret to surviving the stock market is never losing a big chunk of your money. By enforcing a 2.5x ratio, you can be wrong half the time and still come out ahead!")
-            st.markdown(f"**The Verdict:** Max safe investment size for your account is **{plan.calculated_shares} shares** ({currency_sym}{risk.allocated_capital:,.2f}).")
+        with st.expander("🔍 ELI5 Context"):
+            st.markdown("**In Plain Words:** Never take a trade where the upside isn't at least 2.5x larger than the risk. Keep losses tiny!")
+            st.markdown(f"**The Verdict:** Max allocation: **{plan.calculated_shares} shares** ({currency_sym}{risk.allocated_capital:,.2f}).")
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
     # --- 5. INTERACTIVE 3-TIER CHART ---
     st.markdown("### 📈 **Interactive Technical Chart with Safety Overlays**")
     st.caption("Visualizing the entry zone (blue), safety stop-loss (red dashed), and profit targets (green).")
-    
+
     fig = build_interactive_chart(df, tech, plan, currency_symbol=currency_sym)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
 
     # --- 6. STRUCTURED DEEP-DIVE TABS ---
     tab_names = [
         "🧭 Thematic Market Radar",
+        "🔗 Supply Chain & Network Visualizer",
         "📖 Step-by-Step Action Plan",
-        "🔗 Who Benefits? (Supply Chain)",
         "🪤 Beginner Traps Checked",
     ]
 
@@ -618,13 +623,13 @@ if tech and df is not None and plan:
 
     tabs = st.tabs(tab_names)
 
-    # TAB 1: THEMATIC MARKET RADAR (Penny, Safe, New, Trending, Future)
+    # TAB 1: THEMATIC MARKET RADAR
     with tabs[0]:
         st.markdown(f"### 🧭 **Curated Stock Discovery Radar ({'India NSE' if is_indian else 'US Markets'})**")
         st.caption("Discover hand-picked companies categorized by investment style, world leader policies, and news catalysts. Click any stock to analyze it immediately!")
 
         radar_data = get_thematic_market_radar(is_indian)
-        
+
         r_tabs = st.tabs([
             "🪙 Small-Priced (< $10 / < ₹100)",
             "🏰 Safe Havens (Blue-Chips)",
@@ -660,13 +665,54 @@ if tech and df is not None and plan:
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # 1-Click Action to audit this stock with guaranteed unique key per category
+                    # 1-Click Action to audit this stock with uniquely scoped key
                     if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{cat_key}_{stock.ticker}_{c_idx}"):
                         st.session_state["active_ticker"] = stock.ticker
                         st.rerun()
 
-    # TAB 2: STEP-BY-STEP ACTION PLAN
+    # TAB 2: SUPPLY CHAIN & NETWORK VISUALIZER
     with tabs[1]:
+        st.markdown(f"### 🔗 **Directed Supply Chain Ripple Graph & Network Visualizer**")
+        st.caption(f"Visualizing the master OEM dependency tree for **{plan.ticker}** ({ripple.case_name}).")
+
+        # Ancillary Screener KPI Metrics
+        sc_k1, sc_k2, sc_k3, sc_k4 = st.columns(4)
+        sc_k1.metric("Customer Concentration", f"{ancillary.customer_concentration_pct:.1f}%", delta=ancillary.customer_concentration_flag)
+        sc_k2.metric("Operating Leverage (DOL)", f"{ancillary.operating_leverage_multiplier:.1f}x", delta="High Margin Expansion" if ancillary.operating_leverage_multiplier >= 2.5 else "Moderate")
+        sc_k3.metric("Book-to-Bill Ratio", f"{ancillary.book_to_bill_ratio:.2f}x", delta="Order Surge" if ancillary.book_to_bill_ratio >= 1.15 else "Stable")
+        sc_k4.metric("Capex Lead-Lag Phase", ancillary.capex_phase_title, delta=ancillary.capex_lead_time_months)
+
+        st.info(f"💡 **Supplier Ripple Dynamics:** {ripple.ripple_explanation}\n\n**Operating Leverage Insight:** {ripple.operating_leverage_summary}")
+
+        # Plotly Network Graph
+        net_fig = render_interactive_network_graph(highlight_ticker=plan.ticker)
+        st.plotly_chart(net_fig, use_container_width=True)
+
+        # Transmission Tree Breakdown
+        st.markdown("---")
+        st.markdown("#### **Detailed Ripple Breakdown**")
+        sc1, sc2, sc3 = st.columns(3)
+
+        with sc1:
+            st.markdown("##### 🔺 Connected Anchor OEMs")
+            st.caption("Companies commanding mega-capex budgets that drive demand:")
+            for a in ripple.connected_anchors:
+                st.markdown(f"• **{a}**")
+
+        with sc2:
+            st.markdown("##### 🔻 Upstream & Sub-Assemblies")
+            st.caption("Suppliers of precision sub-assemblies and components:")
+            for u in ripple.upstream_dependencies:
+                st.markdown(f"• **{u}**")
+
+        with sc3:
+            st.markdown("##### ⚡ Downstream Integration")
+            st.caption("Beneficiaries down the integration pipeline:")
+            for d in ripple.downstream_beneficiaries:
+                st.markdown(f"• **{d}**")
+
+    # TAB 3: STEP-BY-STEP ACTION PLAN
+    with tabs[2]:
         st.markdown("### 📖 **Beginner's Step-by-Step Execution Checklist**")
         st.caption(f"Exact guidelines for trading {plan.ticker} safely with minimal stress:")
 
@@ -697,34 +743,6 @@ if tech and df is not None and plan:
             st.caption("Immediate triggers that tell you: *'Exit now and protect your capital'*: ")
             for ks in plan.execution_kill_switches:
                 st.markdown(f"- 🔴 `{ks}`")
-
-    # TAB 3: WHO BENEFITS? (SUPPLY CHAIN TRANSMISSION)
-    with tabs[2]:
-        theme_name = spill.get("theme", ["Sector Transmission"])[0]
-        theme_desc = spill.get("description", ["Supply chain overview"])[0]
-
-        st.markdown(f"### 🔗 **Who Makes Money When {theme_name} Booms?**")
-        st.caption(theme_desc)
-
-        sc1, sc2, sc3 = st.columns(3)
-
-        with sc1:
-            st.markdown("#### 🔺 Upstream Suppliers")
-            st.caption("Companies that supply the raw materials and parts first:")
-            for u in spill.get("upstream_positive", []):
-                st.markdown(f"• **{u}**")
-
-        with sc2:
-            st.markdown("#### 🔻 Downstream Beneficiaries")
-            st.caption("Companies that package, distribute, and sell to end users:")
-            for d in spill.get("midstream_positive", []) + spill.get("downstream_positive", []):
-                st.markdown(f"• **{d}**")
-
-        with sc3:
-            st.markdown("#### ⚠️ Who Loses Out? (Disrupted)")
-            st.caption("Old legacy businesses getting disrupted by this shift:")
-            for n in spill.get("negative_spillovers", []):
-                st.markdown(f"• **{n}**")
 
     # TAB 4: BEGINNER TRAPS CHECKED
     with tabs[3]:
@@ -827,4 +845,4 @@ if tech and df is not None and plan:
                 st.metric("Session Mode", "Authenticated Admin")
                 st.caption("Note: Root policy overrides and emergency cash locks are strictly restricted to Global Administrator (nikhil875171).")
 
-st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Intelligent Stock Decision Engine | Designed for Clarity, Safety, and Capital Preservation</div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Quantitative & Thematic Intelligence Platform | Capital Preservation & Macro Systems</div>", unsafe_allow_html=True)
