@@ -12,6 +12,7 @@ from core.sentiment_engine import fetch_sentiment_analysis
 from core.institutional_engine import audit_institutional_positioning
 from core.risk_manager import calculate_risk_parameters
 from core.gemini_advisor import evaluate_alpha_shield
+from core.visualizer import build_interactive_chart
 from core.auth import (
     render_login_gate,
     render_user_profile_sidebar,
@@ -20,6 +21,7 @@ from core.auth import (
 )
 
 load_dotenv()
+
 
 
 # Bridge Streamlit Cloud secrets to os.environ if running on cloud
