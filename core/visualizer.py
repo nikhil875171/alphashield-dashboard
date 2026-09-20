@@ -31,7 +31,7 @@ def build_interactive_chart(
         )
     )
 
-    # 1. Candlestick Trace
+    # 1. Candlestick Trace with Classy Pastel Palette
     fig.add_trace(
         go.Candlestick(
             x=df.index,
@@ -40,27 +40,27 @@ def build_interactive_chart(
             low=df["Low"],
             close=df["Close"],
             name="OHLC",
-            increasing_line_color="#00E676",  # Bright Green
-            decreasing_line_color="#FF1744",  # Neon Red
+            increasing_line_color="#34D399",  # Soft Pastel Mint Emerald
+            decreasing_line_color="#FB7185",  # Soft Pastel Coral Rose
         ),
         row=1,
         col=1
     )
 
-    # 2. Moving Average Overlays
+    # 2. Moving Average Overlays in Sophisticated Pastels
     if "EMA_20" in df.columns:
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["EMA_20"], mode="lines", name="20 EMA", line=dict(color="#29B6F6", width=1.5)),
+            go.Scatter(x=df.index, y=df["EMA_20"], mode="lines", name="20 EMA", line=dict(color="#38BDF8", width=1.5)),
             row=1, col=1
         )
     if "EMA_50" in df.columns:
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["EMA_50"], mode="lines", name="50 EMA", line=dict(color="#FFA726", width=1.5)),
+            go.Scatter(x=df.index, y=df["EMA_50"], mode="lines", name="50 EMA", line=dict(color="#FBBF24", width=1.5)),
             row=1, col=1
         )
     if "EMA_200" in df.columns:
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["EMA_200"], mode="lines", name="200 EMA", line=dict(color="#AB47BC", width=2.0)),
+            go.Scatter(x=df.index, y=df["EMA_200"], mode="lines", name="200 EMA", line=dict(color="#C084FC", width=1.8)),
             row=1, col=1
         )
     if "VWAP" in df.columns:
@@ -89,54 +89,55 @@ def build_interactive_chart(
         target_ladder = []
 
     # 3. Horizontal Trade Level Annotations
-    # Hard Stop Loss & Shaded Invalidation Zone
+    # Hard Stop Loss & Shaded Invalidation Zone in Soft Coral
     if stop_loss is not None and stop_loss > 0:
         fig.add_hline(
             y=stop_loss,
             line_dash="dash",
-            line_color="#FF1744",
-            line_width=2,
+            line_color="#FB7185",
+            line_width=1.8,
             annotation_text=f"Hard Stop: {currency_symbol}{stop_loss}",
             annotation_position="bottom right",
-            annotation_font_color="#FF1744",
+            annotation_font_color="#FDA4AF",
             row=1, col=1
         )
         fig.add_hrect(
             y0=stop_loss * 0.96,
             y1=stop_loss,
-            fillcolor="rgba(239, 68, 68, 0.10)",
+            fillcolor="rgba(251, 113, 133, 0.12)",
             line_width=0,
             row=1, col=1
         )
 
-    # Entry Range (Midpoint or upper/lower)
+    # Entry Range in Soft Pastel Blue
     if entry_range and len(entry_range) >= 2 and entry_range[0] > 0 and entry_range[1] > 0:
         entry_low, entry_high = entry_range[0], entry_range[1]
         fig.add_hrect(
             y0=entry_low,
             y1=entry_high,
-            fillcolor="rgba(33, 150, 243, 0.15)",
+            fillcolor="rgba(96, 165, 250, 0.14)",
             line_width=1,
             line_dash="dot",
-            line_color="#2196F3",
+            line_color="#60A5FA",
             annotation_text=f"Entry Zone ({currency_symbol}{entry_low} - {currency_symbol}{entry_high})",
             annotation_position="top left",
+            annotation_font_color="#93C5FD",
             row=1, col=1
         )
 
-    # Target Price Ladder & Shaded Profit Accumulation Band
+    # Target Price Ladder & Shaded Profit Accumulation Band in Pastel Mint
     if target_ladder and len(target_ladder) >= 1 and target_ladder[0] > 0:
         t_min = target_ladder[0]
         t_max = target_ladder[-1] if len(target_ladder) > 1 else target_ladder[0] * 1.05
         fig.add_hrect(
             y0=t_min,
             y1=t_max,
-            fillcolor="rgba(16, 185, 129, 0.10)",
+            fillcolor="rgba(52, 211, 153, 0.10)",
             line_width=0,
             row=1, col=1
         )
 
-    target_colors = ["#69F0AE", "#00E676", "#00C853"]
+    target_colors = ["#A7F3D0", "#6EE7B7", "#34D399"]
     for idx, target in enumerate(target_ladder[:3]):
         if target is not None and target > 0:
             color = target_colors[idx % len(target_colors)]
@@ -151,15 +152,15 @@ def build_interactive_chart(
                 row=1, col=1
             )
 
-    # 4. Volume Bar Subplot
-    vol_colors = ["#00E676" if c >= o else "#FF1744" for c, o in zip(df["Close"], df["Open"])]
+    # 4. Volume Bar Subplot with Soft Pastel Tints
+    vol_colors = ["#34D399" if c >= o else "#FB7185" for c, o in zip(df["Close"], df["Open"])]
     fig.add_trace(
         go.Bar(
             x=df.index,
             y=df["Volume"],
             name="Volume",
             marker_color=vol_colors,
-            opacity=0.75
+            opacity=0.65
         ),
         row=2,
         col=1
@@ -171,13 +172,13 @@ def build_interactive_chart(
                 y=df["VOL_SMA_20"],
                 mode="lines",
                 name="20 ADV",
-                line=dict(color="#FFD54F", width=1.5)
+                line=dict(color="#FDE68A", width=1.5)
             ),
             row=2,
             col=1
         )
 
-    # 5. RSI Subplot
+    # 5. RSI Subplot with Pastel Lilac
     if "RSI_14" in df.columns:
         fig.add_trace(
             go.Scatter(
@@ -185,24 +186,24 @@ def build_interactive_chart(
                 y=df["RSI_14"],
                 mode="lines",
                 name="RSI (14)",
-                line=dict(color="#E040FB", width=1.5)
+                line=dict(color="#C4B5FD", width=1.5)
             ),
             row=3,
             col=1
         )
         # 70 Overbought line
-        fig.add_hline(y=70, line_dash="dash", line_color="#FF5252", line_width=1, row=3, col=1)
+        fig.add_hline(y=70, line_dash="dash", line_color="#FB7185", line_width=1, row=3, col=1)
         # 30 Oversold line
-        fig.add_hline(y=30, line_dash="dash", line_color="#69F0AE", line_width=1, row=3, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="#34D399", line_width=1, row=3, col=1)
 
-    # Dark Institutional Theme Styling
+    # Dark Obsidian / Slate Institutional Theme Styling
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0E1117",
-        plot_bgcolor="#131722",
-        font=dict(family="Consolas, monospace, sans-serif", color="#E0E0E0", size=11),
+        paper_bgcolor="#0A0E1A",
+        plot_bgcolor="#111827",
+        font=dict(family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", color="#CBD5E1", size=11),
         xaxis_rangeslider_visible=False,
-        height=750,
+        height=720,
         margin=dict(l=40, r=60, t=40, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",

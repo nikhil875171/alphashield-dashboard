@@ -259,10 +259,10 @@ def render_interactive_network_graph(highlight_ticker: Optional[str] = None) -> 
     node_size = []
 
     tier_colors = {
-        "ANCHOR_OEM": "#38BDF8",  # Sky Blue
-        "TIER_1": "#10B981",      # Emerald Green
-        "TIER_2": "#F59E0B",      # Amber Yellow
-        "TIER_3": "#E040FB",      # Purple Magenta
+        "ANCHOR_OEM": "#93C5FD",  # Soft Pastel Blue
+        "TIER_1": "#6EE7B7",      # Soft Pastel Mint
+        "TIER_2": "#FDE68A",      # Soft Pastel Amber
+        "TIER_3": "#C4B5FD",      # Soft Pastel Lilac
     }
 
     target_sym = highlight_ticker.upper().strip() if highlight_ticker else ""
@@ -278,7 +278,7 @@ def render_interactive_network_graph(highlight_ticker: Optional[str] = None) -> 
         desc = data.get("desc", "")
 
         is_target = (node == target_sym or node.startswith(target_sym.split(".")[0]))
-        color = "#FF1744" if is_target else tier_colors.get(tier, "#94A3B8")
+        color = "#FDA4AF" if is_target else tier_colors.get(tier, "#94A3B8")
         size = 24 if is_target else (18 if tier == "ANCHOR_OEM" else 14)
 
         node_color.append(color)
@@ -304,14 +304,14 @@ def render_interactive_network_graph(highlight_ticker: Optional[str] = None) -> 
         data=[edge_trace, node_trace],
         layout=go.Layout(
             title=dict(
-                text="<b>Interactive Multi-Tier Supply Chain Ripple Graph</b><br><sup>Anchor OEMs (Blue) → Tier-1 Sub-Assemblies (Green) → Tier-2 Precision Modules (Yellow) → Tier-3 Feedstock (Purple)</sup>",
+                text="<b>Interactive Multi-Tier Supply Chain Ripple Graph</b><br><sup>Anchor OEMs (Pastel Blue) → Tier-1 Sub-Assemblies (Mint) → Tier-2 Precision Modules (Amber) → Tier-3 Feedstock (Lilac)</sup>",
                 font=dict(size=13, color="#F8FAFC")
             ),
             showlegend=False,
             hovermode="closest",
             margin=dict(b=20, l=20, r=20, t=50),
-            paper_bgcolor="#0E1117",
-            plot_bgcolor="#131722",
+            paper_bgcolor="#0A0E1A",
+            plot_bgcolor="#111827",
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             height=500

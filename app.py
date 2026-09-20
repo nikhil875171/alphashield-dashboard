@@ -52,10 +52,10 @@ st.set_page_config(
 # Custom High-Contrast Modern Theme CSS
 st.markdown("""
 <style>
-    /* Obsidian Luxury Canvas & Typography */
+    /* Obsidian Luxury Canvas & Classy Pastel Accents */
     .stApp {
-        background-color: #0B0E14;
-        background-image: radial-gradient(circle at 50% 0%, #161E2E 0%, #0B0E14 75%);
+        background-color: #0A0E1A;
+        background-image: radial-gradient(circle at 50% 0%, #131E33 0%, #0A0E1A 75%);
         color: #E2E8F0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
         font-variant-numeric: tabular-nums;
@@ -66,13 +66,58 @@ st.markdown("""
         font-variant-numeric: tabular-nums;
     }
 
-    /* Elevated Metric Surfaces */
-    div[data-testid="stMetric"] {
-        background-color: #161E2E;
+    /* Top-Level Segmented Menu Bar (Pill Navigation) */
+    div[data-testid="stTabs"] > div > div[role="tablist"] {
+        display: flex;
+        gap: 8px;
+        background: #0D1527;
+        padding: 7px 10px;
+        border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+        margin-bottom: 22px;
+        overflow-x: auto;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        background: transparent;
+        color: #94A3B8;
         border-radius: 12px;
-        padding: 12px 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: 1px solid transparent;
+        transition: all 0.22s ease-in-out;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover {
+        color: #F1F5F9;
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #93C5FD !important;
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
+        border: 1px solid rgba(147, 197, 253, 0.35) !important;
+        box-shadow: 0 4px 14px rgba(147, 197, 253, 0.12) !important;
+    }
+    div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+    div[data-testid="stTabs"] [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+
+    /* Elevated Metric Surfaces with Pastel Accents */
+    div[data-testid="stMetric"] {
+        background: linear-gradient(135deg, #121A2B 0%, #162238 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px 18px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        border-color: rgba(147, 197, 253, 0.3);
+        transform: translateY(-1px);
     }
     div[data-testid="stMetricLabel"] {
         color: #94A3B8;
@@ -87,117 +132,165 @@ st.markdown("""
         color: #F8FAFC;
     }
 
-    /* 30-Second Bottom Line Executive Strip */
-    .bottom-line-container {
-        background: linear-gradient(135deg, #131A2A 0%, #1E293B 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-left: 6px solid #10B981;
-        border-radius: 14px;
+    /* Company Identity Card */
+    .company-profile-banner {
+        background: linear-gradient(135deg, #111A2D 0%, #17233D 100%);
+        border: 1px solid rgba(147, 197, 253, 0.18);
+        border-radius: 16px;
         padding: 18px 24px;
         margin-bottom: 20px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 30-Second Bottom Line Executive Strip in Classy Pastels */
+    .bottom-line-container {
+        background: linear-gradient(135deg, #111A2E 0%, #17243C 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 6px solid #6EE7B7;
+        border-radius: 14px;
+        padding: 18px 24px;
+        margin-bottom: 22px;
         box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
     }
     .bottom-line-danger {
-        border-left-color: #F43F5E !important;
+        border-left-color: #FDA4AF !important;
     }
     .bottom-line-caution {
-        border-left-color: #F59E0B !important;
+        border-left-color: #FDE68A !important;
     }
 
-    /* Action Badges with High-End Glow */
+    /* Soft Pastel Action Badges */
     .badge-buy {
-        background: linear-gradient(135deg, #059669 0%, #10B981 100%);
-        color: white;
-        padding: 8px 24px;
-        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.25) 0%, rgba(110, 231, 183, 0.2) 100%);
+        color: #6EE7B7;
+        border: 1px solid rgba(110, 231, 183, 0.45);
+        padding: 6px 20px;
+        border-radius: 20px;
         font-weight: 800;
-        font-size: 1.35rem;
+        font-size: 1.20rem;
         display: inline-block;
-        letter-spacing: 0.05em;
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 16px rgba(110, 231, 183, 0.25);
     }
     .badge-sell {
-        background: linear-gradient(135deg, #E11D48 0%, #F43F5E 100%);
-        color: white;
-        padding: 8px 24px;
-        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(225, 29, 72, 0.25) 0%, rgba(253, 164, 175, 0.2) 100%);
+        color: #FDA4AF;
+        border: 1px solid rgba(253, 164, 175, 0.45);
+        padding: 6px 20px;
+        border-radius: 20px;
         font-weight: 800;
-        font-size: 1.35rem;
+        font-size: 1.20rem;
         display: inline-block;
-        letter-spacing: 0.05em;
-        box-shadow: 0 0 20px rgba(244, 63, 94, 0.5);
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 16px rgba(253, 164, 175, 0.25);
     }
     .badge-hold {
-        background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
-        color: white;
-        padding: 8px 24px;
-        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(217, 119, 6, 0.25) 0%, rgba(253, 230, 138, 0.2) 100%);
+        color: #FDE68A;
+        border: 1px solid rgba(253, 230, 138, 0.45);
+        padding: 6px 20px;
+        border-radius: 20px;
         font-weight: 800;
-        font-size: 1.35rem;
+        font-size: 1.20rem;
         display: inline-block;
-        letter-spacing: 0.05em;
-        box-shadow: 0 0 20px rgba(245, 158, 11, 0.45);
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 16px rgba(253, 230, 138, 0.25);
     }
     .badge-avoid {
-        background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%);
-        color: white;
-        padding: 8px 24px;
-        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(196, 181, 253, 0.2) 100%);
+        color: #C4B5FD;
+        border: 1px solid rgba(196, 181, 253, 0.45);
+        padding: 6px 20px;
+        border-radius: 20px;
         font-weight: 800;
-        font-size: 1.35rem;
+        font-size: 1.20rem;
         display: inline-block;
-        letter-spacing: 0.05em;
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.45);
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 16px rgba(196, 181, 253, 0.25);
     }
 
     /* Interactive Explanatory Tiles */
     .interactive-tile {
-        background-color: #161E2E;
+        background: linear-gradient(135deg, #121A2B 0%, #162238 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
-        padding: 14px;
+        padding: 16px;
         height: 100%;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
         transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
     .interactive-tile:hover {
-        border-color: #06B6D4;
+        border-color: rgba(147, 197, 253, 0.4);
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(6, 182, 212, 0.2);
+        box-shadow: 0 8px 24px rgba(147, 197, 253, 0.12);
     }
     .tile-header {
         font-size: 0.78rem;
         color: #94A3B8;
         text-transform: uppercase;
         font-weight: 600;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .tile-status-safe {
-        color: #10B981;
+        color: #6EE7B7;
         font-weight: 700;
         font-size: 1.05rem;
     }
     .tile-status-caution {
-        color: #F59E0B;
+        color: #FDE68A;
         font-weight: 700;
         font-size: 1.05rem;
     }
     .tile-status-danger {
-        color: #F43F5E;
+        color: #FDA4AF;
         font-weight: 700;
         font-size: 1.05rem;
     }
 
     /* Thematic Discovery Card */
     .radar-card {
-        background-color: #161E2E;
+        background: linear-gradient(135deg, #121A2B 0%, #162138 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
-        padding: 14px 16px;
+        padding: 16px 18px;
         margin-bottom: 12px;
+        transition: border-color 0.18s ease, transform 0.18s ease;
     }
     .radar-card:hover {
-        border-color: #06B6D4;
+        border-color: rgba(147, 197, 253, 0.35);
+        transform: translateY(-1px);
+    }
+
+    /* Pastel Tag / Pill */
+    .pastel-pill {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        background: rgba(147, 197, 253, 0.12);
+        color: #93C5FD;
+        border: 1px solid rgba(147, 197, 253, 0.25);
+    }
+    .pastel-pill-mint {
+        background: rgba(110, 231, 183, 0.12);
+        color: #6EE7B7;
+        border: 1px solid rgba(110, 231, 183, 0.25);
+    }
+    .pastel-pill-amber {
+        background: rgba(253, 230, 138, 0.12);
+        color: #FDE68A;
+        border: 1px solid rgba(253, 230, 138, 0.25);
+    }
+    .pastel-pill-rose {
+        background: rgba(253, 164, 175, 0.12);
+        color: #FDA4AF;
+        border: 1px solid rgba(253, 164, 175, 0.25);
+    }
+    .pastel-pill-lilac {
+        background: rgba(196, 181, 253, 0.12);
+        color: #C4B5FD;
+        border: 1px solid rgba(196, 181, 253, 0.25);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -450,189 +543,24 @@ def run_full_audit(ticker: str):
                 trade_plan.action = "AVOID"
                 trade_plan.calculated_shares = 0
 
-            return tech, df, factors, micro, traps, spill, risk, trade_plan, thematic, ripple, ancillary
+            return tech, df, factors, micro, traps, spill, risk, trade_plan, thematic, ripple, ancillary, info
 
         except Exception as e:
             st.error(f"Analysis encountered an unexpected issue: {e}")
-            return None, None, None, None, None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None, None, None, None, {}
 
 
 audit_results = run_full_audit(ticker_to_run)
 if audit_results and audit_results[0] is not None:
-    tech, df, factors, micro, traps, spill, risk, plan, thematic, ripple, ancillary = audit_results
+    tech, df, factors, micro, traps, spill, risk, plan, thematic, ripple, ancillary, info = audit_results
 
-    # --- 3. THE 30-SECOND "BOTTOM LINE" SUMMARY STRIP ---
-    if plan.action in ["BUY", "ACCUMULATE"]:
-        box_class = "bottom-line-container"
-        badge_html = f"<span class='badge-buy'>🟢 {plan.action} RECOMMENDATION</span>"
-        action_headline = "A favorable setup with high reward and protected risk."
-        f_score_disp = getattr(factors, "piotroski_f_score", 6) if factors else 6
-        why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {f_score_disp}/9)."
-    elif plan.action == "HOLD":
-        box_class = "bottom-line-container bottom-line-caution"
-        badge_html = "<span class='badge-hold'>🟡 HOLD / WAIT FOR DIP</span>"
-        action_headline = "Good company, but not the ideal moment to enter."
-        why_text = f"{plan.plain_english_verdict} Wait for a clean pullback into the recommended entry zone."
-    elif plan.action == "SELL":
-        box_class = "bottom-line-container bottom-line-danger"
-        badge_html = "<span class='badge-sell'>🔴 EXIT / TAKE PROFIT</span>"
-        action_headline = "Momentum is breaking down or targets have been reached."
-        why_text = plan.plain_english_verdict
-    else:
-        box_class = "bottom-line-container bottom-line-danger"
-        badge_html = "<span class='badge-avoid'>🔴 AVOID (HIGH RISK)</span>"
-        action_headline = "High risk of capital loss detected. Do not invest now."
-        why_text = plan.plain_english_verdict
-
-    risk_rule_text = f"{plan.primary_danger}. Automatic stop-loss at **{currency_sym}{plan.algorithmic_stop_loss}** caps loss to exactly **{currency_sym}{risk.max_equity_at_risk:,.2f}** ({risk.risk_pct:.1f}% of budget)."
-
-    st.markdown(f"""
-    <div class='{box_class}'>
-        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
-            <div>
-                {badge_html}
-                <span style='margin-left: 14px; font-size: 1.25rem; font-weight: 700; color: #F8FAFC;'>{plan.ticker} — {action_headline}</span>
-            </div>
-            <div style='font-size: 0.95rem; color: #94A3B8; font-weight: 600;'>
-                Conviction: <strong style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong> | Role: <strong style='color: #38BDF8;'>{plan.supply_chain_role}</strong>
-            </div>
-        </div>
-        <div style='font-size: 1.02rem; line-height: 1.55; color: #CBD5E1; margin-bottom: 10px;'>
-            <strong>💡 Why:</strong> {why_text}
-        </div>
-        <div style='font-size: 1.02rem; line-height: 1.55; color: #FCA5A5;'>
-            <strong>⚠️ The #1 Risk to Watch:</strong> {risk_rule_text}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-    # --- 4. SIX INTERACTIVE EXPLANATORY TILES (CARDS) ---
-    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
-
-    # TILE 1: MARKET MOOD
-    with t_c1:
-        mood_status = "🟢 Calm & Safe" if macro.market_mood_color == "green" else ("🟡 Choppy Waters" if macro.market_mood_color == "yellow" else "🔴 Stormy Seas")
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>1. 🌡️ Market Mood</div>
-            <div class='tile-status-{"safe" if macro.market_mood_color == "green" else ("caution" if macro.market_mood_color == "yellow" else "danger")}'>{mood_status}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>VIX: <strong>{macro.vix:.1f}</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.")
-            st.markdown(f"**The Verdict:** {macro.market_mood_desc}")
-
-    # TILE 2: COMPANY HEALTH
-    with t_c2:
-        z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
-        health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Insolvent Risk")
-        health_class = "safe" if z_score >= 2.99 else ("caution" if z_score >= 1.81 else "danger")
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>2. 🏥 Company Health</div>
-            <div class='tile-status-{health_class}'>{health_status}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Z-Score: <strong>{z_score:.2f}</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?")
-            is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
-            beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
-            f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
-            sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
-
-            beneish_note = "⚠️ Forensic Distortion Warning" if is_manip else "✅ Clean Accounting"
-            st.markdown(f"**The Verdict:** Solvency Status: **{plan.solvency_status}**.")
-            st.markdown(f"• Altman Z-Score: **{z_score:.2f}** (Distress: < 1.81, Safe: > 2.99)")
-            st.markdown(f"• Piotroski F-Score: **{f_score}/9** (Operating Quality)")
-            st.markdown(f"• Sloan Accruals: **{sloan_val * 100:.1f}%** (Quality Threshold: < 10%)")
-            st.markdown(f"• Beneish M-Score: **{beneish_val:.2f}** ({beneish_note})")
-
-    # TILE 3: PRICE MOMENTUM
-    with t_c3:
-        is_uptrend = tech.current_price > tech.ema_50 and tech.rsi_14 < 70
-        is_overheated = tech.rsi_14 >= 70
-        mom_status = "🟢 Strong Uptrend" if is_uptrend else ("🟡 Resting" if is_overheated else "🔴 Downtrend")
-        mom_class = "safe" if is_uptrend else ("caution" if is_overheated else "danger")
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>3. 🚀 Price Trend</div>
-            <div class='tile-status-{mom_class}'>{mom_status}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>RSI: <strong>{tech.rsi_14:.1f}</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Are more buyers rushing in, or are investors quietly heading for the exits?")
-            st.markdown(f"**The Verdict:** Price is {'above 50-day average' if tech.current_price > tech.ema_50 else 'below 50-day average'}.")
-
-    # TILE 4: SMART MONEY FLOW
-    with t_c4:
-        smart_status = "🟢 Whales Buying" if micro.delivery_valid else "🟡 Day Trading"
-        smart_class = "safe" if micro.delivery_valid else "caution"
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>4. 🐋 Smart Money</div>
-            <div class='tile-status-{smart_class}'>{smart_status}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.")
-            st.markdown(f"**The Verdict:** {micro.delivery_status_msg}")
-
-    # TILE 5: THEMATIC HORIZON TILE
-    with t_c5:
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>5. ⏳ Secular Horizon</div>
-            <div class='tile-status-safe' style='font-size: 0.98rem;'>{thematic.timeframe}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Wave: <strong>{thematic.horizon_code}</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown(f"**Macro Wave:** {thematic.horizon_title}")
-            st.markdown(f"**Driver:** {thematic.thematic_driver}")
-            st.markdown(f"**Resource Scarcity Bottleneck:** `{thematic.resource_scarcity_exposure}`")
-            st.markdown(f"**Takeaway:** {thematic.plain_english_takeaway}")
-
-    # TILE 6: SAFETY & RISK GAUGE
-    with t_c6:
-        risk_status = "🟢 Asymmetric Win" if risk.asymmetric_rr_passed else "🔴 Poor Odds"
-        risk_class = "safe" if risk.asymmetric_rr_passed else "danger"
-        st.markdown(f"""
-        <div class='interactive-tile'>
-            <div class='tile-header'>6. 🛡️ Safety Gauge</div>
-            <div class='tile-status-{risk_class}'>{risk_status}</div>
-            <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Odds: <strong>{risk.risk_reward_ratio:.1f}x</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Never take a trade where the upside isn't at least 2.5x larger than the risk. Keep losses tiny!")
-            st.markdown(f"**The Verdict:** Max allocation: **{plan.calculated_shares} shares** ({currency_sym}{risk.allocated_capital:,.2f}).")
-
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-
-    # --- 5. INTERACTIVE 3-TIER CHART ---
-    st.markdown("### 📈 **Interactive Technical Chart with Safety Overlays**")
-    st.caption("Visualizing the entry zone (blue), safety stop-loss (red dashed), and profit targets (green).")
-
-    fig = build_interactive_chart(df, tech, plan, currency_symbol=currency_sym)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
-
-    # --- 6. STRUCTURED DEEP-DIVE TABS ---
+    # --- TOP-LEVEL SEGMENTED MENU BAR ---
     tab_names = [
+        "📊 Executive Summary",
+        "📈 Interactive Chart Terminal",
         "🧭 Thematic Market Radar",
-        "🔗 Supply Chain & Network Visualizer",
-        "📖 Step-by-Step Action Plan",
-        "🪤 Beginner Traps Checked",
+        "🔗 Supply Chain & Ripple Graph",
+        "🛡️ Solvency, Traps & Execution",
     ]
 
     if is_global_admin():
@@ -642,8 +570,272 @@ if audit_results and audit_results[0] is not None:
 
     tabs = st.tabs(tab_names)
 
-    # TAB 1: THEMATIC MARKET RADAR
+    # =========================================================================
+    # TAB 1: EXECUTIVE SUMMARY (30s BOTTOM-LINE & ELI5 TILES)
+    # =========================================================================
     with tabs[0]:
+        # Company Profile & Identity Header
+        company_name = info.get("longName") or info.get("shortName") or plan.ticker
+        sector = info.get("sector", "Global Equities")
+        industry = info.get("industry", "Diversified")
+        market_cap = info.get("marketCap", None)
+        if market_cap:
+            if is_indian:
+                mcap_str = f"₹{market_cap / 1e7:,.1f} Cr" if market_cap >= 1e7 else f"₹{market_cap:,.0f}"
+            else:
+                mcap_str = f"${market_cap / 1e9:,.2f}B" if market_cap >= 1e9 else f"${market_cap / 1e6:,.1f}M"
+        else:
+            mcap_str = "N/A"
+
+        pe_ratio = info.get("trailingPE", None) or info.get("forwardPE", None)
+        pe_str = f"{pe_ratio:.1f}x" if pe_ratio else "N/A"
+
+        fifty_two_high = info.get("fiftyTwoWeekHigh", None)
+        fifty_two_low = info.get("fiftyTwoWeekLow", None)
+        range_str = f"{currency_sym}{fifty_two_low:.2f} – {currency_sym}{fifty_two_high:.2f}" if (fifty_two_high and fifty_two_low) else "N/A"
+
+        st.markdown(f"""
+        <div class='company-profile-banner'>
+            <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;'>
+                <div>
+                    <div style='display: flex; align-items: center; gap: 10px;'>
+                        <span style='font-size: 1.55rem; font-weight: 800; color: #F8FAFC;'>{company_name}</span>
+                        <span class='pastel-pill'>{plan.ticker}</span>
+                    </div>
+                    <div style='margin-top: 8px;'>
+                        <span class='pastel-pill-mint'>{sector}</span>
+                        <span class='pastel-pill-lilac' style='margin-left: 6px;'>{industry}</span>
+                    </div>
+                </div>
+                <div style='display: flex; gap: 24px; align-items: center; flex-wrap: wrap;'>
+                    <div style='text-align: right;'>
+                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Market Price</div>
+                        <div style='font-size: 1.50rem; font-weight: 800; color: #38BDF8;'>{currency_sym}{tech.current_price:,.2f}</div>
+                    </div>
+                    <div style='text-align: right;'>
+                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Market Cap</div>
+                        <div style='font-size: 1.15rem; font-weight: 700; color: #E2E8F0;'>{mcap_str}</div>
+                    </div>
+                    <div style='text-align: right;'>
+                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>P/E Ratio</div>
+                        <div style='font-size: 1.15rem; font-weight: 700; color: #E2E8F0;'>{pe_str}</div>
+                    </div>
+                    <div style='text-align: right;'>
+                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>52-Week Range</div>
+                        <div style='font-size: 0.95rem; font-weight: 600; color: #CBD5E1;'>{range_str}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # The 30-Second "Bottom Line" Summary Strip
+        if plan.action in ["BUY", "ACCUMULATE"]:
+            box_class = "bottom-line-container"
+            badge_html = f"<span class='badge-buy'>🟢 {plan.action} RECOMMENDATION</span>"
+            action_headline = "A favorable setup with high reward and protected risk."
+            f_score_disp = getattr(factors, "piotroski_f_score", 6) if factors else 6
+            why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {f_score_disp}/9)."
+        elif plan.action == "HOLD":
+            box_class = "bottom-line-container bottom-line-caution"
+            badge_html = "<span class='badge-hold'>🟡 HOLD / WAIT FOR DIP</span>"
+            action_headline = "Good company, but not the ideal moment to enter."
+            why_text = f"{plan.plain_english_verdict} Wait for a clean pullback into the recommended entry zone."
+        elif plan.action == "SELL":
+            box_class = "bottom-line-container bottom-line-danger"
+            badge_html = "<span class='badge-sell'>🔴 EXIT / TAKE PROFIT</span>"
+            action_headline = "Momentum is breaking down or targets have been reached."
+            why_text = plan.plain_english_verdict
+        else:
+            box_class = "bottom-line-container bottom-line-danger"
+            badge_html = "<span class='badge-avoid'>🔴 AVOID (HIGH RISK)</span>"
+            action_headline = "High risk of capital loss detected. Do not invest now."
+            why_text = plan.plain_english_verdict
+
+        risk_rule_text = f"{plan.primary_danger}. Automatic stop-loss at **{currency_sym}{plan.algorithmic_stop_loss}** caps loss to exactly **{currency_sym}{risk.max_equity_at_risk:,.2f}** ({risk.risk_pct:.1f}% of budget)."
+
+        st.markdown(f"""
+        <div class='{box_class}'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;'>
+                <div>
+                    {badge_html}
+                    <span style='margin-left: 14px; font-size: 1.25rem; font-weight: 700; color: #F8FAFC;'>{plan.ticker} — {action_headline}</span>
+                </div>
+                <div style='font-size: 0.95rem; color: #94A3B8; font-weight: 600;'>
+                    Conviction: <strong style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong> | Role: <strong style='color: #93C5FD;'>{plan.supply_chain_role}</strong>
+                </div>
+            </div>
+            <div style='font-size: 1.02rem; line-height: 1.55; color: #CBD5E1; margin-bottom: 10px;'>
+                <strong>💡 Why:</strong> {why_text}
+            </div>
+            <div style='font-size: 1.02rem; line-height: 1.55; color: #FDA4AF;'>
+                <strong>⚠️ The #1 Risk to Watch:</strong> {risk_rule_text}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("#### 🧩 **Institutional Core Dimensions (ELI5 Deep Dive)**")
+        st.caption("Click the context expanders on any card to see how institutional analysts interpret these numbers:")
+
+        # Six Interactive Explanatory Cards
+        t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
+
+        with t_c1:
+            mood_status = "🟢 Calm & Safe" if macro.market_mood_color == "green" else ("🟡 Choppy Waters" if macro.market_mood_color == "yellow" else "🔴 Stormy Seas")
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>1. 🌡️ Market Mood</div>
+                <div class='tile-status-{"safe" if macro.market_mood_color == "green" else ("caution" if macro.market_mood_color == "yellow" else "danger")}'>{mood_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>VIX: <strong>{macro.vix:.1f}</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown("**In Plain Words:** Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.")
+                st.markdown(f"**The Verdict:** {macro.market_mood_desc}")
+
+        with t_c2:
+            z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
+            health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Insolvent Risk")
+            health_class = "safe" if z_score >= 2.99 else ("caution" if z_score >= 1.81 else "danger")
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>2. 🏥 Company Health</div>
+                <div class='tile-status-{health_class}'>{health_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Z-Score: <strong>{z_score:.2f}</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?")
+                is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+                beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+                f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+                sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+
+                beneish_note = "⚠️ Forensic Distortion Warning" if is_manip else "✅ Clean Accounting"
+                st.markdown(f"**The Verdict:** Solvency Status: **{plan.solvency_status}**.")
+                st.markdown(f"• Altman Z-Score: **{z_score:.2f}** (Distress: < 1.81, Safe: > 2.99)")
+                st.markdown(f"• Piotroski F-Score: **{f_score}/9** (Operating Quality)")
+                st.markdown(f"• Sloan Accruals: **{sloan_val * 100:.1f}%** (Quality Threshold: < 10%)")
+                st.markdown(f"• Beneish M-Score: **{beneish_val:.2f}** ({beneish_note})")
+
+        with t_c3:
+            is_uptrend = tech.current_price > tech.ema_50 and tech.rsi_14 < 70
+            is_overheated = tech.rsi_14 >= 70
+            mom_status = "🟢 Strong Uptrend" if is_uptrend else ("🟡 Resting" if is_overheated else "🔴 Downtrend")
+            mom_class = "safe" if is_uptrend else ("caution" if is_overheated else "danger")
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>3. 🚀 Price Trend</div>
+                <div class='tile-status-{mom_class}'>{mom_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>RSI: <strong>{tech.rsi_14:.1f}</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown("**In Plain Words:** Are more buyers rushing in, or are investors quietly heading for the exits?")
+                st.markdown(f"**The Verdict:** Price is {'above 50-day average' if tech.current_price > tech.ema_50 else 'below 50-day average'}.")
+
+        with t_c4:
+            smart_status = "🟢 Whales Buying" if micro.delivery_valid else "🟡 Day Trading"
+            smart_class = "safe" if micro.delivery_valid else "caution"
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>4. 🐋 Smart Money</div>
+                <div class='tile-status-{smart_class}'>{smart_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown("**In Plain Words:** Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.")
+                st.markdown(f"**The Verdict:** {micro.delivery_status_msg}")
+
+        with t_c5:
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>5. ⏳ Secular Horizon</div>
+                <div class='tile-status-safe' style='font-size: 0.98rem;'>{thematic.timeframe}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Wave: <strong>{thematic.horizon_code}</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown(f"**Macro Wave:** {thematic.horizon_title}")
+                st.markdown(f"**Driver:** {thematic.thematic_driver}")
+                st.markdown(f"**Resource Scarcity Bottleneck:** `{thematic.resource_scarcity_exposure}`")
+                st.markdown(f"**Takeaway:** {thematic.plain_english_takeaway}")
+
+        with t_c6:
+            risk_status = "🟢 Asymmetric Win" if risk.asymmetric_rr_passed else "🔴 Poor Odds"
+            risk_class = "safe" if risk.asymmetric_rr_passed else "danger"
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>6. 🛡️ Safety Gauge</div>
+                <div class='tile-status-{risk_class}'>{risk_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Odds: <strong>{risk.risk_reward_ratio:.1f}x</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 ELI5 Context"):
+                st.markdown("**In Plain Words:** Never take a trade where the upside isn't at least 2.5x larger than the risk. Keep losses tiny!")
+                st.markdown(f"**The Verdict:** Max allocation: **{plan.calculated_shares} shares** ({currency_sym}{risk.allocated_capital:,.2f}).")
+
+    # =========================================================================
+    # TAB 2: INTERACTIVE CHART TERMINAL
+    # =========================================================================
+    with tabs[1]:
+        st.markdown(f"### 📈 **Institutional Technical Terminal — {plan.ticker}**")
+        st.caption("Visualizing price action with 20/50/200 EMA ribbons, shaded entry/stop zones, volume ADV, and RSI.")
+
+        # Technical Status Strip
+        tc1, tc2, tc3, tc4, tc5 = st.columns(5)
+        tc1.metric("Current Price", f"{currency_sym}{tech.current_price:,.2f}", delta=f"{((tech.current_price - tech.ema_20) / tech.ema_20) * 100:+.1f}% vs 20 EMA")
+        tc2.metric("20-Day Fast EMA", f"{currency_sym}{tech.ema_20:,.2f}", delta="Short-Term Support")
+        tc3.metric("50-Day Trend EMA", f"{currency_sym}{tech.ema_50:,.2f}", delta="Institutional Baseline")
+        tc4.metric("200-Day Major EMA", f"{currency_sym}{tech.ema_200:,.2f}", delta="Structural S/R")
+        tc5.metric("RSI Momentum", f"{tech.rsi_14:.1f}", delta=f"ATR: {currency_sym}{tech.atr_14:.2f}")
+
+        # Interactive 3-Tier Plotly Chart
+        fig = build_interactive_chart(df, tech, plan, currency_symbol=currency_sym)
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
+
+        # Plain-English Indicator Explanations for Beginners
+        st.markdown("#### 💡 **Technical Signals Explained in Plain English**")
+        ch_e1, ch_e2, ch_e3 = st.columns(3)
+        with ch_e1:
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>📈 Moving Average Ribbons (20 / 50 / 200)</div>
+                <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
+                    When the price trades above the 20 (blue) and 50 (amber) day averages, big institutional money is actively accumulating. If the price falls below the 200 EMA (purple), the stock is in a long-term decline.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with ch_e2:
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>⚡ Average True Range (ATR: {currency_sym}{tech.atr_14:.2f})</div>
+                <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
+                    ATR measures how much this stock typically swings on a normal day. We automatically place your hard stop-loss at 1.8x ATR so normal daily wiggles won't knock you out of a winning investment.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with ch_e3:
+            st.markdown(f"""
+            <div class='interactive-tile'>
+                <div class='tile-header'>🎯 RSI Momentum ({tech.rsi_14:.1f})</div>
+                <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
+                    RSI between 45 and 65 is the sweet spot for steady gains. If RSI shoots above 70, the stock is 'overheated'—never chase buying at this level. If RSI drops below 30, it is heavily oversold.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # =========================================================================
+    # TAB 3: THEMATIC MARKET RADAR
+    # =========================================================================
+    with tabs[2]:
         st.markdown(f"### 🧭 **Curated Stock Discovery Radar ({'India NSE' if is_indian else 'US Markets'})**")
         st.caption("Discover hand-picked companies categorized by investment style, world leader policies, and news catalysts. Click any stock to analyze it immediately!")
 
@@ -665,14 +857,14 @@ if audit_results and audit_results[0] is not None:
                 for stock in stock_list:
                     st.markdown(f"""
                     <div class='radar-card'>
-                        <div style='display: flex; justify-content: space-between; align-items: center;'>
+                        <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;'>
                             <div>
-                                <span style='font-size: 1.15rem; font-weight: 700; color: #38BDF8;'>{stock.ticker}</span>
+                                <span style='font-size: 1.15rem; font-weight: 700; color: #93C5FD;'>{stock.ticker}</span>
                                 <span style='font-size: 0.95rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
                                 <span style='margin-left: 12px; font-weight: 600; color: #F8FAFC;'>{stock.approx_price}</span>
                             </div>
                             <div>
-                                <span style='font-size: 0.85rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.08);'>{stock.risk_badge}</span>
+                                <span class='pastel-pill-mint'>{stock.risk_badge}</span>
                             </div>
                         </div>
                         <div style='margin-top: 8px; font-size: 0.92rem; color: #CBD5E1;'>
@@ -689,8 +881,10 @@ if audit_results and audit_results[0] is not None:
                         st.session_state["active_ticker"] = stock.ticker
                         st.rerun()
 
-    # TAB 2: SUPPLY CHAIN & NETWORK VISUALIZER
-    with tabs[1]:
+    # =========================================================================
+    # TAB 4: SUPPLY CHAIN & RIPPLE GRAPH
+    # =========================================================================
+    with tabs[3]:
         st.markdown(f"### 🔗 **Directed Supply Chain Ripple Graph & Network Visualizer**")
         st.caption(f"Visualizing the master OEM dependency tree for **{plan.ticker}** ({ripple.case_name}).")
 
@@ -730,55 +924,106 @@ if audit_results and audit_results[0] is not None:
             for d in ripple.downstream_beneficiaries:
                 st.markdown(f"• **{d}**")
 
-    # TAB 3: STEP-BY-STEP ACTION PLAN
-    with tabs[2]:
-        st.markdown("### 📖 **Beginner's Step-by-Step Execution Checklist**")
-        st.caption(f"Exact guidelines for trading {plan.ticker} safely with minimal stress:")
+    # =========================================================================
+    # TAB 5: SOLVENCY, TRAPS & EXECUTION
+    # =========================================================================
+    with tabs[4]:
+        st.markdown("### 🛡️ **Forensic Solvency, Microstructure & Algorithmic Execution**")
+        st.caption(f"Comprehensive forensic health audit, institutional order flow verification, and beginner execution checklist for **{plan.ticker}**.")
 
-        ap_col1, ap_col2 = st.columns([1.2, 1.0])
+        sol_col, exe_col = st.columns([1.1, 1.1])
 
-        with ap_col1:
-            st.markdown("#### **Execution Checklist**")
+        with sol_col:
+            st.markdown("#### 🏥 **Forensic Solvency & Earnings Quality**")
+            z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
+            f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+            sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+            beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+            is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+
+            z_status = "Safe Zone (> 2.99)" if z_score >= 2.99 else ("Grey Zone (1.81 - 2.99)" if z_score >= 1.81 else "Distress Risk (< 1.81)")
+            beneish_status = "⚠️ Forensic Warning: Potential Distortion" if is_manip else "✅ Clean Financials (M < -1.78)"
+
             st.markdown(f"""
-            1. **Step 1: Check the Safe Entry Window**
-               - Recommended Buy Zone: **{currency_sym}{plan.entry_price_range[0]} – {currency_sym}{plan.entry_price_range[1]}**
-               - *Do not chase the price if it has already skyrocketed above the upper entry price.*
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong>Altman Z-Score (Bankruptcy Risk)</strong>
+                    <span class='{"tile-status-safe" if z_score >= 2.99 else ("tile-status-caution" if z_score >= 1.81 else "tile-status-danger")}'>{z_score:.2f}</span>
+                </div>
+                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Status: {z_status}</div>
+            </div>
 
-            2. **Step 2: Place Your Safety Stop-Loss Order**
-               - Hard Stop-Loss Price: **{currency_sym}{plan.algorithmic_stop_loss}**
-               - *Set this immediately in your broker terminal after buying. Never move your stop-loss down.*
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong>Piotroski F-Score (Operational Quality)</strong>
+                    <span class='{"tile-status-safe" if f_score >= 7 else ("tile-status-caution" if f_score >= 5 else "tile-status-danger")}'>{f_score} / 9</span>
+                </div>
+                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Evaluates profitability, leverage, and operating efficiency.</div>
+            </div>
 
-            3. **Step 3: Taking Profits (The Ladder)**
-               - Target 1: **{currency_sym}{plan.target_ladder[0] if len(plan.target_ladder) > 0 else 'N/A'}** *(Sell 1/3 to lock in profits)*
-               - Target 2: **{currency_sym}{plan.target_ladder[1] if len(plan.target_ladder) > 1 else 'N/A'}** *(Sell 1/3 and move stop to breakeven)*
-               - Target 3: **{currency_sym}{plan.target_ladder[2] if len(plan.target_ladder) > 2 else 'N/A'}** *(Let the last 1/3 run for maximum gain)*
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong>Sloan Accruals Ratio (Cash vs Paper Earnings)</strong>
+                    <span class='{"tile-status-safe" if abs(sloan_val) < 0.10 else "tile-status-danger"}'>{sloan_val * 100:.1f}%</span>
+                </div>
+                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Accruals < 10% indicates earnings are backed by hard cash flow.</div>
+            </div>
 
-            4. **Step 4: Position Sizing**
-               - Buy no more than **{plan.calculated_shares:,} shares** (Total: {currency_sym}{risk.allocated_capital:,.2f}).
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong>Beneish M-Score (Forensic Manipulation Sieve)</strong>
+                    <span class='{"tile-status-safe" if not is_manip else "tile-status-danger"}'>{beneish_val:.2f}</span>
+                </div>
+                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>{beneish_status}</div>
+            </div>
+
+            <div class='interactive-tile'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong>Microstructure Flow (Delivery Volume)</strong>
+                    <span class='{"tile-status-safe" if micro.delivery_valid else "tile-status-caution"}'>{micro.delivery_pct:.1f}%</span>
+                </div>
+                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>{micro.delivery_status_msg}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with exe_col:
+            st.markdown("#### 📖 **Execution Checklist & Profit Targets**")
+            st.markdown(f"""
+            1. **Step 1: Check Safe Entry Range**
+               - Target Buy Zone: **{currency_sym}{plan.entry_price_range[0]} – {currency_sym}{plan.entry_price_range[1]}**
+               - *Do not chase price if it has already spiked past the upper boundary.*
+
+            2. **Step 2: Set Algorithmic Hard Stop-Loss**
+               - Hard Stop Price: **{currency_sym}{plan.algorithmic_stop_loss}**
+               - *Place this stop in your brokerage terminal immediately after order execution.*
+
+            3. **Step 3: Scaling Out (The 3-Target Profit Ladder)**
+               - **Target 1 ({currency_sym}{plan.target_ladder[0] if len(plan.target_ladder) > 0 else 'N/A'})**: Sell 1/3 to lock in initial gains.
+               - **Target 2 ({currency_sym}{plan.target_ladder[1] if len(plan.target_ladder) > 1 else 'N/A'})**: Sell 1/3 and move stop-loss to breakeven.
+               - **Target 3 ({currency_sym}{plan.target_ladder[2] if len(plan.target_ladder) > 2 else 'N/A'})**: Let the final 1/3 run with a trailing stop.
+
+            4. **Step 4: Position Sizing & Capital Allocation**
+               - Max Sizing: **{plan.calculated_shares:,} shares** (Total Capital: {currency_sym}{risk.allocated_capital:,.2f}).
             """)
 
-        with ap_col2:
-            st.markdown("#### **🚨 Emergency Kill-Switches**")
-            st.caption("Immediate triggers that tell you: *'Exit now and protect your capital'*: ")
+            st.markdown("#### 🚨 **Emergency Kill-Switches**")
             for ks in plan.execution_kill_switches:
                 st.markdown(f"- 🔴 `{ks}`")
 
-    # TAB 4: BEGINNER TRAPS CHECKED
-    with tabs[3]:
-        st.markdown("### 🪤 **Common Stock Market Traps Checked**")
-        st.caption("Our automated guardrails check for amateur mistakes before you put your money at risk:")
+        st.markdown("---")
+        st.markdown("#### 🪤 **Automated Trap Guards Checked**")
+        st.caption("Our automated quantitative sieves verify that you are not walking into common amateur pitfalls:")
 
         tr1, tr2 = st.columns(2)
-
         with tr1:
             exh = any("EXHAUSTION" in t for t in traps)
             st.markdown(f"""
             <div class='radar-card'>
-                <div style='font-size: 1.05rem; font-weight: 700; color: {"#EF4444" if exh else "#10B981"};'>
-                    {"🚨 TRAP ALERT: Exhaustion FOMO" if exh else "✅ SAFE: No Exhaustion Trap"}
+                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if exh else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Exhaustion FOMO" if exh else "✅ SAFE: Healthy Volume Expansion"}
                 </div>
-                <div style='font-size: 0.90rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Did you show up too late to the party? Buying after a 3-day rally when trading volume has dried up often leads to immediate losses.
+                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it means:</strong> Buying after an extended rally when volume dries up often traps late buyers at the exact top.
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -786,11 +1031,11 @@ if audit_results and audit_results[0] is not None:
             rumor = any("PRICED-IN" in t for t in traps)
             st.markdown(f"""
             <div class='radar-card'>
-                <div style='font-size: 1.05rem; font-weight: 700; color: {"#EF4444" if rumor else "#10B981"};'>
-                    {"🚨 TRAP ALERT: Priced-in Rumor" if rumor else "✅ SAFE: Balanced Price Action"}
+                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if rumor else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Priced-in Rumor" if rumor else "✅ SAFE: Balanced Valuation & News"}
                 </div>
-                <div style='font-size: 0.90rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> 'Buy the rumor, sell the news'. If a stock already rallied +20% right before an announcement, professionals will dump their shares on beginners.
+                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it means:</strong> 'Buy the rumor, sell the news'. If a stock rallied +20% right before an earnings or product event, smart money will exit.
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -799,11 +1044,11 @@ if audit_results and audit_results[0] is not None:
             cyc = any("CYCLICAL" in t for t in traps)
             st.markdown(f"""
             <div class='radar-card'>
-                <div style='font-size: 1.05rem; font-weight: 700; color: {"#EF4444" if cyc else "#10B981"};'>
-                    {"🚨 TRAP ALERT: Cheap Value Illusion" if cyc else "✅ SAFE: True Valuation"}
+                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if cyc else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Cheap Value Illusion" if cyc else "✅ SAFE: Sustainable Margin Profile"}
                 </div>
-                <div style='font-size: 0.90rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Commodity, metal, and oil companies look artificially 'cheap' right when commodity prices hit peak profit margins before collapsing.
+                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it means:</strong> Commodity and cyclical companies look 'cheap' on P/E right when commodity prices peak, right before profits plunge.
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -811,18 +1056,20 @@ if audit_results and audit_results[0] is not None:
             geo = any("GEOPOLITICAL" in t for t in traps)
             st.markdown(f"""
             <div class='radar-card'>
-                <div style='font-size: 1.05rem; font-weight: 700; color: {"#38BDF8" if geo else "#10B981"};'>
-                    {"ℹ️ V-BOTTOM OPPORTUNITY: Headline Overreaction" if geo else "✅ SAFE: Normal Price Action"}
+                <div style='font-size: 1.02rem; font-weight: 700; color: {"#93C5FD" if geo else "#6EE7B7"};'>
+                    {"ℹ️ V-BOTTOM OPPORTUNITY: Headline Overreaction" if geo else "✅ SAFE: Normal Market Flow"}
                 </div>
-                <div style='font-size: 0.90rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Transitory geopolitical panic headlines often create temporary discounts in fundamentally great companies.
+                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it means:</strong> Transitory geopolitical headlines create temporary discounts in fundamentally resilient companies.
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-    # TAB 5: GLOBAL GOVERNANCE (RESTRICTED RBAC)
+    # =========================================================================
+    # TAB 6: GLOBAL GOVERNANCE / ADMIN TELEMETRY (RESTRICTED RBAC)
+    # =========================================================================
     if is_global_admin():
-        with tabs[4]:
+        with tabs[5]:
             st.markdown("### 👑 **Global Governance & Root Authority**")
             st.success("🔐 **Authenticated as Global Administrator (`nikhil875171`).** Complete root authority active.", icon="👑")
 
@@ -853,7 +1100,7 @@ if audit_results and audit_results[0] is not None:
                 """)
 
     elif is_admin():
-        with tabs[4]:
+        with tabs[5]:
             st.markdown("### 🛡️ **Administrator Operational Telemetry**")
             st.info("Logged in as Administrator (`nkk_admin`). Standard operations active.")
             a_col1, a_col2 = st.columns(2)
