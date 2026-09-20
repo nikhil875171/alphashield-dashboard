@@ -12,9 +12,15 @@ from core.sentiment_engine import fetch_sentiment_analysis
 from core.institutional_engine import audit_institutional_positioning
 from core.risk_manager import calculate_risk_parameters
 from core.gemini_advisor import evaluate_alpha_shield
-from core.visualizer import build_interactive_chart
+from core.auth import (
+    render_login_gate,
+    render_user_profile_sidebar,
+    is_admin,
+    is_global_admin,
+)
 
 load_dotenv()
+
 
 # Bridge Streamlit Cloud secrets to os.environ if running on cloud
 try:
@@ -115,6 +121,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- 1. ENFORCE ROLE-BASED AUTHENTICATION GATE ---
+if not render_login_gate():
+    st.stop()
 
 # Cached macro telemetry
 @st.cache_data(ttl=300)
@@ -124,8 +133,12 @@ def fetch_macro_cached(is_indian: bool):
 
 # --- SIDEBAR: CONTROLS & PARAMETERS ---
 with st.sidebar:
+    # Render user profile & Sign out button
+    render_user_profile_sidebar()
+
     st.markdown("### 🛡️ **AlphaShield Controls**")
     st.caption("Institutional Quantitative Parameters")
+
 
     ticker_input = st.text_input(
         "Asset Ticker (NSE or Global)",
@@ -322,13 +335,21 @@ if tech and df is not None and rec:
     fig = build_interactive_chart(df, tech, rec)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
 
-    # --- BOTTOM SECTION: FACTOR SIEVE ACCORDIONS ---
-    t1, t2, t3, t4 = st.tabs([
+    # --- BOTTOM SECTION: FACTOR SIEVE ACCORDIONS & GOVERNANCE ---
+    tab_titles = [
         "🧠 Multi-Factor Thesis & Kill-Switches",
         "⚖️ Fundamental Solvency (Altman & Piotroski)",
         "📊 Technical Microstructure & Volatility",
-        "👥 Crowdsourced Sentiment & Smart Money"
-    ])
+        "👥 Crowdsourced Sentiment & Smart Money",
+    ]
+
+    if is_global_admin():
+        tab_titles.append("👑 Global Governance (nikhil875171 Only)")
+    elif is_admin():
+        tab_titles.append("🛡️ Admin Operational Telemetry")
+
+    tabs = st.tabs(tab_titles)
+    t1, t2, t3, t4 = tabs[0], tabs[1], tabs[2], tabs[3]
 
     with t1:
         c_thesis, c_kill = st.columns([1.5, 1.0])
@@ -407,5 +428,50 @@ if tech and df is not None and rec:
             st.metric("Short Float Interest", f"{inst.short_float_pct}%" if inst.short_float_pct else "N/A")
             st.info(f"**Positioning Signal:** {inst.institutional_signal}")
 
+    # --- 5th TAB: GOVERNANCE & PRIVILEGED CONTROLS ---
+    if is_global_admin():
+        with tabs[4]:
+            st.markdown("### 👑 **Global Governance & Root Authority**")
+            st.success("🔐 **Authenticated as Global Administrator (`nikhil875171`).** Complete root governance active.", icon="👑")
+
+            gov_col1, gov_col2 = st.columns([1, 1])
+            with gov_col1:
+                st.markdown("#### 🚨 **Fund Risk Overrides**")
+                cash_lock = st.toggle("Force Fund-Wide 100% Cash Defense", value=st.session_state.get("emergency_cash_lock", False))
+                st.session_state["emergency_cash_lock"] = cash_lock
+                if cash_lock:
+                    st.error("⚠️ Emergency Cash Defense ENGAGED: All trades overridden to AVOID.", icon="🚨")
+                else:
+                    st.info("System operating under normal quantitative risk governance.")
+
+                st.markdown("#### 🔑 **Root API Telemetry**")
+                api_k = os.getenv("GEMINI_API_KEY", "")
+                masked_k = (api_k[:7] + "..." + api_k[-4:]) if len(api_k) > 12 else "Not Configured"
+                st.write(f"**Gemini API Key:** `{masked_k}`")
+                st.write(f"**Default Model Cascade:** `gemini-flash-lite-latest` ➔ `gemini-3.1-flash-lite`")
+
+            with gov_col2:
+                st.markdown("#### 👥 **Authorized Personnel Registry**")
+                st.markdown("""
+                | Identity | Assigned Role | Permissions |
+                | :--- | :--- | :--- |
+                | `nikhil875171` | **Global Administrator** | Complete Root & Governance Rights |
+                | `nkk_admin` | **System Administrator** | Operational Telemetry & Monitoring |
+                | `nkk_user` | **Standard Analyst** | Asset Analysis & Chart Access |
+                """)
+
+    elif is_admin():
+        with tabs[4]:
+            st.markdown("### 🛡️ **Administrator Operational Telemetry**")
+            st.info("Logged in as Administrator (`nkk_admin`). Standard operations active.")
+            a_col1, a_col2 = st.columns(2)
+            with a_col1:
+                st.metric("System Health", "ONLINE", delta="All Engines Operational")
+                st.metric("Active Model", model_choice)
+            with a_col2:
+                st.metric("Session Mode", "Authenticated Admin")
+                st.caption("Note: Root policy changes and emergency kill-switches are restricted to Global Administrator (nikhil875171).")
+
 st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Institutional Capital Preservation System | For Educational & Quantitative Decision-Support Only</div>", unsafe_allow_html=True)
+
 
