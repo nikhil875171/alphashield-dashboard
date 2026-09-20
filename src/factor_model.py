@@ -11,12 +11,14 @@ class FactorScoreSummary:
     """Multi-factor quantitative scoring and capital preservation sieve result."""
     sieve_verdict: Literal["PASS", "REJECT_INSOLVENT", "REJECT_WEAK_FUNDAMENTALS", "REJECT_EARNINGS_QUALITY"]
     sieve_rejection_reasons: List[str] = field(default_factory=list)
-    solvency_audit: Dict[str, float] = field(default_factory=dict)  # Z-score, F-score, Sloan Accruals
+    solvency_audit: Dict[str, float] = field(default_factory=dict)  # Z-score, F-score, Sloan Accruals, Beneish M
     factor_grades: Dict[str, float] = field(default_factory=dict)   # Value, Quality, Momentum, Microstructure
     composite_factor_score: float = 50.0                            # 0 to 100 composite ranking
     sloan_accrual_ratio: float = 0.0
     altman_z_score: float = 2.5
     piotroski_f_score: int = 6
+    beneish_m_score: float = -2.45
+    beneish_manipulation_risk: bool = False
 
 
 def calculate_sloan_accruals(bs: pd.DataFrame, fin: pd.DataFrame, cf: pd.DataFrame) -> Tuple[float, str]:
@@ -49,6 +51,86 @@ def calculate_sloan_accruals(bs: pd.DataFrame, fin: pd.DataFrame, cf: pd.DataFra
     return accrual_ratio, flag
 
 
+def calculate_beneish_m_score(bs: pd.DataFrame, fin: pd.DataFrame, cf: pd.DataFrame) -> Tuple[float, str, bool]:
+    """
+    Computes the Beneish M-Score for forensic earnings manipulation detection:
+    M = -4.84 + 0.920*DSRI + 0.528*GMI + 0.404*AQI + 0.892*SGI + 0.115*DEPI - 0.172*SGAI + 4.037*TATA + 0.0327*LVGI
+    
+    If M > -1.78, the company exhibits a high probability of being an earnings manipulator.
+    If M <= -1.78, low probability of manipulation (Pristine/Normal).
+    """
+    if bs is None or fin is None or bs.empty or fin.empty or bs.shape[1] < 2 or fin.shape[1] < 2:
+        return -2.45, "Beneish M-Score Normal (-2.45): Baseline low manipulation risk.", False
+
+    try:
+        sales_0 = _get_row_value(fin, ["Total Revenue", "Operating Revenue", "Revenue"], col_idx=0) or 1_000_000.0
+        sales_1 = _get_row_value(fin, ["Total Revenue", "Operating Revenue", "Revenue"], col_idx=1) or sales_0
+        
+        rec_0 = _get_row_value(bs, ["Receivables", "Accounts Receivable"], col_idx=0) or (sales_0 * 0.12)
+        rec_1 = _get_row_value(bs, ["Receivables", "Accounts Receivable"], col_idx=1) or (sales_1 * 0.12)
+        dsri = (rec_0 / max(sales_0, 1.0)) / max(rec_1 / max(sales_1, 1.0), 0.0001)
+
+        gp_0 = _get_row_value(fin, ["Gross Profit"], col_idx=0) or (sales_0 * 0.35)
+        gp_1 = _get_row_value(fin, ["Gross Profit"], col_idx=1) or (sales_1 * 0.35)
+        gm_0 = gp_0 / max(sales_0, 1.0)
+        gm_1 = gp_1 / max(sales_1, 1.0)
+        gmi = gm_1 / max(gm_0, 0.0001)
+
+        assets_0 = _get_row_value(bs, ["Total Assets"], col_idx=0) or 1_000_000.0
+        assets_1 = _get_row_value(bs, ["Total Assets"], col_idx=1) or assets_0
+        
+        ca_0 = _get_row_value(bs, ["Current Assets"], col_idx=0) or (assets_0 * 0.4)
+        ca_1 = _get_row_value(bs, ["Current Assets"], col_idx=1) or (assets_1 * 0.4)
+        ppe_0 = _get_row_value(bs, ["Net PPE", "Properties"], col_idx=0) or (assets_0 * 0.3)
+        ppe_1 = _get_row_value(bs, ["Net PPE", "Properties"], col_idx=1) or (assets_1 * 0.3)
+        aq_0 = 1.0 - ((ca_0 + ppe_0) / max(assets_0, 1.0))
+        aq_1 = 1.0 - ((ca_1 + ppe_1) / max(assets_1, 1.0))
+        aqi = aq_0 / max(aq_1, 0.0001)
+
+        sgi = sales_0 / max(sales_1, 1.0)
+
+        dep_0 = _get_row_value(cf, ["Depreciation And Amortization", "Depreciation"], col_idx=0) or (ppe_0 * 0.08)
+        dep_1 = _get_row_value(cf, ["Depreciation And Amortization", "Depreciation"], col_idx=1) or (ppe_1 * 0.08)
+        dep_rate_0 = dep_0 / max(ppe_0 + dep_0, 1.0)
+        dep_rate_1 = dep_1 / max(ppe_1 + dep_1, 1.0)
+        depi = dep_rate_1 / max(dep_rate_0, 0.0001)
+
+        sga_0 = _get_row_value(fin, ["Selling General And Administration", "SG&A"], col_idx=0) or (sales_0 * 0.15)
+        sga_1 = _get_row_value(fin, ["Selling General And Administration", "SG&A"], col_idx=1) or (sales_1 * 0.15)
+        sgai = (sga_0 / max(sales_0, 1.0)) / max(sga_1 / max(sales_1, 1.0), 0.0001)
+
+        ltd_0 = _get_row_value(bs, ["Total Debt", "Long Term Debt"], col_idx=0) or (assets_0 * 0.25)
+        ltd_1 = _get_row_value(bs, ["Total Debt", "Long Term Debt"], col_idx=1) or (assets_1 * 0.25)
+        lvgi = (ltd_0 / max(assets_0, 1.0)) / max(ltd_1 / max(assets_1, 1.0), 0.0001)
+
+        net_inc = _get_row_value(fin, ["Net Income"], col_idx=0) or 0.0
+        cfo = _get_row_value(cf, ["Operating Cash Flow"], col_idx=0) or (net_inc * 1.05)
+        tata = (net_inc - cfo) / max(assets_0, 1.0)
+
+        dsri = float(np.clip(dsri, 0.2, 3.0))
+        gmi = float(np.clip(gmi, 0.2, 3.0))
+        aqi = float(np.clip(aqi, 0.2, 3.0))
+        sgi = float(np.clip(sgi, 0.2, 3.0))
+        depi = float(np.clip(depi, 0.2, 3.0))
+        sgai = float(np.clip(sgai, 0.2, 3.0))
+        lvgi = float(np.clip(lvgi, 0.2, 3.0))
+        tata = float(np.clip(tata, -0.5, 0.5))
+
+        m_score = round(
+            -4.84 + (0.920 * dsri) + (0.528 * gmi) + (0.404 * aqi) + (0.892 * sgi) +
+            (0.115 * depi) - (0.172 * sgai) + (4.037 * tata) + (0.0327 * lvgi), 2
+        )
+        is_manipulator = m_score > -1.78
+        if is_manipulator:
+            flag = f"BENEISH M-SCORE HAZARD ({m_score}): High statistical probability of earnings distortion/manipulation (> -1.78)."
+        else:
+            flag = f"Beneish M-Score Normal ({m_score}): Low accounting manipulation probability."
+
+        return m_score, flag, is_manipulator
+    except Exception:
+        return -2.45, "Beneish M-Score Normal (-2.45): Low manipulation risk.", False
+
+
 def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = None) -> FactorScoreSummary:
     """
     Executes the 6-pillar multi-factor model and Zero-Ruin Capital Preservation Sieve.
@@ -78,8 +160,9 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
     if f_score is None:
         f_score = 6
 
-    # 2. Sloan Accrual Anomaly
+    # 2. Sloan Accrual Anomaly & Beneish M-Score
     sloan_ratio, sloan_flag = calculate_sloan_accruals(bs, fin, cf)
+    beneish_m, beneish_flag, is_manipulator = calculate_beneish_m_score(bs, fin, cf)
 
     rejections: List[str] = []
     verdict = "PASS"
@@ -94,10 +177,14 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
         verdict = "REJECT_WEAK_FUNDAMENTALS"
         rejections.append(f"Operational Deterioration: Piotroski F-score ({f_score}/9) reflects failing operating efficiency.")
 
-    # Rule 3: Sloan Accruals > 10% => REJECT_EARNINGS_QUALITY
+    # Rule 3: Sloan Accruals > 10% or Beneish M-Score > -1.78 => REJECT_EARNINGS_QUALITY
     if sloan_ratio > 0.10:
         verdict = "REJECT_EARNINGS_QUALITY"
         rejections.append(f"Earnings Quality Failure: Sloan Accrual Ratio ({sloan_ratio * 100:.1f}%) exceeds 10% threshold.")
+
+    if is_manipulator:
+        verdict = "REJECT_EARNINGS_QUALITY"
+        rejections.append(f"Forensic Accounting Alert: Beneish M-Score ({beneish_m}) signals potential earnings manipulation.")
 
     # 3. Four-Pillar Factor Grades (0 - 100)
     # Pillar A: Value (EV/EBITDA, FCF Yield)
@@ -195,6 +282,7 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
             "Altman Z-Score": z_score,
             "Piotroski F-Score": float(f_score),
             "Sloan Accruals Ratio": round(sloan_ratio, 4),
+            "Beneish M-Score": round(beneish_m, 2),
             "ROE (%)": round(roe, 2),
             "Debt-to-Equity": round(de_ratio, 2),
         },
@@ -208,5 +296,7 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
         sloan_accrual_ratio=sloan_ratio,
         altman_z_score=z_score,
         piotroski_f_score=f_score,
+        beneish_m_score=beneish_m,
+        beneish_manipulation_risk=is_manipulator,
     )
 

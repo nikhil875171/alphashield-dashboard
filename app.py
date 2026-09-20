@@ -52,20 +52,27 @@ st.set_page_config(
 # Custom High-Contrast Modern Theme CSS
 st.markdown("""
 <style>
-    /* Dark background styling */
+    /* Obsidian Luxury Canvas & Typography */
     .stApp {
         background-color: #0B0E14;
+        background-image: radial-gradient(circle at 50% 0%, #161E2E 0%, #0B0E14 75%);
         color: #E2E8F0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+        font-variant-numeric: tabular-nums;
     }
 
-    /* Metric Cards */
+    /* Tabular numbers for all financial metrics */
+    div[data-testid="stMetricValue"], .radar-card, .interactive-tile, table {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Elevated Metric Surfaces */
     div[data-testid="stMetric"] {
-        background-color: #151B26;
-        border: 1px solid #232D3F;
-        border-radius: 10px;
+        background-color: #161E2E;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
         padding: 12px 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     div[data-testid="stMetricLabel"] {
         color: #94A3B8;
@@ -80,24 +87,24 @@ st.markdown("""
         color: #F8FAFC;
     }
 
-    /* 30-Second Bottom Line Strip */
+    /* 30-Second Bottom Line Executive Strip */
     .bottom-line-container {
-        background: linear-gradient(135deg, #131A2A 0%, #1A2234 100%);
-        border: 1px solid #2D3A4F;
+        background: linear-gradient(135deg, #131A2A 0%, #1E293B 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-left: 6px solid #10B981;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 18px 24px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
     }
     .bottom-line-danger {
-        border-left-color: #EF4444 !important;
+        border-left-color: #F43F5E !important;
     }
     .bottom-line-caution {
         border-left-color: #F59E0B !important;
     }
 
-    /* Action Badges */
+    /* Action Badges with High-End Glow */
     .badge-buy {
         background: linear-gradient(135deg, #059669 0%, #10B981 100%);
         color: white;
@@ -107,10 +114,10 @@ st.markdown("""
         font-size: 1.35rem;
         display: inline-block;
         letter-spacing: 0.05em;
-        box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
     }
     .badge-sell {
-        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+        background: linear-gradient(135deg, #E11D48 0%, #F43F5E 100%);
         color: white;
         padding: 8px 24px;
         border-radius: 24px;
@@ -118,7 +125,7 @@ st.markdown("""
         font-size: 1.35rem;
         display: inline-block;
         letter-spacing: 0.05em;
-        box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
+        box-shadow: 0 0 20px rgba(244, 63, 94, 0.5);
     }
     .badge-hold {
         background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
@@ -129,7 +136,7 @@ st.markdown("""
         font-size: 1.35rem;
         display: inline-block;
         letter-spacing: 0.05em;
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.45);
     }
     .badge-avoid {
         background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%);
@@ -140,22 +147,23 @@ st.markdown("""
         font-size: 1.35rem;
         display: inline-block;
         letter-spacing: 0.05em;
-        box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.45);
     }
 
     /* Interactive Explanatory Tiles */
     .interactive-tile {
-        background-color: #151B26;
-        border: 1px solid #232D3F;
-        border-radius: 12px;
+        background-color: #161E2E;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
         padding: 14px;
         height: 100%;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
-        transition: transform 0.15s ease, border-color 0.15s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
     .interactive-tile:hover {
-        border-color: #38BDF8;
+        border-color: #06B6D4;
         transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(6, 182, 212, 0.2);
     }
     .tile-header {
         font-size: 0.78rem;
@@ -175,21 +183,21 @@ st.markdown("""
         font-size: 1.05rem;
     }
     .tile-status-danger {
-        color: #EF4444;
+        color: #F43F5E;
         font-weight: 700;
         font-size: 1.05rem;
     }
 
     /* Thematic Discovery Card */
     .radar-card {
-        background-color: #151B26;
-        border: 1px solid #232D3F;
-        border-radius: 10px;
+        background-color: #161E2E;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
         padding: 14px 16px;
         margin-bottom: 12px;
     }
     .radar-card:hover {
-        border-color: #38BDF8;
+        border-color: #06B6D4;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -530,8 +538,13 @@ if audit_results and audit_results[0] is not None:
         """, unsafe_allow_html=True)
 
         with st.expander("🔍 ELI5 Context"):
-            st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money just to survive?")
-            st.markdown(f"**The Verdict:** Status: **{plan.solvency_status}**. Piotroski score: {factors.piotroski_f_score}/9.")
+            st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?")
+            beneish_note = "⚠️ Forensic Distortion Warning" if factors.beneish_manipulation_risk else "✅ Clean Accounting"
+            st.markdown(f"**The Verdict:** Solvency Status: **{plan.solvency_status}**.")
+            st.markdown(f"• Altman Z-Score: **{z_score:.2f}** (Distress: < 1.81, Safe: > 2.99)")
+            st.markdown(f"• Piotroski F-Score: **{factors.piotroski_f_score}/9** (Operating Quality)")
+            st.markdown(f"• Sloan Accruals: **{factors.sloan_accrual_ratio * 100:.1f}%** (Quality Threshold: < 10%)")
+            st.markdown(f"• Beneish M-Score: **{factors.beneish_m_score:.2f}** ({beneish_note})")
 
     # TILE 3: PRICE MOMENTUM
     with t_c3:

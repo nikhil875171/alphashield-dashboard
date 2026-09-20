@@ -89,7 +89,7 @@ def build_interactive_chart(
         target_ladder = []
 
     # 3. Horizontal Trade Level Annotations
-    # Hard Stop Loss
+    # Hard Stop Loss & Shaded Invalidation Zone
     if stop_loss is not None and stop_loss > 0:
         fig.add_hline(
             y=stop_loss,
@@ -99,6 +99,13 @@ def build_interactive_chart(
             annotation_text=f"Hard Stop: {currency_symbol}{stop_loss}",
             annotation_position="bottom right",
             annotation_font_color="#FF1744",
+            row=1, col=1
+        )
+        fig.add_hrect(
+            y0=stop_loss * 0.96,
+            y1=stop_loss,
+            fillcolor="rgba(239, 68, 68, 0.10)",
+            line_width=0,
             row=1, col=1
         )
 
@@ -117,7 +124,18 @@ def build_interactive_chart(
             row=1, col=1
         )
 
-    # Target Price Ladder
+    # Target Price Ladder & Shaded Profit Accumulation Band
+    if target_ladder and len(target_ladder) >= 1 and target_ladder[0] > 0:
+        t_min = target_ladder[0]
+        t_max = target_ladder[-1] if len(target_ladder) > 1 else target_ladder[0] * 1.05
+        fig.add_hrect(
+            y0=t_min,
+            y1=t_max,
+            fillcolor="rgba(16, 185, 129, 0.10)",
+            line_width=0,
+            row=1, col=1
+        )
+
     target_colors = ["#69F0AE", "#00E676", "#00C853"]
     for idx, target in enumerate(target_ladder[:3]):
         if target is not None and target > 0:

@@ -105,6 +105,51 @@ class TestSolvencySieve(unittest.TestCase):
         self.assertLess(ratio_q, 0.0)
         self.assertIn("HIGH QUALITY EARNINGS", flag_q)
 
+    def test_beneish_m_score_threshold(self):
+        """Verify Beneish M-Score flags manipulation risk (> -1.78) and passes clean accounting."""
+        from src.factor_model import calculate_beneish_m_score
+
+        # 1. Clean accounting baseline
+        m_base, flag_base, is_man_base = calculate_beneish_m_score(pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+        self.assertLessEqual(m_base, -1.78)
+        self.assertFalse(is_man_base)
+
+        # 2. Aggressive earnings manipulator case:
+        # High sales growth, ballooning receivables, deteriorating gross margin
+        bs_manip = pd.DataFrame(
+            [
+                [1_000_000, 700_000],  # Total Assets
+                [400_000, 100_000],    # Receivables (ballooning from 100k to 400k)
+                [600_000, 400_000],    # Current Assets
+                [300_000, 250_000],    # Net PPE
+                [450_000, 150_000],    # Total Debt
+            ],
+            index=["Total Assets", "Receivables", "Current Assets", "Net PPE", "Total Debt"],
+            columns=["2025-12-31", "2024-12-31"],
+        )
+        fin_manip = pd.DataFrame(
+            [
+                [2_000_000, 1_000_000],  # Revenue (doubled)
+                [500_000, 450_000],      # Gross Profit (margin compressed: 45% -> 25%)
+                [300_000, 100_000],      # Net Income
+                [250_000, 120_000],      # SG&A
+            ],
+            index=["Total Revenue", "Gross Profit", "Net Income", "Selling General And Administration"],
+            columns=["2025-12-31", "2024-12-31"],
+        )
+        cf_manip = pd.DataFrame(
+            [
+                [-50_000, 80_000],  # Operating Cash Flow (negative despite 300k net income!)
+                [30_000, 25_000],   # Depreciation
+            ],
+            index=["Operating Cash Flow", "Depreciation"],
+            columns=["2025-12-31", "2024-12-31"],
+        )
+        m_score, flag, is_manipulator = calculate_beneish_m_score(bs_manip, fin_manip, cf_manip)
+        self.assertGreater(m_score, -1.78)
+        self.assertTrue(is_manipulator)
+        self.assertIn("BENEISH M-SCORE HAZARD", flag)
+
     def test_factor_model_zero_ruin_sieve(self):
         """Verify Factor Score Summary properly applies rejection gates."""
         df_dummy = pd.DataFrame({

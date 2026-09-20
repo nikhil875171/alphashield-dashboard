@@ -17,43 +17,153 @@ load_dotenv()
 class FullInstitutionalTradePlan(BaseModel):
     """Unified Institutional Trade Plan schema enforcing macro, thematic, and supply chain intelligence."""
     ticker: str
-    market: Literal["US", "INDIA"]
-    currency: Literal["$", "₹"]
+    company_name: str = "Enterprise Issuer"
+    market_exchange: Literal["US", "INDIA"]
+    currency_symbol: Literal["$", "₹"]
     action: Literal["BUY", "ACCUMULATE", "HOLD", "AVOID"]
-    plain_english_verdict: str = Field(description="Max 25-word jargon-free summary for beginners")
-    primary_danger: str = Field(description="The #1 danger to watch out for in plain English")
+    plain_english_bottom_line: str = Field(description="Max 25-word jargon-free summary for beginners")
+    primary_risk_warning: str = Field(description="The #1 danger to watch out for in plain English")
     conviction_score: float = Field(ge=0.0, le=1.0)
-    thematic_horizon: Literal["1_YEAR", "3_YEARS", "5_YEARS", "10_YEARS", "20_YEARS"]
-    thematic_driver: str = Field(description="e.g., AI Edge, Power Grid, Nuclear Baseload, Water Scarcity, Humanoid Robotics")
-    supply_chain_role: Literal["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"]
-    anchor_oem_dependencies: List[str] = Field(description="List of anchor OEMs driving demand to this company")
-    operating_leverage_multiplier: float = Field(ge=0.0, le=5.0)
+    time_horizon: Literal["1_YEAR", "3_YEARS", "5_YEARS", "10_YEARS", "20_YEARS"]
+    thematic_pillar: str = Field(description="e.g., AI Edge, Power Grid, Nuclear Baseload, Water Scarcity, Humanoid Robotics")
+    is_anchor_or_ancillary: Literal["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"]
+    connected_anchors: List[str] = Field(description="List of anchor OEMs driving demand to this company")
+    operating_leverage_score: float = Field(ge=0.0, le=5.0)
     customer_concentration_pct: float = Field(description="Percentage of revenue tied to primary anchor OEM")
-    resource_scarcity_exposure: Literal["WATER", "CLEAN_AIR", "ORE_DEPLETION", "POWER_GRID", "NONE"]
+    scarcity_transmission_vector: Literal["WATER", "CLEAN_AIR", "ORE_DEPLETION", "POWER_GRID", "NONE"]
+    macro_regime_label: str = "EXPANSION"
     solvency_status: Literal["PRISTINE", "STABLE", "DEBT_BURDENED", "INSOLVENT_DISTRESS"]
     altman_z_score: float
     piotroski_f_score: int
-    sloan_accrual_ratio: float
-    entry_price_range: Tuple[float, float]
+    sloan_accrual_pct: float
+    recommended_entry_range: Tuple[float, float]
     algorithmic_stop_loss: float
-    target_ladder: List[float]
-    calculated_shares: int
-    max_capital_at_risk: float
+    target_price_ladder: List[float]
+    calculated_shares_to_buy: int
+    risk_reward_ratio: float = 2.5
+    detected_traps_or_warnings: List[str]
     execution_kill_switches: List[str]
-    detected_traps: List[str]
 
-    # Backwards compatibility property
+    def __init__(self, **data):
+        # Support legacy argument names seamlessly
+        if "market" in data and "market_exchange" not in data:
+            data["market_exchange"] = data["market"]
+        if "currency" in data and "currency_symbol" not in data:
+            data["currency_symbol"] = data["currency"]
+        if "plain_english_verdict" in data and "plain_english_bottom_line" not in data:
+            data["plain_english_bottom_line"] = data["plain_english_verdict"]
+        if "primary_danger" in data and "primary_risk_warning" not in data:
+            data["primary_risk_warning"] = data["primary_danger"]
+        if "thematic_horizon" in data and "time_horizon" not in data:
+            data["time_horizon"] = data["thematic_horizon"]
+        if "thematic_driver" in data and "thematic_pillar" not in data:
+            data["thematic_pillar"] = data["thematic_driver"]
+        if "supply_chain_role" in data and "is_anchor_or_ancillary" not in data:
+            data["is_anchor_or_ancillary"] = data["supply_chain_role"]
+        if "anchor_oem_dependencies" in data and "connected_anchors" not in data:
+            data["connected_anchors"] = data["anchor_oem_dependencies"]
+        if "operating_leverage_multiplier" in data and "operating_leverage_score" not in data:
+            data["operating_leverage_score"] = data["operating_leverage_multiplier"]
+        if "resource_scarcity_exposure" in data and "scarcity_transmission_vector" not in data:
+            data["scarcity_transmission_vector"] = data["resource_scarcity_exposure"]
+        if "sloan_accrual_ratio" in data and "sloan_accrual_pct" not in data:
+            data["sloan_accrual_pct"] = data["sloan_accrual_ratio"]
+        if "entry_price_range" in data and "recommended_entry_range" not in data:
+            data["recommended_entry_range"] = data["entry_price_range"]
+        if "target_ladder" in data and "target_price_ladder" not in data:
+            data["target_price_ladder"] = data["target_ladder"]
+        if "calculated_shares" in data and "calculated_shares_to_buy" not in data:
+            data["calculated_shares_to_buy"] = data["calculated_shares"]
+        if "detected_traps" in data and "detected_traps_or_warnings" not in data:
+            data["detected_traps_or_warnings"] = data["detected_traps"]
+        if "company_name" not in data:
+            data["company_name"] = data.get("ticker", "Enterprise Issuer")
+        if "macro_regime_label" not in data:
+            data["macro_regime_label"] = "EXPANSION"
+        if "risk_reward_ratio" not in data:
+            data["risk_reward_ratio"] = 2.5
+        super().__init__(**data)
+
+    # Backwards compatibility properties
+    @property
+    def plain_english_verdict(self) -> str:
+        return self.plain_english_bottom_line
+
+    @plain_english_verdict.setter
+    def plain_english_verdict(self, val: str):
+        self.plain_english_bottom_line = val
+
+    @property
+    def primary_danger(self) -> str:
+        return self.primary_risk_warning
+
+    @primary_danger.setter
+    def primary_danger(self, val: str):
+        self.primary_risk_warning = val
+
+    @property
+    def market(self) -> str:
+        return self.market_exchange
+
+    @property
+    def currency(self) -> str:
+        return self.currency_symbol
+
+    @property
+    def thematic_horizon(self) -> str:
+        return self.time_horizon
+
+    @property
+    def thematic_driver(self) -> str:
+        return self.thematic_pillar
+
+    @property
+    def supply_chain_role(self) -> str:
+        return self.is_anchor_or_ancillary
+
+    @property
+    def anchor_oem_dependencies(self) -> List[str]:
+        return self.connected_anchors
+
+    @property
+    def operating_leverage_multiplier(self) -> float:
+        return self.operating_leverage_score
+
+    @property
+    def resource_scarcity_exposure(self) -> str:
+        return self.scarcity_transmission_vector
+
+    @property
+    def sloan_accrual_ratio(self) -> float:
+        return self.sloan_accrual_pct
+
+    @property
+    def entry_price_range(self) -> Tuple[float, float]:
+        return self.recommended_entry_range
+
+    @property
+    def target_ladder(self) -> List[float]:
+        return self.target_price_ladder
+
+    @property
+    def calculated_shares(self) -> int:
+        return self.calculated_shares_to_buy
+
+    @calculated_shares.setter
+    def calculated_shares(self, val: int):
+        self.calculated_shares_to_buy = val
+
+    @property
+    def detected_traps(self) -> List[str]:
+        return self.detected_traps_or_warnings
+
+    @property
+    def max_capital_at_risk(self) -> float:
+        return round(self.calculated_shares_to_buy * abs(self.recommended_entry_range[0] - self.algorithmic_stop_loss), 2)
+
     @property
     def macro_regime(self) -> str:
-        return "EXPANSION"
-
-    @property
-    def risk_reward_ratio(self) -> float:
-        if self.entry_price_range and self.target_ladder and self.algorithmic_stop_loss:
-            risk = abs(self.entry_price_range[0] - self.algorithmic_stop_loss)
-            reward = abs(self.target_ladder[0] - self.entry_price_range[0])
-            return round(reward / max(risk, 0.01), 2)
-        return 2.5
+        return self.macro_regime_label
 
 
 # Backwards compatibility alias
