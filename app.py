@@ -660,8 +660,8 @@ if tech and df is not None and plan:
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # 1-Click Action to audit this stock
-                    if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{stock.ticker}"):
+                    # 1-Click Action to audit this stock with guaranteed unique key per category
+                    if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{cat_key}_{stock.ticker}_{c_idx}"):
                         st.session_state["active_ticker"] = stock.ticker
                         st.rerun()
 
