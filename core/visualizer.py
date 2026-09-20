@@ -67,47 +67,65 @@ def build_interactive_chart(
             row=1, col=1
         )
 
+    # Support both AlphaShieldRecommendation and InstitutionalTradePlan schemas safely
+    stop_loss = getattr(rec, "algorithmic_stop_loss", None)
+    if stop_loss is None:
+        stop_loss = getattr(rec, "hard_stop_loss", None)
+
+    entry_range = getattr(rec, "entry_price_range", None)
+    if entry_range is None:
+        entry_range = getattr(rec, "recommended_entry_range", None)
+
+    target_ladder = getattr(rec, "target_ladder", None)
+    if target_ladder is None:
+        target_ladder = getattr(rec, "target_price_ladder", None)
+    if target_ladder is None:
+        target_ladder = []
+
     # 3. Horizontal Trade Level Annotations
     # Hard Stop Loss
-    fig.add_hline(
-        y=rec.hard_stop_loss,
-        line_dash="dash",
-        line_color="#FF1744",
-        line_width=2,
-        annotation_text=f"Hard Stop: ₹{rec.hard_stop_loss}",
-        annotation_position="bottom right",
-        annotation_font_color="#FF1744",
-        row=1, col=1
-    )
+    if stop_loss is not None and stop_loss > 0:
+        fig.add_hline(
+            y=stop_loss,
+            line_dash="dash",
+            line_color="#FF1744",
+            line_width=2,
+            annotation_text=f"Hard Stop: ₹{stop_loss}",
+            annotation_position="bottom right",
+            annotation_font_color="#FF1744",
+            row=1, col=1
+        )
 
     # Entry Range (Midpoint or upper/lower)
-    entry_low, entry_high = rec.recommended_entry_range
-    fig.add_hrect(
-        y0=entry_low,
-        y1=entry_high,
-        fillcolor="rgba(33, 150, 243, 0.15)",
-        line_width=1,
-        line_dash="dot",
-        line_color="#2196F3",
-        annotation_text=f"Entry Zone (₹{entry_low} - ₹{entry_high})",
-        annotation_position="top left",
-        row=1, col=1
-    )
+    if entry_range and len(entry_range) >= 2 and entry_range[0] > 0 and entry_range[1] > 0:
+        entry_low, entry_high = entry_range[0], entry_range[1]
+        fig.add_hrect(
+            y0=entry_low,
+            y1=entry_high,
+            fillcolor="rgba(33, 150, 243, 0.15)",
+            line_width=1,
+            line_dash="dot",
+            line_color="#2196F3",
+            annotation_text=f"Entry Zone (₹{entry_low} - ₹{entry_high})",
+            annotation_position="top left",
+            row=1, col=1
+        )
 
     # Target Price Ladder
     target_colors = ["#69F0AE", "#00E676", "#00C853"]
-    for idx, target in enumerate(rec.target_price_ladder[:3]):
-        color = target_colors[idx % len(target_colors)]
-        fig.add_hline(
-            y=target,
-            line_dash="dashdot",
-            line_color=color,
-            line_width=1.5,
-            annotation_text=f"Target {idx + 1}: ₹{target}",
-            annotation_position="top right",
-            annotation_font_color=color,
-            row=1, col=1
-        )
+    for idx, target in enumerate(target_ladder[:3]):
+        if target is not None and target > 0:
+            color = target_colors[idx % len(target_colors)]
+            fig.add_hline(
+                y=target,
+                line_dash="dashdot",
+                line_color=color,
+                line_width=1.5,
+                annotation_text=f"Target {idx + 1}: ₹{target}",
+                annotation_position="top right",
+                annotation_font_color=color,
+                row=1, col=1
+            )
 
     # 4. Volume Bar Subplot
     vol_colors = ["#00E676" if c >= o else "#FF1744" for c, o in zip(df["Close"], df["Open"])]

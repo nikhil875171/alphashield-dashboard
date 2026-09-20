@@ -1,28 +1,29 @@
 import os
 import streamlit as st
 import pandas as pd
+import yfinance as yf
 from dotenv import load_dotenv
 
-# Import core analytical modules
-from core.schemas import AlphaShieldRecommendation
-from core.macro_engine import get_macro_snapshot
-from core.fundamental_engine import audit_fundamental_health
-from core.technical_engine import compute_technical_snapshot
-from core.sentiment_engine import fetch_sentiment_analysis
-from core.institutional_engine import audit_institutional_positioning
-from core.risk_manager import calculate_risk_parameters
-from core.gemini_advisor import evaluate_alpha_shield
-from core.visualizer import build_interactive_chart
+# Import core infrastructure & authentication
 from core.auth import (
     render_login_gate,
     render_user_profile_sidebar,
     is_admin,
     is_global_admin,
 )
+from core.technical_engine import compute_technical_snapshot
+from core.visualizer import build_interactive_chart
+
+# Import institutional quantitative modules
+from src.macro_engine import compute_macro_transmission, MacroRegimeState
+from src.transmission_tree import detect_company_catalyst, get_supply_chain_spillover
+from src.microstructure import validate_microstructure, MicrostructureValidation
+from src.factor_model import evaluate_factor_model, FactorScoreSummary
+from src.trap_guards import evaluate_all_traps
+from src.risk_engine import calculate_algorithmic_execution, ExecutionRiskReport
+from src.ai_agent import generate_institutional_trade_plan, InstitutionalTradePlan
 
 load_dotenv()
-
-
 
 # Bridge Streamlit Cloud secrets to os.environ if running on cloud
 try:
@@ -32,9 +33,8 @@ except Exception:
     pass
 
 # Page configuration
-
 st.set_page_config(
-    page_title="AlphaShield | Institutional Multi-Factor Alpha",
+    page_title="AlphaShield | Institutional Quantitative Engine",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -59,13 +59,13 @@ st.markdown("""
     }
     div[data-testid="stMetricLabel"] {
         color: #94A3B8;
-        font-size: 0.82rem;
+        font-size: 0.80rem;
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.35rem;
+        font-size: 1.30rem;
         font-weight: 700;
         color: #F8FAFC;
     }
@@ -73,7 +73,7 @@ st.markdown("""
     .badge-buy {
         background: linear-gradient(135deg, #059669 0%, #10B981 100%);
         color: white;
-        padding: 6px 18px;
+        padding: 8px 22px;
         border-radius: 20px;
         font-weight: 800;
         font-size: 1.25rem;
@@ -84,7 +84,7 @@ st.markdown("""
     .badge-sell {
         background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
         color: white;
-        padding: 6px 18px;
+        padding: 8px 22px;
         border-radius: 20px;
         font-weight: 800;
         font-size: 1.25rem;
@@ -95,7 +95,7 @@ st.markdown("""
     .badge-hold {
         background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
         color: white;
-        padding: 6px 18px;
+        padding: 8px 22px;
         border-radius: 20px;
         font-weight: 800;
         font-size: 1.25rem;
@@ -105,7 +105,7 @@ st.markdown("""
     .badge-avoid {
         background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%);
         color: white;
-        padding: 6px 18px;
+        padding: 8px 22px;
         border-radius: 20px;
         font-weight: 800;
         font-size: 1.25rem;
@@ -113,12 +113,25 @@ st.markdown("""
         letter-spacing: 0.05em;
         box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
     }
-    /* Accordion Customization */
-    .streamlit-expanderHeader {
+    .spillover-box {
         background-color: #151B26;
-        border-radius: 6px;
-        font-weight: 600;
-        color: #E2E8F0;
+        border: 1px solid #232D3F;
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+    .spillover-title {
+        color: #38BDF8;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-bottom: 6px;
+    }
+    .trap-card {
+        background-color: #151B26;
+        border: 1px solid #232D3F;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -129,8 +142,8 @@ if not render_login_gate():
 
 # Cached macro telemetry
 @st.cache_data(ttl=300)
-def fetch_macro_cached(is_indian: bool):
-    return get_macro_snapshot(is_indian_market=is_indian)
+def fetch_macro_cached(is_indian: bool) -> MacroRegimeState:
+    return compute_macro_transmission(is_indian_market=is_indian)
 
 
 # --- SIDEBAR: CONTROLS & PARAMETERS ---
@@ -138,21 +151,20 @@ with st.sidebar:
     # Render user profile & Sign out button
     render_user_profile_sidebar()
 
-    st.markdown("### 🛡️ **AlphaShield Controls**")
-    st.caption("Institutional Quantitative Parameters")
-
+    st.markdown("### 🛡️ **Execution Parameters**")
+    st.caption("Institutional Quantitative Risk Gates")
 
     ticker_input = st.text_input(
         "Asset Ticker (NSE or Global)",
         value="RELIANCE.NS",
-        help="Use .NS for Indian National Stock Exchange (e.g. RELIANCE.NS, TCS.NS, INFY.NS) or standard symbols for US (e.g. NVDA, AAPL)."
+        help="Use .NS for Indian National Stock Exchange (e.g. RELIANCE.NS, TCS.NS, INFY.NS) or standard US tickers (e.g. NVDA, AAPL, MSFT)."
     ).strip().upper()
 
     st.markdown("---")
-    st.markdown("#### 💼 **Capital Allocation & Risk**")
+    st.markdown("#### 💼 **Capital Allocation**")
 
     account_size = st.number_input(
-        "Total Account Capital (₹ / $)",
+        "Total Portfolio Equity (₹ / $)",
         min_value=10_000.0,
         max_value=1_000_000_000.0,
         value=1_000_000.0,
@@ -161,30 +173,30 @@ with st.sidebar:
     )
 
     risk_pct = st.slider(
-        "Max Risk Capital per Trade (%)",
+        "Max Equity at Risk per Trade (%)",
         min_value=0.5,
-        max_value=2.5,
-        value=1.5,
+        max_value=2.0,
+        value=1.0,
         step=0.1,
-        help="Institutional Zero-Ruin rule mandates maximum 1.0% to 2.0% risk per trade.",
+        help="Institutional Zero-Ruin rule mandates maximum 1.0% capital risk per trade.",
     )
 
     atr_multiplier = st.slider(
-        "Dynamic ATR Stop Multiplier",
-        min_value=1.2,
-        max_value=3.0,
+        "Dynamic ATR Hard Stop Multiplier",
+        min_value=1.4,
+        max_value=2.6,
         value=1.8,
         step=0.1,
-        help="Distance for algorithmic hard stop-loss: Entry - (Multiplier * ATR).",
+        help="Algorithmic hard stop distance: Entry - (Multiplier * ATR). Dynamically scaled by VIX regime.",
     )
 
     target_rr = st.slider(
-        "Minimum Required R:R Ratio",
+        "Asymmetric Target R:R Ratio",
         min_value=2.0,
         max_value=4.0,
         value=2.5,
         step=0.1,
-        help="Asymmetric gate: Trades below this target ratio are automatically flagged as AVOID.",
+        help="Mathematical gate: Trades projecting below this target ratio are gated as AVOID.",
     )
 
     st.markdown("---")
@@ -193,246 +205,467 @@ with st.sidebar:
         "Gemini Model",
         options=["gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"],
         index=0,
-        help="Ultra-fast, zero-throttling production Gemini models with multi-tier fallback."
+        help="Ultra-fast production Gemini models with automated multi-tier fallback cascade."
     )
 
-
-
-
-    run_btn = st.button("🚀 Run Multi-Factor Audit", use_container_width=True, type="primary")
+    run_btn = st.button("🚀 Run Institutional Audit", use_container_width=True, type="primary")
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or api_key.strip() == "YOUR_GEMINI_API_KEY_HERE":
-        st.warning("⚠️ **GEMINI_API_KEY** not set in `.env`. Running on Algorithmic Rule Engine.", icon="⚠️")
+        st.warning("⚠️ **GEMINI_API_KEY** not configured. Running on Institutional Rule Engine.", icon="⚠️")
     else:
-        st.success("🟢 Gemini Pro Engine Active", icon="✅")
+        st.success("🟢 Gemini Decision Engine Active", icon="✅")
 
-# --- HEADER: MACRO TELEMETRY TICKER RIBBON ---
+
+# --- HEADER: CROSS-ASSET MACRO TRANSMISSION RIBBON ---
 is_indian = ticker_input.endswith(".NS") or ticker_input.endswith(".BO")
-with st.spinner("Synchronizing Macro & Geopolitical Telemetry..."):
+with st.spinner("Synchronizing Cross-Asset Macro Transmission Feeds..."):
     macro = fetch_macro_cached(is_indian)
 
-# Macro ribbon metrics
+# Macro ribbon display (6 clean cards)
 m1, m2, m3, m4, m5, m6 = st.columns(6)
+
 with m1:
-    regime_color = "#10B981" if macro.macro_regime == "EXPANSION" else ("#EF4444" if macro.macro_regime == "DEFENSIVE" else "#F59E0B")
     st.metric(
         "Macro Regime",
-        macro.macro_regime,
-        delta="Stress High" if macro.volatility_kill_switch_active else "Stable",
-        delta_color="inverse" if macro.volatility_kill_switch_active else "normal"
+        macro.regime_label,
+        delta=f"Liquidity: {macro.liquidity_bias:+.1f}",
+        delta_color="normal" if macro.regime_label == "EXPANSION" else "inverse"
     )
+
 with m2:
-    st.metric(
-        "10Y-2Y Yield Spread",
-        f"{macro.yield_spread_10y_2y:.2f}%",
-        delta="Inverted" if macro.yield_spread_10y_2y < 0 else "Normal",
-        delta_color="inverse" if macro.yield_spread_10y_2y < 0 else "normal"
-    )
-with m3:
     vix_label = "India VIX" if is_indian else "CBOE VIX"
+    scale_label = f"Scale: {int(macro.position_scale_factor * 100)}%"
     st.metric(
         vix_label,
         f"{macro.vix:.2f}",
-        delta="Kill-Switch Alert" if macro.volatility_kill_switch_active else "Controlled",
-        delta_color="inverse" if macro.volatility_kill_switch_active else "normal"
+        delta=scale_label,
+        delta_color="normal" if macro.position_scale_factor >= 1.0 else "inverse"
     )
+
+with m3:
+    st.metric(
+        "10Y-2Y Yield Spread",
+        f"{macro.yield_spread:+.2f}%",
+        delta=macro.yield_curve_state,
+        delta_color="inverse" if macro.yield_spread < 0 else "normal"
+    )
+
 with m4:
-    st.metric("Dollar Index (DXY)", f"{macro.dxy:.2f}")
+    dxy_delta = f"{macro.dxy_20d_roc:+.1f}% 20d"
+    st.metric(
+        "Dollar Index (DXY)",
+        f"{macro.dxy:.2f}",
+        delta=dxy_delta,
+        delta_color="inverse" if macro.dxy_20d_roc > 2.0 else "normal"
+    )
+
 with m5:
-    st.metric("Crude Oil (WTI)", f"${macro.crude_oil:.2f}")
+    st.metric(
+        "Crude Oil (WTI)",
+        f"${macro.crude_oil:.2f}",
+        delta="Demand Shock" if macro.crude_demand_destruction else "Normal Range",
+        delta_color="inverse" if macro.crude_demand_destruction else "normal"
+    )
+
 with m6:
-    st.metric("Gold (Comex)", f"${macro.gold:.2f}")
+    st.metric(
+        "Dr. Copper / Gold",
+        f"{macro.copper_gold_ratio:.4f}",
+        delta=macro.industrial_momentum,
+        delta_color="normal" if "Expansionary" in macro.industrial_momentum else "inverse"
+    )
 
 st.markdown("<hr style='margin: 12px 0; border-color: #232D3F;'>", unsafe_allow_html=True)
 
 
-# --- MAIN COMPUTATION PIPELINE ---
-def execute_pipeline():
-    with st.spinner(f"Ingesting Multi-Factor Telemetry for {ticker_input}..."):
+# --- MAIN PIPELINE EXECUTION ---
+def execute_institutional_pipeline():
+    with st.spinner(f"Auditing Multi-Factor Telemetry & Order Flow for {ticker_input}..."):
         try:
-            # 1. Technical Microstructure
+            # 1. Technical Microstructure & OHLCV
             tech, df = compute_technical_snapshot(ticker_input, period="1y", interval="1d")
+            if df.empty:
+                st.error(f"Failed to fetch historical market data for {ticker_input}. Please verify the ticker symbol.")
+                return None, None, None, None, None, None, None, None
 
-            # 2. Fundamental Solvency Sieve
-            fund = audit_fundamental_health(ticker_input)
+            # 2. Company Info & Metadata
+            try:
+                t = yf.Ticker(ticker_input)
+                info = t.info or {}
+            except Exception:
+                info = {}
 
-            # 3. Sentiment & Euphoria Sieve
-            sent = fetch_sentiment_analysis(ticker_input, rsi=tech.rsi_14)
+            # 3. Solvency Sieve & 4-Pillar Factor Model
+            factors = evaluate_factor_model(ticker_input, df, info=info)
 
-            # 4. Smart Money / Institutional
-            inst = audit_institutional_positioning(ticker_input)
+            # 4. Microstructure & Order Flow Validation
+            micro = validate_microstructure(ticker_input, df, info=info)
 
-            # 5. Zero-Ruin Risk Calculations (Target 1 based on Asymmetric Target)
-            # Default projected target = current price + (target_rr * stop_distance)
-            stop_distance = max(tech.atr_14 * atr_multiplier, tech.current_price * 0.015)
-            projected_target = round(tech.current_price + (target_rr * stop_distance), 2)
+            # 5. Heuristic Trap Guards
+            traps = evaluate_all_traps(df, info=info)
 
-            risk = calculate_risk_parameters(
-                account_size=account_size,
+            # 6. Sectoral Spillover Tree
+            sector_val = info.get("sector", "")
+            ind_val = info.get("industry", "")
+            cat_key = detect_company_catalyst(ticker_input, sector=sector_val, industry=ind_val)
+            spillovers = get_supply_chain_spillover(cat_key)
+
+            # 7. Algorithmic Risk & Capital Preservation Engine
+            # Check Global Admin Emergency Cash Lock
+            cash_defense = st.session_state.get("emergency_cash_lock", False)
+
+            # Dynamic target projection: resistance or ATR multiplier
+            stop_dist = max(tech.atr_14 * atr_multiplier, tech.current_price * 0.015)
+            proj_target = round(tech.current_price + (target_rr * stop_dist), 2)
+
+            risk = calculate_algorithmic_execution(
+                portfolio_equity=account_size,
                 current_price=tech.current_price,
                 atr=tech.atr_14,
-                target_price=projected_target,
-                risk_pct=risk_pct,
-                atr_multiplier=atr_multiplier,
-                volatility_kill_switch=macro.volatility_kill_switch_active,
+                macro=macro,
+                resistance_target=proj_target,
+                user_risk_pct=risk_pct,
             )
 
-            # 6. Gemini Pro Structured Reasoning
-            rec = evaluate_alpha_shield(tech, fund, macro, sent, inst, risk, model_name=model_choice)
+            # Handle Global Admin emergency cash defense
+            if cash_defense:
+                risk.calculated_shares = 0
+                risk.allocated_capital = 0.0
+                risk.execution_verdict = "REJECT_EMERGENCY_CASH_LOCK"
+                risk.risk_guardrail_notes.append("Emergency Cash Defense ENGAGED by Global Administrator.")
 
-            return tech, df, fund, sent, inst, risk, rec
+            # 8. Gemini Pro Structured Decision Engine
+            trade_plan = generate_institutional_trade_plan(
+                ticker=ticker_input,
+                macro=macro,
+                micro=micro,
+                factors=factors,
+                traps=traps,
+                spillovers=spillovers,
+                risk=risk,
+                model_name=model_choice,
+            )
+
+            # Override action if emergency cash lock engaged
+            if cash_defense:
+                trade_plan.action = "AVOID"
+                trade_plan.calculated_shares = 0
+
+            return tech, df, factors, micro, traps, spillovers, risk, trade_plan
 
         except Exception as err:
-            st.error(f"Execution Error: {err}")
-            return None, None, None, None, None, None, None
+            st.error(f"Pipeline Execution Anomaly: {err}")
+            return None, None, None, None, None, None, None, None
 
 
-tech, df, fund, sent, inst, risk, rec = execute_pipeline()
+tech, df, factors, micro, traps, spillovers, risk, plan = execute_institutional_pipeline()
 
-if tech and df is not None and rec:
-    # --- TOP ROW: AI ACTION MANDATE CARD ---
+if tech and df is not None and plan:
+    # --- TOP ROW: PRIMARY EXECUTION MANDATE CARD (THE GLANCE) ---
     col_badge, col_conviction, col_rr, col_size, col_loss = st.columns([1.5, 1.2, 1.2, 1.6, 1.6])
 
     with col_badge:
-        st.markdown(f"### **{rec.ticker}**")
-        if rec.action == "BUY":
-            badge_html = f"<div class='badge-buy'>BUY MANDATE</div>"
-        elif rec.action == "SELL":
-            badge_html = f"<div class='badge-sell'>SHORT / EXIT</div>"
-        elif rec.action == "HOLD":
-            badge_html = f"<div class='badge-hold'>HOLD / WAIT</div>"
+        st.markdown(f"### **{plan.ticker}**")
+        if plan.action == "BUY":
+            badge_html = "<div class='badge-buy'>BUY MANDATE</div>"
+        elif plan.action == "SELL":
+            badge_html = "<div class='badge-sell'>SHORT / EXIT</div>"
+        elif plan.action == "HOLD":
+            badge_html = "<div class='badge-hold'>HOLD / WAIT</div>"
         else:
-            badge_html = f"<div class='badge-avoid'>AVOID (HIGH RISK)</div>"
+            badge_html = "<div class='badge-avoid'>AVOID (HIGH RISK)</div>"
         st.markdown(badge_html, unsafe_allow_html=True)
 
     with col_conviction:
-        st.metric("Conviction Score", f"{rec.conviction_score * 100:.0f}%", delta=rec.risk_regime)
+        st.metric(
+            "Conviction Score",
+            f"{plan.conviction_score * 100:.0f}%",
+            delta=f"Regime: {plan.macro_regime}"
+        )
 
     with col_rr:
         st.metric(
             "Risk / Reward",
-            f"{risk.risk_reward_ratio_1}:1",
+            f"{risk.risk_reward_ratio:.2f}:1",
             delta="Asymmetric Pass" if risk.asymmetric_rr_passed else "Below 2.5x Gate",
             delta_color="normal" if risk.asymmetric_rr_passed else "inverse"
         )
 
     with col_size:
         st.metric(
-            "Max Position Sizing",
-            f"{risk.position_size_shares:,} Shares",
-            delta=f"₹/{risk.total_allocated_capital:,.0f} ({risk.portfolio_allocation_pct}%)"
+            "Calculated Position",
+            f"{plan.calculated_shares:,} Shares",
+            delta=f"₹/{risk.allocated_capital:,.0f} ({risk.portfolio_allocation_pct:.1f}% Equity)"
         )
 
     with col_loss:
         st.metric(
-            "Max Downside at Risk",
-            f"₹/{risk.risk_capital_amount:,.2f}",
-            delta=f"Capped at {risk.risk_pct_selected}%"
+            "Max Capital at Risk",
+            f"₹/{risk.max_equity_at_risk:,.2f}",
+            delta=f"Hard Stop: ₹{plan.algorithmic_stop_loss}"
         )
 
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    # Prominent Capital Sieve / Warning Banner if active
+    if factors.sieve_verdict != "PASS":
+        st.error(
+            f"🚨 **Zero-Ruin Capital Preservation Sieve Active ({factors.sieve_verdict})**: "
+            f"{'; '.join(factors.sieve_rejection_reasons)}. Capital allocation blocked.",
+            icon="🛡️"
+        )
+    elif st.session_state.get("emergency_cash_lock", False):
+        st.error("🚨 **Emergency Cash Defense ENGAGED by Global Administrator**: All long trades restricted to 100% cash.", icon="🔒")
+    elif len(traps) > 0:
+        st.warning(f"⚠️ **Structural Heuristic Trap Alert**: {traps[0]}", icon="🪤")
+
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
 
     # --- CENTRAL PLOTLY INTERACTIVE CHART ---
-    fig = build_interactive_chart(df, tech, rec)
+    fig = build_interactive_chart(df, tech, plan)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
 
-    # --- BOTTOM SECTION: FACTOR SIEVE ACCORDIONS & GOVERNANCE ---
+    # --- BOTTOM SECTION: INSTITUTIONAL DEEP-DIVE TABS ---
     tab_titles = [
-        "🧠 Multi-Factor Thesis & Kill-Switches",
-        "⚖️ Fundamental Solvency (Altman & Piotroski)",
-        "📊 Technical Microstructure & Volatility",
-        "👥 Crowdsourced Sentiment & Smart Money",
+        "🧠 Trade Plan & Kill-Switches",
+        "🔗 Supply Chain & Spillover Tree",
+        "⚖️ Solvency Sieve & Factor Grades",
+        "🌊 Microstructure & Options Flow",
+        "🪤 Heuristic Trap Detectors",
     ]
 
     if is_global_admin():
-        tab_titles.append("👑 Global Governance (nikhil875171 Only)")
+        tab_titles.append("👑 Global Governance (nikhil875171)")
     elif is_admin():
         tab_titles.append("🛡️ Admin Operational Telemetry")
 
     tabs = st.tabs(tab_titles)
-    t1, t2, t3, t4 = tabs[0], tabs[1], tabs[2], tabs[3]
 
-    with t1:
-        c_thesis, c_kill = st.columns([1.5, 1.0])
-        with c_thesis:
-            st.markdown("#### **Executive Multi-Factor Rationale**")
-            for factor, rationale in rec.multi_factor_thesis.items():
-                st.markdown(f"**• {factor}:** {rationale}")
+    # TAB 1: TRADE PLAN & KILL SWITCHES
+    with tabs[0]:
+        c1, c2 = st.columns([1.4, 1.0])
+        with c1:
+            st.markdown("#### **Executive Quantitative Thesis & Decision Rationale**")
+            st.info(
+                f"**Macro State:** {plan.macro_regime} | "
+                f"**Solvency Sieve:** {factors.sieve_verdict} | "
+                f"**Composite Alpha Score:** {factors.composite_factor_score}/100"
+            )
 
-        with c_kill:
-            st.markdown("#### **🚨 Primary Kill-Switches**")
-            st.caption("Immediate thesis invalidation triggers:")
-            for ks in rec.primary_kill_switches:
+            # Factor pillars overview
+            p_cols = st.columns(4)
+            p_cols[0].metric("Value Pillar", f"{factors.factor_grades.get('Value', 50):.0f}/100")
+            p_cols[1].metric("Quality Pillar", f"{factors.factor_grades.get('Quality', 50):.0f}/100")
+            p_cols[2].metric("Momentum Pillar", f"{factors.factor_grades.get('Momentum', 50):.0f}/100")
+            p_cols[3].metric("Microstructure", f"{factors.factor_grades.get('Microstructure', 50):.0f}/100")
+
+            st.markdown("##### **Institutional Synthesis & Rationale:**")
+            for warning in plan.detected_traps_or_warnings:
+                if "No active" in warning:
+                    st.success(f"✅ {warning}")
+                else:
+                    st.warning(f"⚠️ {warning}")
+
+        with c2:
+            st.markdown("#### **🚨 Execution Kill-Switches**")
+            st.caption("Immediate algorithmic invalidation triggers:")
+            for ks in plan.execution_kill_switches:
                 st.markdown(f"- 🔴 `{ks}`")
 
             st.markdown("---")
-            st.markdown(f"**Recommended Entry Zone:** ₹{rec.recommended_entry_range[0]} – ₹{rec.recommended_entry_range[1]}")
-            st.markdown(f"**Hard Stop-Loss:** ₹{rec.hard_stop_loss}")
-            st.markdown(f"**Target Price Ladder:** {', '.join([f'₹{t}' for t in rec.target_price_ladder])}")
+            st.markdown("#### **🎯 Execution Price Levels**")
+            st.markdown(f"**Recommended Entry Zone:** ₹{plan.entry_price_range[0]} – ₹{plan.entry_price_range[1]}")
+            st.markdown(f"**Algorithmic Hard Stop:** ₹{plan.algorithmic_stop_loss} *(Per-share risk: ₹{risk.per_share_risk:.2f})*")
+            
+            target_str = " | ".join([f"T{i+1}: ₹{t}" for i, t in enumerate(plan.target_ladder)])
+            st.markdown(f"**Target Price Ladder:** {target_str}")
+            st.markdown(f"**Risk/Reward Ratio:** **{risk.risk_reward_ratio:.2f}:1** (Gate: >= 2.5:1)")
 
-    with t2:
-        f1, f2, f3, f4 = st.columns(4)
-        with f1:
-            z_val = f"{fund.altman_z_score:.2f}" if fund.altman_z_score is not None else "N/A"
-            st.metric("Altman Z-Score (Solvency)", z_val, delta=fund.altman_zone, delta_color="normal" if "Safe" in fund.altman_zone else "inverse")
-        with f2:
-            f_val = f"{fund.piotroski_f_score}/9" if fund.piotroski_f_score is not None else "N/A"
-            st.metric("Piotroski F-Score", f_val, delta=fund.piotroski_grade, delta_color="normal" if "Strong" in fund.piotroski_grade else "inverse")
-        with f3:
-            de_val = f"{fund.debt_to_equity}x" if fund.debt_to_equity is not None else "N/A"
-            st.metric("Debt to Equity", de_val)
-        with f4:
-            roe_val = f"{fund.roe}%" if fund.roe is not None else "N/A"
-            st.metric("Return on Equity (ROE)", roe_val)
+    # TAB 2: SUPPLY CHAIN & SECTORAL SPILLOVER TREE
+    with tabs[1]:
+        theme_title = spillovers.get("theme", ["Sector Transmission"])[0]
+        theme_desc = spillovers.get("description", ["Supply chain spillover analysis"])[0]
 
-        if fund.audit_notes:
-            st.markdown("##### **Fundamental Audit Findings:**")
-            for note in fund.audit_notes:
-                st.info(note)
+        st.markdown(f"### 🔗 **{theme_title}**")
+        st.caption(theme_desc)
 
-    with t3:
-        p1, p2, p3, p4 = st.columns(4)
-        with p1:
-            st.metric("RSI (14-Day)", f"{tech.rsi_14:.2f}", delta="Overbought" if tech.rsi_14 > 70 else ("Oversold" if tech.rsi_14 < 30 else "Balanced"))
-        with p2:
-            st.metric("ATR (14-Day Volatility)", f"₹{tech.atr_14:.2f}", delta=f"{((tech.atr_14 / tech.current_price) * 100):.2f}% of price")
-        with p3:
-            st.metric("Volume Surge vs ADV", f"{tech.volume_surge_ratio:.2f}x", delta="Above Average" if tech.volume_surge_ratio > 1.0 else "Normal")
-        with p4:
-            st.metric("Estimated Bid-Ask Slippage", f"{tech.estimated_spread_impact_pct:.2f}%")
+        sc1, sc2, sc3 = st.columns(3)
 
-        st.markdown("##### **Moving Average Architecture:**")
-        ma_col1, ma_col2, ma_col3, ma_col4 = st.columns(4)
-        ma_col1.write(f"**20 EMA:** ₹{tech.ema_20}")
-        ma_col2.write(f"**50 EMA:** ₹{tech.ema_50}")
-        ma_col3.write(f"**200 EMA:** ₹{tech.ema_200}")
-        ma_col4.write(f"**VWAP:** ₹{tech.vwap}")
+        with sc1:
+            st.markdown("<div class='spillover-box'><div class='spillover-title'>🔺 Upstream Positive Beneficiaries</div>", unsafe_allow_html=True)
+            for item in spillovers.get("upstream_positive", []):
+                st.markdown(f"• **{item}**")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    with t4:
-        s1, s2 = st.columns([1, 1])
-        with s1:
-            st.markdown("#### **Crowdsourced & News Sentiment**")
-            st.metric("Sentiment Score", f"{sent.sentiment_score:+.2f}", delta=sent.sentiment_label)
-            if sent.retail_euphoria_flag:
-                st.error("🚨 **Retail Euphoria Warning:** Crowd sentiment is excessively bullish while technical indicators reflect extreme overbought conditions. High risk of contrarian pullback!")
+        with sc2:
+            st.markdown("<div class='spillover-box'><div class='spillover-title'>🔻 Midstream & Downstream Drivers</div>", unsafe_allow_html=True)
+            for item in spillovers.get("midstream_positive", []) + spillovers.get("downstream_positive", []):
+                st.markdown(f"• **{item}**")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with sc3:
+            st.markdown("<div class='spillover-box'><div class='spillover-title'>⚠️ Negative Spillovers & Budget Cannibalization</div>", unsafe_allow_html=True)
+            for item in spillovers.get("negative_spillovers", []):
+                st.markdown(f"• **{item}**")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # TAB 3: SOLVENCY SIEVE & FACTOR GRADES
+    with tabs[2]:
+        st.markdown("#### **Zero-Ruin Capital Preservation Sieve Audit**")
+
+        f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns(5)
+        with f_col1:
+            z_score = factors.altman_z_score
+            st.metric(
+                "Altman Z-Score",
+                f"{z_score:.2f}",
+                delta="Safe Zone" if z_score >= 2.99 else ("Grey Zone" if z_score >= 1.81 else "Distress (< 1.81)"),
+                delta_color="normal" if z_score >= 1.81 else "inverse"
+            )
+
+        with f_col2:
+            f_score = factors.piotroski_f_score
+            st.metric(
+                "Piotroski F-Score",
+                f"{f_score}/9",
+                delta="Strong" if f_score >= 7 else ("Moderate" if f_score >= 4 else "Failing (<= 3)"),
+                delta_color="normal" if f_score >= 4 else "inverse"
+            )
+
+        with f_col3:
+            sloan_ratio = factors.sloan_accrual_ratio
+            st.metric(
+                "Sloan Accrual Ratio",
+                f"{sloan_ratio * 100:.1f}%",
+                delta="Aggressive Accruals" if sloan_ratio > 0.10 else "High Quality Cash Flow",
+                delta_color="inverse" if sloan_ratio > 0.10 else "normal"
+            )
+
+        with f_col4:
+            roe_val = factors.solvency_audit.get("ROE (%)", 0.0)
+            st.metric("Return on Equity", f"{roe_val:.1f}%")
+
+        with f_col5:
+            de_val = factors.solvency_audit.get("Debt-to-Equity", 0.0)
+            st.metric("Debt-to-Equity", f"{de_val:.2f}x")
+
+        st.markdown("---")
+        st.markdown("#### **Four-Pillar Factor Architecture**")
+
+        pg_col1, pg_col2 = st.columns(2)
+        with pg_col1:
+            st.write(f"**Value Pillar Score:** {factors.factor_grades.get('Value', 50.0):.1f} / 100")
+            st.progress(int(factors.factor_grades.get('Value', 50.0)))
+
+            st.write(f"**Quality Pillar Score:** {factors.factor_grades.get('Quality', 50.0):.1f} / 100")
+            st.progress(int(factors.factor_grades.get('Quality', 50.0)))
+
+        with pg_col2:
+            st.write(f"**Momentum Pillar Score:** {factors.factor_grades.get('Momentum', 50.0):.1f} / 100")
+            st.progress(int(factors.factor_grades.get('Momentum', 50.0)))
+
+            st.write(f"**Microstructure Pillar Score:** {factors.factor_grades.get('Microstructure', 50.0):.1f} / 100")
+            st.progress(int(factors.factor_grades.get('Microstructure', 50.0)))
+
+    # TAB 4: MICROSTRUCTURE & OPTIONS FLOW
+    with tabs[3]:
+        st.markdown("#### **Institutional Microstructure & Order Flow Verification**")
+
+        u1, u2, u3, u4 = st.columns(4)
+        with u1:
+            st.metric(
+                "Delivery Percentage",
+                f"{micro.delivery_pct:.1f}%",
+                delta="Institutional Validation Pass" if micro.delivery_valid else "Below Institutional Threshold",
+                delta_color="normal" if micro.delivery_valid else "inverse"
+            )
+
+        with u2:
+            st.metric(
+                "FII / DII Confluence",
+                "Confluent Inflow" if micro.institutional_confluence else "Divergent Flow",
+                delta="Institutional Sponsorship" if micro.institutional_confluence else "Cautious",
+                delta_color="normal" if micro.institutional_confluence else "inverse"
+            )
+
+        with u3:
+            pcr_str = f"{micro.put_call_ratio:.2f}"
+            st.metric(
+                "Put-Call Ratio (PCR)",
+                pcr_str,
+                delta=micro.pcr_regime
+            )
+
+        with u4:
+            st.metric(
+                "Estimated Slippage Impact",
+                f"{micro.estimated_bid_ask_spread_pct:.2f}%",
+                delta="High Liquidity" if micro.liquidity_passed else "Illiquid / High Spread",
+                delta_color="normal" if micro.liquidity_passed else "inverse"
+            )
+
+        st.markdown("##### **Options Skew & Strike Geometry:**")
+        sk1, sk2, sk3 = st.columns(3)
+        sk1.write(f"**Max Pain Strike:** ₹{micro.max_pain_strike if micro.max_pain_strike else 'N/A'}")
+        sk2.write(f"**Major Call Resistance Wall:** ₹{micro.call_resistance_wall if micro.call_resistance_wall else 'N/A'}")
+        sk3.write(f"**Major Put Support Floor:** ₹{micro.put_support_wall if micro.put_support_wall else 'N/A'}")
+
+        if micro.microstructure_warnings:
+            st.markdown("##### **Microstructure Alerts:**")
+            for w in micro.microstructure_warnings:
+                st.warning(w)
+
+    # TAB 5: HEURISTIC TRAP DETECTORS
+    with tabs[4]:
+        st.markdown("#### **Quantitative Heuristic Trap Diagnostics**")
+        st.caption("Active monitoring for market failure modes, fake breakouts, and narrative traps.")
+
+        t_col1, t_col2 = st.columns(2)
+
+        with t_col1:
+            st.markdown("<div class='trap-card'>", unsafe_allow_html=True)
+            st.markdown("##### **1. Exhaustion Trap**")
+            st.caption("Detects 3-day rallies into overhead resistance on fading volume or RSI > 75.")
+            exh_detected = any("EXHAUSTION TRAP" in t for t in traps)
+            if exh_detected:
+                st.error("🚨 **TRAP DETECTED**: Volume divergence indicates institutional buying has dried up.")
             else:
-                st.success("✅ No Retail Euphoria Divergence detected.")
+                st.success("✅ **CLEAN**: Volume expansion validates price trend.")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-            st.markdown("##### **Recent Curated Headlines:**")
-            for news in sent.recent_news[:4]:
-                st.markdown(f"- [{news['title']}]({news['link']}) *({news['source']} — {news['sentiment']})*")
+            st.markdown("<div class='trap-card'>", unsafe_allow_html=True)
+            st.markdown("##### **2. Priced-in Rumor Trap**")
+            st.caption("Flags > 20% price surges in the 20 days prior to expected earnings/catalysts.")
+            rumor_detected = any("PRICED-IN RUMOR" in t for t in traps)
+            if rumor_detected:
+                st.error("🚨 **TRAP DETECTED**: High probability of 'sell-the-news' profit taking.")
+            else:
+                st.success("✅ **CLEAN**: Asset trading within balanced momentum bounds.")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        with s2:
-            st.markdown("#### **Smart Money & Institutional Positioning**")
-            st.metric("Institutional Holding", f"{inst.institutional_ownership_pct}%" if inst.institutional_ownership_pct else "N/A")
-            st.metric("Insider / Promoter Ownership", f"{inst.insider_ownership_pct}%" if inst.insider_ownership_pct else "N/A")
-            st.metric("Short Float Interest", f"{inst.short_float_pct}%" if inst.short_float_pct else "N/A")
-            st.info(f"**Positioning Signal:** {inst.institutional_signal}")
+        with t_col2:
+            st.markdown("<div class='trap-card'>", unsafe_allow_html=True)
+            st.markdown("##### **3. Cyclical Value Trap**")
+            st.caption("Prevents classifying cyclical commodity/materials producers as 'cheap' at cyclical peak earnings.")
+            cyc_detected = any("CYCLICAL VALUE TRAP" in t for t in traps)
+            if cyc_detected:
+                st.error("🚨 **TRAP DETECTED**: Trailing P/E reflects peak-cycle earnings rather than true margin discount.")
+            else:
+                st.success("✅ **CLEAN**: Valuation not distorted by cyclical peak anomaly.")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- 5th TAB: GOVERNANCE & PRIVILEGED CONTROLS ---
+            st.markdown("<div class='trap-card'>", unsafe_allow_html=True)
+            st.markdown("##### **4. Geopolitical Overreaction**")
+            st.caption("Distinguishes between transitory headline fear and structural supply chokepoint disruptions.")
+            geo_detected = any("GEOPOLITICAL OVERREACTION" in t for t in traps)
+            if geo_detected:
+                st.info("ℹ️ **POTENTIAL V-BOTTOM**: Transitory headline dip may offer favorable mean-reverting entry.")
+            else:
+                st.success("✅ **CLEAN**: No abnormal headline overreaction distortion.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # TAB 6: GOVERNANCE & PRIVILEGED CONTROLS (RBAC ENFORCED)
     if is_global_admin():
-        with tabs[4]:
+        with tabs[5]:
             st.markdown("### 👑 **Global Governance & Root Authority**")
             st.success("🔐 **Authenticated as Global Administrator (`nikhil875171`).** Complete root governance active.", icon="👑")
 
@@ -450,7 +683,7 @@ if tech and df is not None and rec:
                 api_k = os.getenv("GEMINI_API_KEY", "")
                 masked_k = (api_k[:7] + "..." + api_k[-4:]) if len(api_k) > 12 else "Not Configured"
                 st.write(f"**Gemini API Key:** `{masked_k}`")
-                st.write(f"**Default Model Cascade:** `gemini-flash-lite-latest` ➔ `gemini-3.1-flash-lite`")
+                st.write(f"**Default Model Cascade:** `gemini-flash-lite-latest` ➔ `gemini-3.1-flash-lite` ➔ `gemini-flash-latest`")
 
             with gov_col2:
                 st.markdown("#### 👥 **Authorized Personnel Registry**")
@@ -463,17 +696,15 @@ if tech and df is not None and rec:
                 """)
 
     elif is_admin():
-        with tabs[4]:
+        with tabs[5]:
             st.markdown("### 🛡️ **Administrator Operational Telemetry**")
             st.info("Logged in as Administrator (`nkk_admin`). Standard operations active.")
             a_col1, a_col2 = st.columns(2)
             with a_col1:
-                st.metric("System Health", "ONLINE", delta="All Engines Operational")
+                st.metric("System Health", "ONLINE", delta="All Quantitative Engines Operational")
                 st.metric("Active Model", model_choice)
             with a_col2:
                 st.metric("Session Mode", "Authenticated Admin")
-                st.caption("Note: Root policy changes and emergency kill-switches are restricted to Global Administrator (nikhil875171).")
+                st.caption("Note: Root policy changes and emergency kill-switches are strictly restricted to Global Administrator (nikhil875171).")
 
-st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Institutional Capital Preservation System | For Educational & Quantitative Decision-Support Only</div>", unsafe_allow_html=True)
-
-
+st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Institutional Quantitative Engine | Capital Preservation & Decision Support Architecture</div>", unsafe_allow_html=True)
