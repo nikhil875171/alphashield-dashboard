@@ -1,4 +1,5 @@
 import os
+import math
 from typing import Dict, List
 import streamlit as st
 import pandas as pd
@@ -16,7 +17,11 @@ from core.auth import (
     update_user_credentials,
 )
 from core.technical_engine import compute_technical_snapshot
-from core.visualizer import build_interactive_chart
+from core.visualizer import (
+    build_interactive_chart,
+    compute_institutional_dimension_scores,
+    build_institutional_radar_chart,
+)
 
 # Import institutional quantitative & thematic modules
 from src.macro_engine import compute_macro_transmission, MacroRegimeState
@@ -338,6 +343,112 @@ st.markdown("""
         color: #FDA4AF;
         font-weight: 700;
         font-size: 1.05rem;
+    }
+
+    /* 360-Degree Institutional Dimension Cards & ELI5 Containers */
+    .dimension-card {
+        background: linear-gradient(145deg, #101827 0%, #162035 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 16px 18px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        margin-bottom: 14px;
+    }
+    .dimension-card:hover {
+        border-color: rgba(56, 189, 248, 0.40);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12);
+    }
+    .dim-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        gap: 8px;
+    }
+    .dim-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94A3B8;
+        letter-spacing: 0.04em;
+    }
+    .dim-meter-track {
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 999px;
+        height: 5px;
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    .dim-meter-fill-safe {
+        background: linear-gradient(90deg, #10B981, #34D399);
+        height: 100%;
+        border-radius: 999px;
+    }
+    .dim-meter-fill-caution {
+        background: linear-gradient(90deg, #F59E0B, #FBBF24);
+        height: 100%;
+        border-radius: 999px;
+    }
+    .dim-meter-fill-danger {
+        background: linear-gradient(90deg, #EF4444, #FB7185);
+        height: 100%;
+        border-radius: 999px;
+    }
+    .dim-metric-sub {
+        font-size: 0.84rem;
+        color: #94A3B8;
+        margin-bottom: 10px;
+    }
+    .eli5-callout {
+        background: rgba(30, 41, 59, 0.55);
+        border-left: 3px solid #38BDF8;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin: 8px 0;
+    }
+    .eli5-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: #38BDF8;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .eli5-text {
+        font-size: 0.86rem;
+        color: #E2E8F0;
+        line-height: 1.48;
+        font-style: italic;
+    }
+    .verdict-box {
+        font-size: 0.85rem;
+        color: #CBD5E1;
+        line-height: 1.45;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        padding-top: 10px;
+        margin-top: 6px;
+    }
+    .dim-overview-banner {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
     /* Thematic Discovery Card */
@@ -1065,113 +1176,397 @@ if audit_results and audit_results[0] is not None:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("#### 🧩 **Institutional Core Dimensions (ELI5 Deep Dive)**")
-        st.caption("Click the context expanders on any card to see how institutional analysts interpret these numbers:")
+        # =========================================================================
+        # 360° INSTITUTIONAL MULTI-FACTOR MATRIX (ZERO-CLICK ELI5 & RADAR)
+        # =========================================================================
+        st.markdown("#### 🧩 **Institutional Core Dimensions (360° Multi-Factor Matrix)**")
+        st.caption("Institutional forensic gates paired with intuitive plain-English insights — zero manual clicking required.")
 
-        # Six Interactive Explanatory Cards
-        t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
+        # Compute normalized scores for the 6 core pillars
+        dim_scores = compute_institutional_dimension_scores(macro, factors, tech, micro, thematic, risk)
+        total_score = sum(d["score"] for d in dim_scores.values())
+        avg_score = int(total_score / len(dim_scores)) if dim_scores else 50
+        passing_pillars = sum(1 for d in dim_scores.values() if d["class"] == "safe")
+        caution_pillars = sum(1 for d in dim_scores.values() if d["class"] == "caution")
+        danger_pillars = sum(1 for d in dim_scores.values() if d["class"] == "danger")
 
-        with t_c1:
-            mood_status = "🟢 Calm & Safe" if macro.market_mood_color == "green" else ("🟡 Choppy Waters" if macro.market_mood_color == "yellow" else "🔴 Stormy Seas")
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>1. 🌡️ Market Mood</div>
-                <div class='tile-status-{"safe" if macro.market_mood_color == "green" else ("caution" if macro.market_mood_color == "yellow" else "danger")}'>{mood_status}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>VIX: <strong>{macro.vix:.1f}</strong></div>
+        # Top Control Strip: View Mode + ELI5 Insights Toggle
+        c_mode_col, c_tgl_col = st.columns([2.5, 1.5])
+        with c_mode_col:
+            selected_dim_view = st.segmented_control(
+                "Dimension View Mode",
+                options=["✨ 360° Matrix & Cards", "🕸️ Interactive Spider Radar", "🎯 Single Pillar Spotlight"],
+                default="✨ 360° Matrix & Cards",
+                label_visibility="collapsed",
+            )
+            if not selected_dim_view:
+                selected_dim_view = "✨ 360° Matrix & Cards"
+
+        with c_tgl_col:
+            show_eli5_insights = st.toggle("💡 Plain-English (ELI5) Insights", value=True)
+
+        # Overview Header Banner
+        health_grade = "INSTITUTIONAL GRADE" if avg_score >= 75 else ("MODERATE CONVICTION" if avg_score >= 55 else "CAPITAL PRESERVATION RISK")
+        health_badge_class = "safe" if avg_score >= 75 else ("caution" if avg_score >= 55 else "danger")
+        score_color = "#34D399" if avg_score >= 75 else ("#FBBF24" if avg_score >= 55 else "#FB7185")
+
+        st.markdown(f"""
+        <div class='dim-overview-banner'>
+            <div>
+                <span style='font-size: 0.78rem; text-transform: uppercase; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;'>Composite Multi-Factor Health</span>
+                <div style='display: flex; align-items: center; gap: 10px; margin-top: 4px;'>
+                    <span style='font-size: 1.55rem; font-weight: 800; color: {score_color};'>{avg_score} / 100</span>
+                    <span class='tile-status-{health_badge_class}' style='font-size: 0.88rem; padding: 4px 10px; background: rgba(255,255,255,0.05); border-radius: 999px;'>{health_grade}</span>
+                </div>
             </div>
-            """, unsafe_allow_html=True)
-
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown("**In Plain Words:** Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.")
-                st.markdown(f"**The Verdict:** {macro.market_mood_desc}")
-
-        with t_c2:
-            z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
-            health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Insolvent Risk")
-            health_class = "safe" if z_score >= 2.99 else ("caution" if z_score >= 1.81 else "danger")
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>2. 🏥 Company Health</div>
-                <div class='tile-status-{health_class}'>{health_status}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Z-Score: <strong>{z_score:.2f}</strong></div>
+            <div style='display: flex; gap: 14px; flex-wrap: wrap; align-items: center;'>
+                <div style='text-align: center; padding: 0 8px;'>
+                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Passing Gates</div>
+                    <div style='font-size: 1.15rem; font-weight: 700; color: #34D399;'>🟢 {passing_pillars} of 6</div>
+                </div>
+                <div style='text-align: center; padding: 0 8px; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);'>
+                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Caution</div>
+                    <div style='font-size: 1.15rem; font-weight: 700; color: #FBBF24;'>🟡 {caution_pillars}</div>
+                </div>
+                <div style='text-align: center; padding: 0 8px;'>
+                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Distress / Danger</div>
+                    <div style='font-size: 1.15rem; font-weight: 700; color: #FB7185;'>🔴 {danger_pillars}</div>
+                </div>
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?")
-                is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
-                beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
-                f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
-                sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+        # Precalculate shared data & resilient NaN safeguards
+        rr = getattr(risk, "risk_reward_ratio", 0.0) if risk else 0.0
+        if rr is None or math.isnan(rr) or rr <= 0:
+            odds_disp = "0.0x (Risk Gate Tripped)"
+            alloc_disp = "0 shares (₹0.00 — Capital Protected)"
+        else:
+            odds_disp = f"{rr:.1f}x"
+            alloc_cap = getattr(risk, "allocated_capital", 0.0)
+            alloc_cap_str = f"{currency_sym}{alloc_cap:,.2f}" if (alloc_cap and not math.isnan(alloc_cap)) else f"{currency_sym}0.00"
+            alloc_disp = f"{plan.calculated_shares} shares ({alloc_cap_str})"
 
-                beneish_note = "⚠️ Forensic Distortion Warning" if is_manip else "✅ Clean Accounting"
-                st.markdown(f"**The Verdict:** Solvency Status: **{plan.solvency_status}**.")
-                st.markdown(f"• Altman Z-Score: **{z_score:.2f}** (Distress: < 1.81, Safe: > 2.99)")
-                st.markdown(f"• Piotroski F-Score: **{f_score}/9** (Operating Quality)")
-                st.markdown(f"• Sloan Accruals: **{sloan_val * 100:.1f}%** (Quality Threshold: < 10%)")
-                st.markdown(f"• Beneish M-Score: **{beneish_val:.2f}** ({beneish_note})")
+        z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
+        is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+        beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+        f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+        sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+        beneish_note = "⚠️ Forensic Warning" if is_manip else "✅ Clean Accounting"
 
-        with t_c3:
-            is_uptrend = tech.current_price > tech.ema_50 and tech.rsi_14 < 70
-            is_overheated = tech.rsi_14 >= 70
-            mom_status = "🟢 Strong Uptrend" if is_uptrend else ("🟡 Resting" if is_overheated else "🔴 Downtrend")
-            mom_class = "safe" if is_uptrend else ("caution" if is_overheated else "danger")
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>3. 🚀 Price Trend</div>
-                <div class='tile-status-{mom_class}'>{mom_status}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>RSI: <strong>{tech.rsi_14:.1f}</strong></div>
-            </div>
-            """, unsafe_allow_html=True)
+        # -------------------------------------------------------------------------
+        # VIEW 1: 360° MATRIX & CARDS (DEFAULT)
+        # -------------------------------------------------------------------------
+        if selected_dim_view == "✨ 360° Matrix & Cards":
+            # Top Visual Strip: Interactive Radar on Left, 6-Pillar Health Meters on Right
+            vis_r1, vis_r2 = st.columns([1.15, 1.45])
+            with vis_r1:
+                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker)
+                st.plotly_chart(radar_fig, use_container_width=True, config={"displayModeBar": False})
+            with vis_r2:
+                st.markdown("<div style='font-size: 0.85rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; margin-bottom: 8px;'>Pillar Readiness vs Institutional Threshold (60)</div>", unsafe_allow_html=True)
+                for p_name, p_data in dim_scores.items():
+                    meter_fill_class = f"dim-meter-fill-{p_data['class']}"
+                    st.markdown(f"""
+                    <div style='margin-bottom: 8px;'>
+                        <div style='display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 3px;'>
+                            <span style='color: #E2E8F0; font-weight: 600;'>{p_data['axis_label']}</span>
+                            <span><strong style='color: #F8FAFC;'>{p_data['score']}</strong>/100 • <span class='tile-status-{p_data["class"]}' style='font-size: 0.80rem;'>{p_data["status"]}</span></span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='{meter_fill_class}' style='width: {p_data["score"]}%;'></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown("**In Plain Words:** Are more buyers rushing in, or are investors quietly heading for the exits?")
-                st.markdown(f"**The Verdict:** Price is {'above 50-day average' if tech.current_price > tech.ema_50 else 'below 50-day average'}.")
+            # Reorganized 3-Column x 2-Row Grid of Luxury Dimension Cards (Zero-Click ELI5)
+            r1_c1, r1_c2, r1_c3 = st.columns(3)
+            with r1_c1:
+                # 1. Market Mood
+                p1 = dim_scores["Market Mood"]
+                eli5_html = """
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.</div>
+                </div>
+                """ if show_eli5_insights else ""
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>1. 🌡️ Market Mood</span>
+                            <span class='tile-status-{p1["class"]}'>{p1["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p1["class"]}' style='width: {p1["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>VIX: <strong>{macro.vix:.1f}</strong> • Volatility Regime: <strong>{macro.regime.value if hasattr(macro, "regime") else "NORMAL"}</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Institutional Verdict:</strong> {macro.market_mood_desc}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with t_c4:
-            smart_status = "🟢 Whales Buying" if micro.delivery_valid else "🟡 Day Trading"
-            smart_class = "safe" if micro.delivery_valid else "caution"
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>4. 🐋 Smart Money</div>
-                <div class='tile-status-{smart_class}'>{smart_status}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong></div>
-            </div>
-            """, unsafe_allow_html=True)
+            with r1_c2:
+                # 2. Company Health
+                p2 = dim_scores["Company Health"]
+                eli5_html = """
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?</div>
+                </div>
+                """ if show_eli5_insights else ""
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>2. 🏥 Company Health</span>
+                            <span class='tile-status-{p2["class"]}'>{p2["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p2["class"]}' style='width: {p2["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>Altman Z: <strong>{z_score:.2f}</strong> • Solvency: <strong>{plan.solvency_status}</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Forensic Gate Checks:</strong>
+                        <div style='margin-top: 4px; font-size: 0.82rem; line-height: 1.5;'>
+                            • Altman Z-Score: <strong>{z_score:.2f}</strong> (Distress: &lt; 1.81, Safe: &gt; 2.99)<br>
+                            • Piotroski F-Score: <strong>{f_score}/9</strong> (Operating Quality)<br>
+                            • Sloan Accruals: <strong>{sloan_val * 100:.1f}%</strong> (Cash Backed &lt; 10%)<br>
+                            • Beneish M-Score: <strong>{beneish_val:.2f}</strong> ({beneish_note})
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown("**In Plain Words:** Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.")
-                st.markdown(f"**The Verdict:** {micro.delivery_status_msg}")
+            with r1_c3:
+                # 3. Price Trend
+                p3 = dim_scores["Price Trend"]
+                eli5_html = """
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>Are more buyers rushing in, or are investors quietly heading for the exits? Moving averages reveal the institutional money footprint.</div>
+                </div>
+                """ if show_eli5_insights else ""
+                trend_msg = "above 50-day baseline" if tech.current_price > tech.ema_50 else "below 50-day baseline"
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>3. 🚀 Price Trend</span>
+                            <span class='tile-status-{p3["class"]}'>{p3["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p3["class"]}' style='width: {p3["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>RSI: <strong>{tech.rsi_14:.1f}</strong> • Price vs 50 EMA: <strong>{((tech.current_price - tech.ema_50) / tech.ema_50) * 100:+.1f}%</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Institutional Verdict:</strong> Price is <strong>{trend_msg}</strong>.<br>
+                        <span style='font-size: 0.80rem; color: #94A3B8;'>20 EMA: {currency_sym}{tech.ema_20:,.2f} | 50 EMA: {currency_sym}{tech.ema_50:,.2f} | 200 EMA: {currency_sym}{tech.ema_200:,.2f}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with t_c5:
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>5. ⏳ Secular Horizon</div>
-                <div class='tile-status-safe' style='font-size: 0.98rem;'>{thematic.timeframe}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Wave: <strong>{thematic.horizon_code}</strong></div>
-            </div>
-            """, unsafe_allow_html=True)
+            r2_c1, r2_c2, r2_c3 = st.columns(3)
+            with r2_c1:
+                # 4. Smart Money
+                p4 = dim_scores["Smart Money"]
+                eli5_html = """
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.</div>
+                </div>
+                """ if show_eli5_insights else ""
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>4. 🐋 Smart Money</span>
+                            <span class='tile-status-{p4["class"]}'>{p4["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p4["class"]}' style='width: {p4["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong> • Flow Validity: <strong>{'VALID' if micro.delivery_valid else 'DAY-TRADING'}</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Microstructure Verdict:</strong> {micro.delivery_status_msg}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown(f"**Macro Wave:** {thematic.horizon_title}")
-                st.markdown(f"**Driver:** {thematic.thematic_driver}")
-                st.markdown(f"**Resource Scarcity Bottleneck:** `{thematic.resource_scarcity_exposure}`")
-                st.markdown(f"**Takeaway:** {thematic.plain_english_takeaway}")
+            with r2_c2:
+                # 5. Secular Horizon
+                p5 = dim_scores["Secular Horizon"]
+                eli5_html = f"""
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>{thematic.plain_english_takeaway}</div>
+                </div>
+                """ if show_eli5_insights else ""
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>5. ⏳ Secular Horizon</span>
+                            <span class='tile-status-{p5["class"]}'>{thematic.timeframe}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p5["class"]}' style='width: {p5["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>Wave: <strong>{thematic.horizon_code}</strong> • <strong>{thematic.horizon_title}</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Megatrend & Scarcity:</strong><br>
+                        <span style='font-size: 0.82rem;'>• Driver: {thematic.thematic_driver}</span><br>
+                        <span style='font-size: 0.82rem;'>• Bottleneck: <code style='color: #38BDF8;'>{thematic.resource_scarcity_exposure}</code></span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with t_c6:
-            risk_status = "🟢 Asymmetric Win" if risk.asymmetric_rr_passed else "🔴 Poor Odds"
-            risk_class = "safe" if risk.asymmetric_rr_passed else "danger"
-            st.markdown(f"""
-            <div class='interactive-tile'>
-                <div class='tile-header'>6. 🛡️ Safety Gauge</div>
-                <div class='tile-status-{risk_class}'>{risk_status}</div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Odds: <strong>{risk.risk_reward_ratio:.1f}x</strong></div>
-            </div>
-            """, unsafe_allow_html=True)
+            with r2_c3:
+                # 6. Safety Gauge
+                p6 = dim_scores["Safety Gauge"]
+                eli5_html = """
+                <div class='eli5-callout'>
+                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
+                    <div class='eli5-text'>Never take a trade where the upside isn't at least 2.5x larger than the risk. Protect capital first, profits come second.</div>
+                </div>
+                """ if show_eli5_insights else ""
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>6. 🛡️ Safety Gauge</span>
+                            <span class='tile-status-{p6["class"]}'>{p6["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{p6["class"]}' style='width: {p6["score"]}%;'></div>
+                        </div>
+                        <div class='dim-metric-sub'>Reward-to-Risk: <strong>{odds_disp}</strong> • Asymmetry: <strong>{'PASS (>=2.5x)' if risk.asymmetric_rr_passed else 'REJECTED'}</strong></div>
+                        {eli5_html}
+                    </div>
+                    <div class='verdict-box'>
+                        <strong>🏛️ Risk Sizing Verdict:</strong> Max allocation: <strong>{alloc_disp}</strong>.<br>
+                        <span style='font-size: 0.80rem; color: #FDA4AF;'>Hard Stop-Loss: {currency_sym}{plan.algorithmic_stop_loss} caps max equity loss at {currency_sym}{risk.max_equity_at_risk:,.2f}.</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-            with st.expander("🔍 ELI5 Context"):
-                st.markdown("**In Plain Words:** Never take a trade where the upside isn't at least 2.5x larger than the risk. Keep losses tiny!")
-                st.markdown(f"**The Verdict:** Max allocation: **{plan.calculated_shares} shares** ({currency_sym}{risk.allocated_capital:,.2f}).")
+        # -------------------------------------------------------------------------
+        # VIEW 2: INTERACTIVE SPIDER RADAR
+        # -------------------------------------------------------------------------
+        elif selected_dim_view == "🕸️ Interactive Spider Radar":
+            col_rad_large, col_rad_table = st.columns([1.3, 1.2])
+            with col_rad_large:
+                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker)
+                radar_fig.update_layout(height=480)
+                st.plotly_chart(radar_fig, use_container_width=True, config={"displayModeBar": True})
+            with col_rad_table:
+                st.markdown("##### 🏛️ **Institutional Dimension Scorecard vs Benchmark**")
+                rows = []
+                for k, v in dim_scores.items():
+                    gap = v["score"] - 60
+                    gap_str = f"+{gap}" if gap >= 0 else str(gap)
+                    rows.append({
+                        "Dimension": k,
+                        "Metric": v["metric"],
+                        "Score": f"{v['score']}/100",
+                        "Benchmark": "60/100",
+                        "Gap vs Baseline": gap_str,
+                        "Institutional Status": v["status"],
+                    })
+                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+                st.info("💡 **Institutional Benchmark Rule:** Top-tier quantitative managers require at least 4 of 6 dimensions to score ≥ 60/100 before committing growth capital.")
+
+        # -------------------------------------------------------------------------
+        # VIEW 3: SINGLE PILLAR SPOTLIGHT
+        # -------------------------------------------------------------------------
+        else:
+            pillar_names = list(dim_scores.keys())
+            selected_pillar = st.pills("Select Dimension to Inspect in Deep-Dive Mode:", pillar_names, default=pillar_names[1])
+            if not selected_pillar:
+                selected_pillar = pillar_names[1]
+
+            sp_data = dim_scores[selected_pillar]
+            st.markdown(f"### {selected_pillar} — Institutional Analytical Dossier")
+
+            sp_col1, sp_col2 = st.columns([1.2, 1.8])
+            with sp_col1:
+                st.markdown(f"""
+                <div class='dimension-card'>
+                    <div class='dim-card-header'>
+                        <span class='dim-title'>{selected_pillar}</span>
+                        <span class='tile-status-{sp_data["class"]}'>{sp_data["status"]}</span>
+                    </div>
+                    <div class='dim-meter-track'>
+                        <div class='dim-meter-fill-{sp_data["class"]}' style='width: {sp_data["score"]}%;'></div>
+                    </div>
+                    <div style='font-size: 2.2rem; font-weight: 800; color: #38BDF8; margin: 10px 0;'>{sp_data["score"]} / 100</div>
+                    <div class='dim-metric-sub'>Key Metric: <strong>{sp_data["metric"]}</strong></div>
+                    <div class='eli5-callout'>
+                        <div class='eli5-label'>💡 Plain English Intuition</div>
+                        <div class='eli5-text'>Institutional investors use this pillar to rigorously test corporate reality against public sentiment.</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with sp_col2:
+                if selected_pillar == "Company Health":
+                    st.markdown("#### 🔬 **Forensic Solvency & Earnings Quality Matrix**")
+                    st.markdown(f"""
+                    - **Altman Z-Score:** `{z_score:.2f}` (Distress Threshold: `< 1.81`, Grey Zone: `1.81 – 2.99`, Safe Zone: `> 2.99`)
+                    - **Piotroski F-Score:** `{f_score} / 9` (Operating quality, profitability, and leverage improvements)
+                    - **Sloan Accruals Ratio:** `{sloan_val * 100:.1f}%` (Values `< 10%` confirm earnings are backed by hard cash flow)
+                    - **Beneish M-Score:** `{beneish_val:.2f}` ({beneish_note})
+                    - **Solvency Status:** **{plan.solvency_status}**
+                    """)
+                elif selected_pillar == "Market Mood":
+                    st.markdown("#### 🌡️ **Macro Volatility Transmission**")
+                    st.markdown(f"""
+                    - **Market VIX:** `{macro.vix:.1f}`
+                    - **Macro Regime:** `{macro.regime.value if hasattr(macro, "regime") else "NORMAL"}`
+                    - **Transmission Rationale:** {macro.market_mood_desc}
+                    """)
+                elif selected_pillar == "Price Trend":
+                    st.markdown("#### 🚀 **Technical Momentum & Moving Average Ribbons**")
+                    st.markdown(f"""
+                    - **Current Price:** `{currency_sym}{tech.current_price:,.2f}`
+                    - **20-Day Fast EMA:** `{currency_sym}{tech.ema_20:,.2f}`
+                    - **50-Day Baseline EMA:** `{currency_sym}{tech.ema_50:,.2f}`
+                    - **200-Day Structural EMA:** `{currency_sym}{tech.ema_200:,.2f}`
+                    - **14-Day RSI:** `{tech.rsi_14:.1f}`
+                    """)
+                elif selected_pillar == "Smart Money":
+                    st.markdown("#### 🐋 **Delivery Microstructure & Vault Accumulation**")
+                    st.markdown(f"""
+                    - **Delivery Percentage:** `{micro.delivery_pct:.1f}%`
+                    - **Flow Verification:** `{'Accumulation Confirmed' if micro.delivery_valid else 'Speculative Day-Trading'}`
+                    - **Details:** {micro.delivery_status_msg}
+                    """)
+                elif selected_pillar == "Secular Horizon":
+                    st.markdown("#### ⏳ **Secular Wave & Supply Chain Scarcity**")
+                    st.markdown(f"""
+                    - **Horizon Wave:** `{thematic.horizon_title}` ({thematic.timeframe})
+                    - **Core Driver:** {thematic.thematic_driver}
+                    - **Scarcity Bottleneck Exposure:** `{thematic.resource_scarcity_exposure}`
+                    - **Plain-English Takeaway:** {thematic.plain_english_takeaway}
+                    """)
+                else:  # Safety Gauge
+                    st.markdown("#### 🛡️ **Asymmetric Risk-Reward & Capital Preservation**")
+                    st.markdown(f"""
+                    - **Reward-to-Risk Ratio:** `{odds_disp}` (Minimum threshold: `2.5x`)
+                    - **Algorithmic Hard Stop:** `{currency_sym}{plan.algorithmic_stop_loss}`
+                    - **Max Equity at Risk:** `{currency_sym}{risk.max_equity_at_risk:,.2f}` ({risk.risk_pct:.1f}% of capital)
+                    - **Calculated Allocation:** `{alloc_disp}`
+                    """)
 
     # =========================================================================
     # TAB 2: INTERACTIVE CHART TERMINAL
