@@ -175,3 +175,4 @@ def render_user_profile_sidebar():
     if st.sidebar.button("🚪 Sign Out", use_container_width=True):
         logout()
     st.sidebar.markdown("---")
+
