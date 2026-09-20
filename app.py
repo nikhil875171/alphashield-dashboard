@@ -341,9 +341,9 @@ def fetch_macro_cached(is_ind: bool) -> MacroRegimeState:
     return compute_macro_transmission(is_indian_market=is_ind)
 
 
-# Cached live thematic market radar
+# Cached live thematic market radar (v2 invalidates legacy schema cache)
 @st.cache_data(ttl=180, show_spinner=False)
-def fetch_radar_cached(is_ind: bool) -> Dict[str, List[ThematicStockItem]]:
+def fetch_radar_cached_v2(is_ind: bool) -> Dict[str, List[ThematicStockItem]]:
     return get_thematic_market_radar(is_indian=is_ind)
 
 
@@ -851,11 +851,11 @@ if audit_results and audit_results[0] is not None:
 
         with col_rad_act:
             if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
-                fetch_radar_cached.clear()
+                fetch_radar_cached_v2.clear()
                 st.rerun()
 
         with st.spinner("Connecting to live exchange feeds & scanning..."):
-            radar_data = fetch_radar_cached(is_indian)
+            radar_data = fetch_radar_cached_v2(is_indian)
 
         total_screened = sum(len(stocks) for stocks in radar_data.values())
 
@@ -901,17 +901,24 @@ if audit_results and audit_results[0] is not None:
                         for offset, col in enumerate(pair):
                             stock = stock_list[i + offset]
                             with col:
+                                # Safe attribute access with fallbacks
+                                chg_pct = getattr(stock, "change_pct", 0.0)
+                                chg_str = getattr(stock, "change_str", f"{chg_pct:+.2f}%")
+                                rel_vol = getattr(stock, "volume_multiple", 1.0)
+                                n_url = getattr(stock, "news_url", "")
+                                r_badge = getattr(stock, "risk_badge", "🟢 Normal")
+
                                 # Real-time change pill
-                                if stock.change_pct >= 0:
-                                    chg_pill = f"<span class='pastel-pill-mint'>▲ {stock.change_str}</span>"
+                                if chg_pct >= 0:
+                                    chg_pill = f"<span class='pastel-pill-mint'>▲ {chg_str}</span>"
                                 else:
-                                    chg_pill = f"<span class='pastel-pill-rose'>▼ {stock.change_str}</span>"
+                                    chg_pill = f"<span class='pastel-pill-rose'>▼ {chg_str}</span>"
 
                                 # Relative volume multiplier pill
-                                vol_pill = f"<span class='pastel-pill-lilac'>⚡ {stock.volume_multiple:.1f}x Vol</span>"
+                                vol_pill = f"<span class='pastel-pill-lilac'>⚡ {rel_vol:.1f}x Vol</span>"
 
                                 # Clickable live news link
-                                news_link = f"<a href='{stock.news_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600; margin-left: 6px;'>[Read Story ↗]</a>" if stock.news_url else ""
+                                news_link = f"<a href='{n_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600; margin-left: 6px;'>[Read Story ↗]</a>" if n_url else ""
 
                                 st.markdown(f"""
                                 <div class='radar-card'>
@@ -924,7 +931,7 @@ if audit_results and audit_results[0] is not None:
                                         <div style='display: flex; gap: 6px; align-items: center; flex-wrap: wrap;'>
                                             {chg_pill}
                                             {vol_pill}
-                                            <span class='pastel-pill-amber'>{stock.risk_badge}</span>
+                                            <span class='pastel-pill-amber'>{r_badge}</span>
                                         </div>
                                     </div>
                                     <div style='margin-top: 10px; font-size: 0.90rem; color: #CBD5E1; line-height: 1.45;'>

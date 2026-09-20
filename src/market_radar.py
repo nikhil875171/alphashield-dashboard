@@ -39,6 +39,18 @@ class ThematicStockItem:
     volume_multiple: float = 1.0
     news_url: str = ""
 
+    def __getattr__(self, name: str):
+        # Backward compatibility safeguard for deserialized cached objects
+        if name == "change_pct":
+            return 0.0
+        if name == "change_str":
+            return "0.00%"
+        if name == "volume_multiple":
+            return 1.0
+        if name == "news_url":
+            return ""
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
 
 # =============================================================================
 # ACTIVE INSTITUTIONAL CANDIDATE UNIVERSES (50+ Verified Liquid Tickers per Market)
