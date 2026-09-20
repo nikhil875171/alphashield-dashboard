@@ -17,11 +17,28 @@ from core.auth import (
     update_user_credentials,
 )
 from core.technical_engine import compute_technical_snapshot
-from core.visualizer import (
-    build_interactive_chart,
-    compute_institutional_dimension_scores,
-    build_institutional_radar_chart,
-)
+try:
+    from core.visualizer import (
+        build_interactive_chart,
+        compute_institutional_dimension_scores,
+        build_institutional_radar_chart,
+    )
+except ImportError as _err:
+    import sys
+    import importlib
+    if "core.visualizer" in sys.modules:
+        try:
+            import core.visualizer
+            importlib.reload(core.visualizer)
+            from core.visualizer import (
+                build_interactive_chart,
+                compute_institutional_dimension_scores,
+                build_institutional_radar_chart,
+            )
+        except Exception as _reload_err:
+            raise _reload_err
+    else:
+        raise _err
 
 # Import institutional quantitative & thematic modules
 from src.macro_engine import compute_macro_transmission, MacroRegimeState
