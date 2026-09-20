@@ -137,27 +137,65 @@ INDIAN_SCAN_UNIVERSE = [
     {"ticker": "DEEPAKFERT.NS", "name": "Deepak Fertilisers", "base_category": "future", "why_it_matters": "Key supplier of industrial nitric acid and electronic-grade chemicals for semiconductors."},
     {"ticker": "PRESTIGE.NS", "name": "Prestige Estates", "base_category": "future", "why_it_matters": "Capturing generational urbanization and premium residential demand across Indian tech hubs."},
 
-    # Small-Priced Candidates (< ₹100 Target)
-    {"ticker": "IDEA.NS", "name": "Vodafone Idea", "base_category": "penny", "why_it_matters": "Sub-₹20 telecom turnaround candidate executing 5G network rollout with government backing."},
-    {"ticker": "YESBANK.NS", "name": "Yes Bank", "base_category": "penny", "why_it_matters": "Post-cleanup balance sheet recovery supported by low-cost retail deposit expansion."},
-    {"ticker": "SOUTHBANK.NS", "name": "South Indian Bank", "base_category": "penny", "why_it_matters": "Attractive price-to-book valuation with clean NPA reduction under professional management."},
-    {"ticker": "RPOWER.NS", "name": "Reliance Power", "base_category": "penny", "why_it_matters": "Rapidly deleveraging power producer benefiting from peak domestic electricity demand."},
+    # Small-Priced & Micro-Cap Penny Candidates (< ₹100 Target, including sub-₹1 & sub-₹10 Screener nano-caps)
+    # Sub-₹1 Nano-Penny Stocks (BSE & NSE)
+    {"ticker": "FILATFASH.NS", "name": "Filatex Fashions Ltd", "base_category": "penny", "why_it_matters": "Micro-cap socks and textile manufacturer subject to 5% circuit bandwidth and high volatility."},
+    {"ticker": "SHREESEC.BO", "name": "Shree Securities Ltd", "base_category": "penny", "why_it_matters": "Kolkata-based NBFC penny stock with micro-cap liquidity and circuit boundaries."},
+    {"ticker": "WELCURE.BO", "name": "Welcure Drugs & Pharmaceuticals", "base_category": "penny", "why_it_matters": "Micro-cap pharmaceutical enterprise trading on BSE with low free-float turnover."},
+    {"ticker": "SYLPH.BO", "name": "Sylph Technologies Ltd", "base_category": "penny", "why_it_matters": "Software technology and BPO solutions provider trading at sub-rupee valuations."},
+    {"ticker": "FCONSUMER.NS", "name": "Future Consumer Ltd", "base_category": "penny", "why_it_matters": "Former Future Group FMCG brand entity navigating balance sheet and corporate debt restructuring."},
+    {"ticker": "SHANGAR.BO", "name": "Shangar Decor Ltd", "base_category": "penny", "why_it_matters": "Event infrastructure and decor services provider listed on BSE in the micro-cap segment."},
+    {"ticker": "STURDY.BO", "name": "Sturdy Industries Ltd", "base_category": "penny", "why_it_matters": "Manufacturer of aluminum conductors and irrigation pipes under debt recovery proceedings."},
+    {"ticker": "SRESTHA.BO", "name": "Srestha Finvest Ltd", "base_category": "penny", "why_it_matters": "Non-banking financial company offering commercial credit, micro-loans, and investment operations."},
+    {"ticker": "SHALPRO.BO", "name": "Shalimar Productions Ltd", "base_category": "penny", "why_it_matters": "Media production and video studio outfit trading in the sub-rupee micro-penny segment."},
+    {"ticker": "VIKASPROP.BO", "name": "Vikas Proppant & Granite", "base_category": "penny", "why_it_matters": "Industrial frac sand, proppants, and granite exploration supplier based in Rajasthan."},
+    {"ticker": "HARSHILAGR.BO", "name": "Harshil Agrotech Ltd", "base_category": "penny", "why_it_matters": "Agricultural produce trading and supply chain distribution company listed on BSE."},
+    {"ticker": "BIOGEN.BO", "name": "Biogen Pharmachem Ltd", "base_category": "penny", "why_it_matters": "Wholesale pharmaceutical formulations and API chemical distributor trading on BSE."},
+    {"ticker": "SANWARIA.BO", "name": "Sanwaria Consumer Ltd", "base_category": "penny", "why_it_matters": "Edible oil and basmati rice processor undergoing corporate insolvency resolution process."},
+    {"ticker": "INVENTURE.NS", "name": "Inventure Growth & Securities", "base_category": "penny", "why_it_matters": "Retail stockbroking, margin funding, and financial advisory boutique."},
+    {"ticker": "RCOM.NS", "name": "Reliance Communications Ltd", "base_category": "penny", "why_it_matters": "Anil Ambani telecommunications entity undergoing corporate insolvency resolution process (CIRP)."},
+
+    # Sub-₹10 Micro-Cap Penny Stocks
+    {"ticker": "VIKASECO.NS", "name": "Vikas EcoTech Ltd", "base_category": "penny", "why_it_matters": "Specialty chemical additives, recycled polymers, and eco-friendly infrastructure materials maker."},
+    {"ticker": "GTLINFRA.NS", "name": "GTL Infrastructure Ltd", "base_category": "penny", "why_it_matters": "Shared telecom tower infrastructure provider serving nationwide cellular network operators."},
+    {"ticker": "BLSINFOTE.BO", "name": "BLS Infotech Ltd", "base_category": "penny", "why_it_matters": "IT education and computer software services provider in the sub-₹5 micro-cap segment."},
+    {"ticker": "FCSSOFT.NS", "name": "FCS Software Solutions Ltd", "base_category": "penny", "why_it_matters": "Offshore software development, IT consulting, and infrastructure management services."},
+    {"ticker": "SUULD.NS", "name": "Suumaya Industries Ltd", "base_category": "penny", "why_it_matters": "Textile supply chain and agricultural commodities merchant trading in distress turnaround."},
+    {"ticker": "RHFL.NS", "name": "Reliance Home Finance Ltd", "base_category": "penny", "why_it_matters": "Affordable housing finance provider navigating debt resolution and promoter transitions."},
+    {"ticker": "GVKPIL.NS", "name": "GVK Power & Infrastructure", "base_category": "penny", "why_it_matters": "Transportation and energy infrastructure concessionaire managing highway and airport projects."},
+    {"ticker": "DISHTV.NS", "name": "Dish TV India Ltd", "base_category": "penny", "why_it_matters": "Direct-to-home (DTH) satellite broadcast television provider with nationwide subscriber base."},
+    {"ticker": "RADAAN.NS", "name": "Radaan Mediaworks India", "base_category": "penny", "why_it_matters": "Regional television content production house producing Tamil and Telugu serial broadcasts."},
+    {"ticker": "UNITECH.NS", "name": "Unitech Ltd", "base_category": "penny", "why_it_matters": "Real estate developer undergoing government-supervised board management to complete stalled projects."},
+    {"ticker": "SEPC.NS", "name": "SEPC Ltd", "base_category": "penny", "why_it_matters": "Integrated engineering, procurement, and construction (EPC) contractor for water and metallurgy."},
+    {"ticker": "ALOKINDS.NS", "name": "Alok Industries Ltd", "base_category": "penny", "why_it_matters": "Integrated textile manufacturer co-promoted by Reliance Industries with expanding polyester capacity."},
+    {"ticker": "RTNPOWER.NS", "name": "RattanIndia Power Ltd", "base_category": "penny", "why_it_matters": "Thermal power utility operating 2,700 MW coal generation capacity in Amravati and Nashik."},
+    {"ticker": "ZEEMEDIA.NS", "name": "Zee Media Corp Ltd", "base_category": "penny", "why_it_matters": "News broadcasting network operating 14 television news channels across India."},
+    {"ticker": "URJA.NS", "name": "Urja Global Ltd", "base_category": "penny", "why_it_matters": "Renewable energy developer distributing solar panels, e-rickshaws, and lithium battery packs."},
+
+    # Turnaround & High-Volume Small Caps (₹10 to ₹100 Target)
+    {"ticker": "BCG.NS", "name": "Brightcom Group Ltd", "base_category": "penny", "why_it_matters": "Digital marketing ad-tech platform under SEBI forensic review and compliance scrutiny."},
+    {"ticker": "IDEA.NS", "name": "Vodafone Idea Ltd", "base_category": "penny", "why_it_matters": "Sub-₹20 telecom turnaround candidate executing 5G network rollout with government backing."},
+    {"ticker": "JPPOWER.NS", "name": "Jaiprakash Power Ventures", "base_category": "penny", "why_it_matters": "Hydropower and thermal electricity generator with declining debt and rising power plant PLF."},
+    {"ticker": "SURANAT&P.NS", "name": "Surana Telecom and Power", "base_category": "penny", "why_it_matters": "Manufacturer of optic-fiber cables, solar photovoltaic modules, and wind power generation."},
+    {"ticker": "SYNCOMF.NS", "name": "Syncom Formulations Ltd", "base_category": "penny", "why_it_matters": "Pharmaceutical formulation manufacturer exporting generic capsules and injections to 30+ nations."},
+    {"ticker": "SUBEXLTD.NS", "name": "Subex Ltd", "base_category": "penny", "why_it_matters": "Telecom enterprise software provider specializing in revenue assurance, fraud management, and AI IoT."},
+    {"ticker": "RPOWER.NS", "name": "Reliance Power Ltd", "base_category": "penny", "why_it_matters": "Power generator operating Sasan ultra-mega power plant, aggressively reducing parent debt."},
+    {"ticker": "HCC.NS", "name": "Hindustan Construction Co", "base_category": "penny", "why_it_matters": "Infrastructure contractor building iconic nuclear reactors, tunnels, hydro dams, and bridges."},
+    {"ticker": "YESBANK.NS", "name": "Yes Bank Ltd", "base_category": "penny", "why_it_matters": "Post-cleanup private banking turnaround supported by low-cost retail deposit expansion."},
+    {"ticker": "3IINFOLTD.NS", "name": "3i Infotech Ltd", "base_category": "penny", "why_it_matters": "Digital transformation and cloud services company executing banking and fintech software solutions."},
+    {"ticker": "SOUTHBANK.NS", "name": "South Indian Bank", "base_category": "penny", "why_it_matters": "Kerala-based private lender with clean NPA reduction, expanding NIMs, and attractive price-to-book."},
+    {"ticker": "TTML.NS", "name": "Tata Teleservices (Maharashtra)", "base_category": "penny", "why_it_matters": "Tata enterprise broadband, cloud telephony, and cybersecurity networking provider."},
+    {"ticker": "TRIDENT.NS", "name": "Trident Limited", "base_category": "penny", "why_it_matters": "Integrated home textiles and paper exporter benefiting from global supply chain diversification."},
     {"ticker": "UCOBANK.NS", "name": "UCO Bank", "base_category": "penny", "why_it_matters": "State-backed lender experiencing sustained asset quality normalization and rising margins."},
     {"ticker": "IOB.NS", "name": "Indian Overseas Bank", "base_category": "penny", "why_it_matters": "Recovered public lender with declining bad loans and sovereign capital backing."},
+    {"ticker": "CENTRALBK.NS", "name": "Central Bank of India", "base_category": "penny", "why_it_matters": "Rapidly reviving public lender with sovereign deposit franchise and falling credit costs."},
     {"ticker": "NHPC.NS", "name": "NHPC Ltd", "base_category": "penny", "why_it_matters": "Defensive state-owned hydropower utility commanding long-term power purchase agreements."},
     {"ticker": "NBCC.NS", "name": "NBCC (India) Ltd", "base_category": "penny", "why_it_matters": "Debt-free PSU managing mega-redevelopment construction projects on cost-plus basis."},
     {"ticker": "SJVN.NS", "name": "SJVN Ltd", "base_category": "penny", "why_it_matters": "Expanding renewable utility executing massive solar and hydro projects across North India."},
     {"ticker": "IDFCFIRSTB.NS", "name": "IDFC First Bank", "base_category": "penny", "why_it_matters": "High-CASA retail banking franchise with rapid branch expansion and clean underwriting."},
     {"ticker": "PNB.NS", "name": "Punjab National Bank", "base_category": "penny", "why_it_matters": "Major state lender benefiting from corporate credit demand and low credit costs."},
-    {"ticker": "BANKBARODA.NS", "name": "Bank of Baroda", "base_category": "penny", "why_it_matters": "Top-tier public bank delivering double-digit ROE and international trade finance."},
     {"ticker": "CANBK.NS", "name": "Canara Bank", "base_category": "penny", "why_it_matters": "Strong public sector lender with expanding retail loan books and attractive valuation."},
-    {"ticker": "UNIONBANK.NS", "name": "Union Bank of India", "base_category": "penny", "why_it_matters": "Public bank delivering steady improvements in return on assets and clean provision coverage."},
-    {"ticker": "CENTRALBK.NS", "name": "Central Bank of India", "base_category": "penny", "why_it_matters": "Rapidly reviving public lender with sovereign deposit franchise and falling credit costs."},
-    {"ticker": "IRFC.NS", "name": "Indian Railway Finance Corp", "base_category": "penny", "why_it_matters": "Monopolistic financing arm of Indian Railways with zero gross non-performing assets."},
-    {"ticker": "IRCON.NS", "name": "Ircon International", "base_category": "penny", "why_it_matters": "Specialized railway and highway construction PSU with deep international projects pipeline."},
-    {"ticker": "HUDCO.NS", "name": "Housing & Urban Dev Corp", "base_category": "penny", "why_it_matters": "Sovereign financing institution funding affordable housing and municipal smart city infrastructure."},
     {"ticker": "HFCL.NS", "name": "HFCL Limited", "base_category": "penny", "why_it_matters": "Optical fiber and telecom network equipment manufacturer exporting 5G equipment globally."},
-    {"ticker": "TRIDENT.NS", "name": "Trident Limited", "base_category": "penny", "why_it_matters": "Integrated home textiles and paper exporter benefiting from global supply chain diversification."},
 ]
 
 US_SCAN_UNIVERSE = [
@@ -375,9 +413,22 @@ def scan_live_market_radar(is_indian: bool = True) -> Dict[str, List[ThematicSto
 
         # 1. Penny / Small-Priced condition (Strict live price ceiling)
         if price <= price_ceiling:
-            risk_badge = "🔴 High Risk" if vol > 3.5 else "🟡 Moderate"
-            risk_level = f"Volatile ({vol:.1f}% swing)" if vol > 3.5 else "Moderate Risk"
-            penny_items.append((rel_v, sym, price, chg_pct, rel_v, risk_badge, risk_level))
+            if is_indian and price < 1.0:
+                risk_badge = "🔴 Nano-Penny (<₹1)"
+                risk_level = f"Sub-Rupee Micro-Cap ({vol:.1f}% swing)"
+            elif is_indian and price < 10.0:
+                risk_badge = "🔴 Micro-Penny (<₹10)"
+                risk_level = f"Sub-₹10 Micro-Cap ({vol:.1f}% swing)"
+            elif not is_indian and price < 5.0:
+                risk_badge = "🔴 Micro-Penny (<$5)"
+                risk_level = f"Sub-$5 Micro-Cap ({vol:.1f}% swing)"
+            elif vol > 3.5:
+                risk_badge = "🟡 High Volatility"
+                risk_level = f"Volatile ({vol:.1f}% swing)"
+            else:
+                risk_badge = "🟢 Turnaround / Liquid"
+                risk_level = "Liquid Small-Cap / PSU"
+            penny_items.append((price, sym, price, chg_pct, rel_v, risk_badge, risk_level))
 
         # 2. Safe Havens
         if base_cat == "safe":
@@ -402,18 +453,18 @@ def scan_live_market_radar(is_indian: bool = True) -> Dict[str, List[ThematicSto
         trending_candidates.append((trend_score, sym, price, chg_pct, rel_v, t_badge, t_level))
 
     # Sort each list by their quantitative scores
-    penny_items.sort(key=lambda x: x[0], reverse=True)           # Highest volume surge first
+    penny_items.sort(key=lambda x: x[0])                         # Lowest price first (e.g. ₹0.14, ₹0.19, ₹0.22... up to ₹100)
     safe_items.sort(key=lambda x: x[0], reverse=True)            # Lowest volatility first
     new_items.sort(key=lambda x: x[0], reverse=True)             # Highest momentum first
     trending_candidates.sort(key=lambda x: x[0], reverse=True)   # Best trend score first
     future_items.sort(key=lambda x: x[0], reverse=True)          # Highest relative strength first
 
-    # Return full depth for each category (up to 40 per category for rich scrollable tables)
-    selected_penny = penny_items[:40]
-    selected_safe = safe_items[:40]
-    selected_new = new_items[:40]
-    selected_trending = trending_candidates[:40]
-    selected_future = future_items[:40]
+    # Return full depth for each category (up to 60 per category for rich scrollable tables)
+    selected_penny = penny_items[:60]
+    selected_safe = safe_items[:50]
+    selected_new = new_items[:50]
+    selected_trending = trending_candidates[:50]
+    selected_future = future_items[:50]
 
     # Collect top tickers across each category to fetch real-time news for
     top_news_tickers = list({
