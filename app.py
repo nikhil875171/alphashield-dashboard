@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List
 import streamlit as st
 import pandas as pd
 import yfinance as yf
@@ -340,6 +341,12 @@ def fetch_macro_cached(is_ind: bool) -> MacroRegimeState:
     return compute_macro_transmission(is_indian_market=is_ind)
 
 
+# Cached live thematic market radar
+@st.cache_data(ttl=180, show_spinner=False)
+def fetch_radar_cached(is_ind: bool) -> Dict[str, List[ThematicStockItem]]:
+    return get_thematic_market_radar(is_indian=is_ind)
+
+
 # --- SIDEBAR: CONTROLS & BEGINNER CAPITAL ALLOCATION ---
 with st.sidebar:
     render_user_profile_sidebar()
@@ -349,7 +356,7 @@ with st.sidebar:
     # Ticker Quick-Select Chips
     st.markdown("##### **Popular Watchlist:**")
     quick_tickers = (
-        ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "TATAMOTORS.NS", "ZOMATO.NS"]
+        ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "SUZLON.NS", "BEL.NS"]
         if is_indian
         else ["NVDA", "AAPL", "MSFT", "TSLA", "PLTR", "AMZN"]
     )
@@ -833,18 +840,28 @@ if audit_results and audit_results[0] is not None:
             """, unsafe_allow_html=True)
 
     # =========================================================================
-    # TAB 3: THEMATIC MARKET RADAR
+    # TAB 3: THEMATIC MARKET RADAR (100% LIVE DYNAMIC QUANTITATIVE SCREENER)
     # =========================================================================
     with tabs[2]:
-        radar_data = get_thematic_market_radar(is_indian)
-        total_curated = sum(len(stocks) for stocks in radar_data.values())
+        col_rad_head, col_rad_act = st.columns([2.8, 1.2])
 
-        st.markdown(f"### 🧭 **Curated Stock Discovery Radar ({'India NSE' if is_indian else 'US Markets'})**")
-        st.caption(f"Tracking **{total_curated}** hand-picked institutional companies across 5 strategic investment categories. Click any stock to audit it immediately!")
+        with col_rad_head:
+            st.markdown(f"### 🧭 **Live Institutional Market Radar ({'India NSE' if is_indian else 'US Markets'})**")
+            st.caption("100% real-time quantitative screening across 50+ institutional candidates. Zero hardcoding: live prices, % deltas, relative volume surges, and live financial news.")
+
+        with col_rad_act:
+            if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
+                fetch_radar_cached.clear()
+                st.rerun()
+
+        with st.spinner("Connecting to live exchange feeds & scanning..."):
+            radar_data = fetch_radar_cached(is_indian)
+
+        total_screened = sum(len(stocks) for stocks in radar_data.values())
 
         # Search / Filter Bar inside the Radar
         radar_search = st.text_input(
-            "🔎 Filter curated stocks by name, ticker, or catalyst keyword:",
+            "🔎 Filter live screened stocks by name, ticker, or catalyst keyword:",
             "",
             placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV...",
             key="radar_filter_input"
@@ -875,7 +892,7 @@ if audit_results and audit_results[0] is not None:
                     stock_list = raw_list
 
                 if not stock_list:
-                    st.info(f"No curated stocks found matching '{radar_search}' in this category.")
+                    st.info(f"No live stocks found matching '{radar_search}' in this category.")
                 else:
                     for i in range(0, len(stock_list), 2):
                         col_left, col_right = st.columns(2)
@@ -884,23 +901,37 @@ if audit_results and audit_results[0] is not None:
                         for offset, col in enumerate(pair):
                             stock = stock_list[i + offset]
                             with col:
+                                # Real-time change pill
+                                if stock.change_pct >= 0:
+                                    chg_pill = f"<span class='pastel-pill-mint'>▲ {stock.change_str}</span>"
+                                else:
+                                    chg_pill = f"<span class='pastel-pill-rose'>▼ {stock.change_str}</span>"
+
+                                # Relative volume multiplier pill
+                                vol_pill = f"<span class='pastel-pill-lilac'>⚡ {stock.volume_multiple:.1f}x Vol</span>"
+
+                                # Clickable live news link
+                                news_link = f"<a href='{stock.news_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600; margin-left: 6px;'>[Read Story ↗]</a>" if stock.news_url else ""
+
                                 st.markdown(f"""
                                 <div class='radar-card'>
                                     <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;'>
                                         <div>
-                                            <span style='font-size: 1.15rem; font-weight: 700; color: #93C5FD;'>{stock.ticker}</span>
-                                            <span style='font-size: 0.95rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
-                                            <span style='margin-left: 12px; font-weight: 600; color: #F8FAFC;'>{stock.approx_price}</span>
+                                            <span style='font-size: 1.18rem; font-weight: 800; color: #93C5FD;'>{stock.ticker}</span>
+                                            <span style='font-size: 0.92rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
+                                            <span style='margin-left: 10px; font-weight: 700; color: #F8FAFC; font-size: 1.05rem;'>{stock.approx_price}</span>
                                         </div>
-                                        <div>
-                                            <span class='pastel-pill-mint'>{stock.risk_badge}</span>
+                                        <div style='display: flex; gap: 6px; align-items: center; flex-wrap: wrap;'>
+                                            {chg_pill}
+                                            {vol_pill}
+                                            <span class='pastel-pill-amber'>{stock.risk_badge}</span>
                                         </div>
                                     </div>
-                                    <div style='margin-top: 8px; font-size: 0.90rem; color: #CBD5E1;'>
-                                        <strong>Catalyst:</strong> {stock.catalyst_driver}
+                                    <div style='margin-top: 10px; font-size: 0.90rem; color: #CBD5E1; line-height: 1.45;'>
+                                        <strong>Catalyst:</strong> {stock.catalyst_driver} {news_link}
                                     </div>
-                                    <div style='margin-top: 4px; font-size: 0.86rem; color: #94A3B8;'>
-                                        <strong>Why it matters:</strong> {stock.why_it_matters}
+                                    <div style='margin-top: 5px; font-size: 0.85rem; color: #94A3B8; line-height: 1.4;'>
+                                        <strong>Institutional Role:</strong> {stock.why_it_matters}
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)

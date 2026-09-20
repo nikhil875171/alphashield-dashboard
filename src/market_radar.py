@@ -1,1229 +1,413 @@
+"""
+AlphaShield Dynamic Market Radar & Live Thematic Screener
+=========================================================
+Institutional-grade real-time market scanner that eliminates static/hardcoded stocks.
+Downloads live OHLCV feeds, computes daily % deltas, relative volume multipliers,
+and dynamically categorizes and ranks stocks across 5 strategic themes:
+  1. 🪙 Small-Priced (< ₹100 or < $15)
+  2. 🏰 Safe Havens (Fortress Blue-Chips)
+  3. 🌱 New & Emerging Disruptors
+  4. 🔥 Trending Today (Market-wide top gainers & volume breakouts)
+  5. 🚀 Future Supercycles (Secular Megatrends)
+
+Concurrently extracts live financial news catalysts via yfinance news feeds.
+"""
+
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Dict, List
+import time
+from typing import Dict, List, Optional
+import numpy as np
+import pandas as pd
+import yfinance as yf
 
 
 @dataclass
 class ThematicStockItem:
-    """Represents a curated stock discovery item with beginner-friendly context."""
+    """Represents a dynamically screened stock discovery item with live market metrics."""
     ticker: str
     name: str
     approx_price: str
-    category_id: str  # 'penny', 'safe', 'new', 'trending', 'future'
+    category_id: str          # 'penny', 'safe', 'new', 'trending', 'future'
     category_title: str
     catalyst_driver: str
     why_it_matters: str
     risk_level: str
-    risk_badge: str  # '🟢 Safe', '🟡 Moderate', '🔴 High Risk'
+    risk_badge: str           # e.g., '🟢 Safe Haven', '🟡 Moderate', '🔴 High Risk'
+    change_pct: float = 0.0
+    change_str: str = "0.00%"
+    volume_multiple: float = 1.0
+    news_url: str = ""
 
 
 # =============================================================================
-# INDIAN MARKETS (NSE / BSE) THEMATIC RADAR — EXPANDED INSTITUTIONAL UNIVERSE
+# ACTIVE INSTITUTIONAL CANDIDATE UNIVERSES (50+ Verified Liquid Tickers per Market)
 # =============================================================================
-INDIAN_THEMATIC_RADAR: Dict[str, List[ThematicStockItem]] = {
-    "penny": [
-        ThematicStockItem(
-            ticker="IDEA.NS",
-            name="Vodafone Idea",
-            approx_price="₹7.40",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Government debt-to-equity conversion and ₹20,000 Cr capex rollout for 5G network expansion.",
-            why_it_matters="Ultra low-priced telecom play. High turnaround leverage, but debt burden requires cautious sizing.",
-            risk_level="High Risk / Speculative",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="YESBANK.NS",
-            name="Yes Bank",
-            approx_price="₹19.80",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Post-restructuring balance sheet cleanup backed by SBI and surging low-cost retail CASA deposits.",
-            why_it_matters="Accessible sub-₹20 entry. Old bad loans are largely resolved, entering a normalized growth phase.",
-            risk_level="Speculative Recovery",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="SOUTHBANK.NS",
-            name="South Indian Bank",
-            approx_price="₹24.50",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Sharp turnaround in net interest margins and digital SME lending across South India.",
-            why_it_matters="Attractive price-to-book valuation with clean NPA reduction under new professional management.",
-            risk_level="Value Turnaround",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="RPOWER.NS",
-            name="Reliance Power",
-            approx_price="₹38.50",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Accelerated debt settlement with commercial lenders and planned expansion into utility solar.",
-            why_it_matters="Rapidly deleveraging power producer benefiting from India's peak electricity demand.",
-            risk_level="High Volatility",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="UCOBANK.NS",
-            name="UCO Bank",
-            approx_price="₹43.00",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Public sector bank experiencing sustained credit quality improvement and rising dividend yields.",
-            why_it_matters="State-owned bank with sovereign backing trading at modest multiples to book value.",
-            risk_level="Moderate",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="IOB.NS",
-            name="Indian Overseas Bank",
-            approx_price="₹52.00",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Exit from RBI prompt corrective action with record low gross NPA ratios.",
-            why_it_matters="Beneficiary of the multi-year Indian banking revival cycle with strong retail presence.",
-            risk_level="Moderate",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="SUZLON.NS",
-            name="Suzlon Energy",
-            approx_price="₹58.20",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Completely net debt-free with an all-time record order book exceeding 4 GW for wind turbines.",
-            why_it_matters="The undisputed leader in domestic wind energy infrastructure, perfectly aligned with green targets.",
-            risk_level="Growth Turnaround",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="OLAEL.NS",
-            name="Ola Electric Mobility",
-            approx_price="₹68.00",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Scale ramp at its Futurefactory and indigenous Bharat 4680 battery cell manufacturing.",
-            why_it_matters="Dominant market share in Indian electric two-wheelers with direct vertically integrated cell tech.",
-            risk_level="High Growth / Early Stage",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="NHPC.NS",
-            name="NHPC Ltd",
-            approx_price="₹88.50",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Government-owned hydropower utility commanding long-term Power Purchase Agreements (PPAs).",
-            why_it_matters="Sub-₹100 defensive blue-chip utility backed by sovereign guarantees with solid dividend payouts.",
-            risk_level="Low to Moderate",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="NBCC.NS",
-            name="NBCC (India) Ltd",
-            approx_price="₹92.00",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="₹70,000+ Cr state construction order book including stalled housing redevelopment projects.",
-            why_it_matters="Debt-free public sector enterprise with an asset-light, cost-plus project management business model.",
-            risk_level="Moderate",
-            risk_badge="🟢 Solid Orderbook",
-        ),
-        ThematicStockItem(
-            ticker="SJVN.NS",
-            name="SJVN Ltd",
-            approx_price="₹98.00",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< ₹100)",
-            catalyst_driver="Rapidly expanding renewable portfolio spanning hydro, solar, and wind across India and Nepal.",
-            why_it_matters="Key executing PSU for national renewable energy mandates with strong operating cash flow.",
-            risk_level="Moderate",
-            risk_badge="🟢 Safe Dividend",
-        ),
-    ],
 
-    "safe": [
-        ThematicStockItem(
-            ticker="RELIANCE.NS",
-            name="Reliance Industries",
-            approx_price="₹1,230.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="India's largest conglomerate spanning Oil-to-Chemicals, Jio 5G, and Reliance Retail leadership.",
-            why_it_matters="Virtually recession-proof. Anchors the Nifty 50 and is the foundational pillar of Indian markets.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="TCS.NS",
-            name="Tata Consultancy Services",
-            approx_price="₹3,950.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Zero net debt, unmatched 35%+ Return on Equity, and consistent high dividend distributions.",
-            why_it_matters="When global markets wobble, TCS protects capital thanks to multi-billion dollar mission-critical contracts.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="HDFCBANK.NS",
-            name="HDFC Bank",
-            approx_price="₹1,680.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Premier private banking institution with conservative underwriting and flawless asset quality.",
-            why_it_matters="The primary destination for global institutional capital deploying into Indian economic growth.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="INFY.NS",
-            name="Infosys",
-            approx_price="₹1,850.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Global generative AI enterprise transformation programs and massive shareholder capital return via buybacks.",
-            why_it_matters="Debt-free tech powerhouse with diversified multi-national clientele across US and Europe.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="ICICIBANK.NS",
-            name="ICICI Bank",
-            approx_price="₹1,250.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Industry-leading return on assets (ROA > 2.3%) driven by high-margin retail loans and digitization.",
-            why_it_matters="Consistent top-tier performer in the Indian banking system with immaculate credit provisioning.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="ITC.NS",
-            name="ITC Limited",
-            approx_price="₹465.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Monopolistic cigarette cash flow machine funding rapid growth in packaged FMCG, hotels, and paper.",
-            why_it_matters="Legendary for capital protection during broad market corrections and generous dividend payouts.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="LT.NS",
-            name="Larsen & Toubro",
-            approx_price="₹3,600.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Supreme monopoly in mega-infrastructure, defense engineering, and Middle East EPC projects.",
-            why_it_matters="If India builds a highway, bridge, metro line, or defense vessel, L&T is virtually guaranteed to build it.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="BHARTIARTL.NS",
-            name="Bharti Airtel",
-            approx_price="₹1,580.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Telecom duopoly in India with premium ARPU growth and expanding enterprise cloud data centers.",
-            why_it_matters="Digital utility essential to 350+ million Indians and businesses with strong pricing power.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="HINDUNILVR.NS",
-            name="Hindustan Unilever",
-            approx_price="₹2,380.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Unrivaled distribution network touching 9 out of 10 Indian households daily across soaps, tea, and detergents.",
-            why_it_matters="Ultimate defensive stock. Everyday consumption continues regardless of economic cycles.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="KOTAKBANK.NS",
-            name="Kotak Mahindra Bank",
-            approx_price="₹1,750.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Conservative risk-adjusted underwriting with one of the lowest non-performing loan ratios in Asia.",
-            why_it_matters="Fortress balance sheet built by Uday Kotak to withstand any economic liquidity crunch.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="TATASTEEL.NS",
-            name="Tata Steel",
-            approx_price="₹145.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Fully captive high-grade iron ore mines making it one of the lowest-cost steelmakers on earth.",
-            why_it_matters="Core supplier to automotive and national infrastructure projects with blue-chip Tata lineage.",
-            risk_level="Cyclical Blue-Chip",
-            risk_badge="🟢 Blue-Chip Value",
-        ),
-        ThematicStockItem(
-            ticker="ASIANPAINT.NS",
-            name="Asian Paints",
-            approx_price="₹2,250.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Uncontested decorative paints monopoly with over 50 years of uninterrupted market leadership.",
-            why_it_matters="Exceptional supply chain logistics and proprietary dealer tinting machines protect its deep moat.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-    ],
+INDIAN_SCAN_UNIVERSE = [
+    # Safe Havens / Market Pillars
+    {"ticker": "RELIANCE.NS", "name": "Reliance Industries", "base_category": "safe", "why_it_matters": "Dominant conglomerate anchoring Nifty 50 with leading telecom and retail cash flows."},
+    {"ticker": "TCS.NS", "name": "Tata Consultancy Services", "base_category": "safe", "why_it_matters": "Zero-debt balance sheet, 35%+ ROE, and mission-critical multi-billion enterprise contracts."},
+    {"ticker": "HDFCBANK.NS", "name": "HDFC Bank", "base_category": "safe", "why_it_matters": "Premier private banking franchise with conservative underwriting and systemic retail presence."},
+    {"ticker": "INFY.NS", "name": "Infosys", "base_category": "safe", "why_it_matters": "High cash generation, global digital consulting, and enterprise AI modernization programs."},
+    {"ticker": "ICICIBANK.NS", "name": "ICICI Bank", "base_category": "safe", "why_it_matters": "Industry-leading ROA and consistent credit quality across digital retail and corporate lending."},
+    {"ticker": "ITC.NS", "name": "ITC Limited", "base_category": "safe", "why_it_matters": "Defensive cash cow with unmatched pricing power, steady FMCG growth, and solid dividend payouts."},
+    {"ticker": "LT.NS", "name": "Larsen & Toubro", "base_category": "safe", "why_it_matters": "Premier engineering and defense contractor, capturing multi-trillion rupee sovereign capex."},
+    {"ticker": "BHARTIARTL.NS", "name": "Bharti Airtel", "base_category": "safe", "why_it_matters": "Telecom duopoly with expanding ARPU and high-growth enterprise cloud data centers."},
+    {"ticker": "HINDUNILVR.NS", "name": "Hindustan Unilever", "base_category": "safe", "why_it_matters": "Essential consumption staple reaching 9 out of 10 Indian households every single day."},
+    {"ticker": "KOTAKBANK.NS", "name": "Kotak Mahindra Bank", "base_category": "safe", "why_it_matters": "Conservative risk-adjusted underwriting with fortress liquidity reserves and clean NPAs."},
+    {"ticker": "TATASTEEL.NS", "name": "Tata Steel", "base_category": "safe", "why_it_matters": "Low-cost integrated steelmaker backed by captive iron ore mines and Tata corporate lineage."},
+    {"ticker": "ASIANPAINT.NS", "name": "Asian Paints", "base_category": "safe", "why_it_matters": "Dominant decorative coatings monopoly with multi-decade dealer distribution moat."},
+    {"ticker": "SBIN.NS", "name": "State Bank of India", "base_category": "safe", "why_it_matters": "India's largest bank by assets, driving national credit expansion with declining NPAs."},
+    {"ticker": "NTPC.NS", "name": "NTPC Limited", "base_category": "safe", "why_it_matters": "Largest power generator in India, expanding into massive utility-scale green renewables."},
+    {"ticker": "COALINDIA.NS", "name": "Coal India", "base_category": "safe", "why_it_matters": "Near-monopoly in domestic thermal coal supply with double-digit dividend distributions."},
 
-    "new": [
-        ThematicStockItem(
-            ticker="ZOMATO.NS",
-            name="Zomato Ltd",
-            approx_price="₹245.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Blinkit quick-commerce hypergrowth turning the entire enterprise decisively profitable.",
-            why_it_matters="The defining consumer tech platform dominating grocery delivery and dining out across urban India.",
-            risk_level="Growth / High Multiple",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="JIOFIN.NS",
-            name="Jio Financial Services",
-            approx_price="₹315.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Joint venture with BlackRock to disrupt Indian asset management, lending, and digital payments.",
-            why_it_matters="Massive capital base with direct distribution access to over 450 million Jio telecom subscribers.",
-            risk_level="Emerging Giant",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="SWIGGY.NS",
-            name="Swiggy Ltd",
-            approx_price="₹410.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Newly listed food delivery and Instamart quick commerce duopoly with expanding dark store margins.",
-            why_it_matters="High-frequency urban consumer habit with immense cross-selling power for groceries and dining.",
-            risk_level="High Growth",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="TATATECH.NS",
-            name="Tata Technologies",
-            approx_price="₹880.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Pure-play digital engineering services powering global OEM transitions to EVs and aerospace software.",
-            why_it_matters="First Tata Group IPO in almost 20 years, commanding prestigious automotive relationships globally.",
-            risk_level="Growth",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="POLICYBZR.NS",
-            name="PB Fintech",
-            approx_price="₹1,650.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Near-monopoly in online term life and health insurance distribution reaching free cash flow inflection.",
-            why_it_matters="Underpenetrated Indian insurance market ensures double-digit structural runway for decades.",
-            risk_level="High Growth",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="NYKAA.NS",
-            name="FSN E-Commerce (Nykaa)",
-            approx_price="₹175.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Dominant beauty and personal care omnichannel retailer expanding owned-brand gross margins.",
-            why_it_matters="Pioneered curated luxury cosmetics e-commerce with high brand loyalty among affluent Indian women.",
-            risk_level="Growth",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="DELHIVERY.NS",
-            name="Delhivery",
-            approx_price="₹340.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Fully automated express parcel sortation hubs capturing e-commerce volume inflection.",
-            why_it_matters="India's largest independent third-party logistics network with high operating leverage as volumes scale.",
-            risk_level="Turnaround Growth",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="MAPMYINDIA.NS",
-            name="C.E. Info Systems",
-            approx_price="₹1,850.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Monopoly in indigenous digital HD mapping powering automotive ADAS, Apple Maps India, and drone corridors.",
-            why_it_matters="Asset-light 40%+ EBITDA margins with unmatched proprietary spatial geospatial intelligence data.",
-            risk_level="High Margin Niche",
-            risk_badge="🟢 High Moat",
-        ),
-        ThematicStockItem(
-            ticker="PAYTM.NS",
-            name="One97 Communications",
-            approx_price="₹720.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Post-regulatory pivot toward merchant soundbox subscriptions and third-party bank loan distribution.",
-            why_it_matters="Dominant merchant checkout terminal network generating stable recurring software rental fees.",
-            risk_level="Speculative Turnaround",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="HONASA.NS",
-            name="Honasa Consumer (Mamaearth)",
-            approx_price="₹265.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Toxin-free direct-to-consumer brand expanding into offline general trade and pharmacy shelves.",
-            why_it_matters="Fast-scaling young personal care portfolio addressing the clean-ingredient consumer shift.",
-            risk_level="Growth / Volatile",
-            risk_badge="🟡 Moderate",
-        ),
-    ],
+    # New & Emerging Disruptors
+    {"ticker": "JIOFIN.NS", "name": "Jio Financial Services", "base_category": "new", "why_it_matters": "BlackRock JV partner with balance sheet depth to disrupt lending and asset management."},
+    {"ticker": "SWIGGY.NS", "name": "Swiggy Ltd", "base_category": "new", "why_it_matters": "Urban food delivery and quick-commerce duopoly with expanding dark store operating margins."},
+    {"ticker": "TATATECH.NS", "name": "Tata Technologies", "base_category": "new", "why_it_matters": "Pure-play engineering R&D services powering OEM transitions to software-defined EVs."},
+    {"ticker": "POLICYBZR.NS", "name": "PB Fintech", "base_category": "new", "why_it_matters": "Online insurance aggregator commanding near-monopoly market share in health and life cover."},
+    {"ticker": "NYKAA.NS", "name": "FSN E-Commerce (Nykaa)", "base_category": "new", "why_it_matters": "Omnichannel luxury beauty and fashion marketplace with expanding owned-brand gross margins."},
+    {"ticker": "DELHIVERY.NS", "name": "Delhivery", "base_category": "new", "why_it_matters": "Fully automated express parcel logistics network capturing e-commerce volume inflection."},
+    {"ticker": "MAPMYINDIA.NS", "name": "C.E. Info Systems", "base_category": "new", "why_it_matters": "Indigenous HD map data monopoly powering automotive ADAS, Apple Maps India, and drones."},
+    {"ticker": "PAYTM.NS", "name": "One97 Communications", "base_category": "new", "why_it_matters": "Merchant payment checkout network generating high-margin recurring soundbox rental fees."},
+    {"ticker": "NAUKRI.NS", "name": "Info Edge (India)", "base_category": "new", "why_it_matters": "Dominant white-collar recruitment platform (Naukri) and premier incubator for Indian tech."},
+    {"ticker": "KALYANKJIL.NS", "name": "Kalyan Jewellers", "base_category": "new", "why_it_matters": "Aggressive retail footprint capturing consumer shift from unorganized to hallmarked jewelry."},
 
-    "trending": [
-        ThematicStockItem(
-            ticker="TATAMOTORS.NS",
-            name="Tata Motors",
-            approx_price="₹715.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="70%+ market share in domestic passenger EVs alongside roaring Jaguar Land Rover luxury order book.",
-            why_it_matters="Among the most actively traded stocks in India, leading the automotive and clean mobility transformation.",
-            risk_level="Moderate",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="BEL.NS",
-            name="Bharat Electronics",
-            approx_price="₹295.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Record multi-billion rupee defense orders for naval radars, electronic warfare systems, and missile avionics.",
-            why_it_matters="The prime hardware beneficiary of the government's mandatory indigenous defense procurement policy.",
-            risk_level="Low to Moderate",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="HAL.NS",
-            name="Hindustan Aeronautics",
-            approx_price="₹4,100.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Sole manufacturer of Tejas fighter aircraft and multi-role combat helicopters with multi-decade order visibility.",
-            why_it_matters="Monopolistic sovereign aerospace champion backed by guaranteed Ministry of Defense capital allocations.",
-            risk_level="Moderate",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="TRENT.NS",
-            name="Trent Ltd",
-            approx_price="₹6,400.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Zudio fast-fashion retail phenomenon expanding stores exponentially with industry-leading store-level payback.",
-            why_it_matters="Exceptional retail execution by the Tata Group capturing mass discretionary youth fashion spend.",
-            risk_level="High Growth / Premium",
-            risk_badge="🟡 High Multiple",
-        ),
-        ThematicStockItem(
-            ticker="COCHINSHIP.NS",
-            name="Cochin Shipyard",
-            approx_price="₹1,450.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Builder of India's indigenous aircraft carrier expanding into green hydrogen commercial vessels and repair docks.",
-            why_it_matters="Strategic national defense shipyard with strong export and commercial retrofit order pipeline.",
-            risk_level="High Momentum",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="MAZDOCK.NS",
-            name="Mazagon Dock Shipbuilders",
-            approx_price="₹4,200.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Construction of Scorpene-class submarines and stealth guided-missile destroyers for the Indian Navy.",
-            why_it_matters="Premier submarine manufacturing yard with massive order backlogs guaranteeing multi-year revenue growth.",
-            risk_level="High Momentum",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="DIXON.NS",
-            name="Dixon Technologies",
-            approx_price="₹12,800.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Leading electronic manufacturing services (EMS) partner assembling smartphones for Motorola, Xiaomi, and Google.",
-            why_it_matters="The primary champion of the government's Production Linked Incentive (PLI) electronics hardware push.",
-            risk_level="High Growth",
-            risk_badge="🟢 High Growth",
-        ),
-        ThematicStockItem(
-            ticker="BSE.NS",
-            name="BSE Ltd",
-            approx_price="₹3,900.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Explosive market share gains in weekly index derivatives contracts (Sensex & Bankex).",
-            why_it_matters="Pure exchange tollbooth that profits directly from surging retail participation and institutional trading volumes.",
-            risk_level="High Momentum",
-            risk_badge="🟢 Strong Momentum",
-        ),
-        ThematicStockItem(
-            ticker="RVNL.NS",
-            name="Rail Vikas Nigam",
-            approx_price="₹390.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Executing dedicated freight corridors, metro rail lines, and overseas railway construction joint ventures.",
-            why_it_matters="Primary executing agency for the multi-trillion rupee Indian Railways modernisation capex program.",
-            risk_level="High Volatility",
-            risk_badge="🟡 High Volatility",
-        ),
-        ThematicStockItem(
-            ticker="ADANIENT.NS",
-            name="Adani Enterprises",
-            approx_price="₹2,800.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Incubating sovereign mega-projects including airports, green hydrogen, expressways, and data centers.",
-            why_it_matters="Flagship incubator driving private infrastructure investment across essential national supply chains.",
-            risk_level="High Leverage / Policy",
-            risk_badge="🟡 High Volatility",
-        ),
-    ],
+    # Defense, Engineering & Momentum
+    {"ticker": "BEL.NS", "name": "Bharat Electronics", "base_category": "trending", "why_it_matters": "Sovereign defense electronics champion securing naval radar and missile avionics orders."},
+    {"ticker": "HAL.NS", "name": "Hindustan Aeronautics", "base_category": "trending", "why_it_matters": "Sole manufacturer of indigenous fighter aircraft and combat helicopters with multi-year order backlog."},
+    {"ticker": "TRENT.NS", "name": "Trent Ltd", "base_category": "trending", "why_it_matters": "Tata Group retail phenomenon driven by exponential store expansions across Zudio."},
+    {"ticker": "COCHINSHIP.NS", "name": "Cochin Shipyard", "base_category": "trending", "why_it_matters": "Aircraft carrier shipyard expanding into green commercial vessels and high-margin ship repair."},
+    {"ticker": "MAZDOCK.NS", "name": "Mazagon Dock Shipbuilders", "base_category": "trending", "why_it_matters": "Submarine and guided-missile destroyer builder with massive multi-billion sovereign orders."},
+    {"ticker": "DIXON.NS", "name": "Dixon Technologies", "base_category": "trending", "why_it_matters": "Premier domestic EMS contractor assembling smartphones and consumer electronics under PLI."},
+    {"ticker": "BSE.NS", "name": "BSE Ltd", "base_category": "trending", "why_it_matters": "Surging market share in index derivatives and retail trading on Asia's oldest exchange."},
+    {"ticker": "RVNL.NS", "name": "Rail Vikas Nigam", "base_category": "trending", "why_it_matters": "Primary executing arm for Indian Railways modernization and high-speed freight corridors."},
+    {"ticker": "ADANIENT.NS", "name": "Adani Enterprises", "base_category": "trending", "why_it_matters": "Flagship private infrastructure incubator executing sovereign airports, solar, and data centers."},
 
-    "future": [
-        ThematicStockItem(
-            ticker="SUZLON.NS",
-            name="Suzlon Energy",
-            approx_price="₹58.20",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Prime Minister's sovereign mandate targeting 500 GW of clean non-fossil renewable capacity by 2030.",
-            why_it_matters="Essential for meeting India's decarbonization targets with domestic 3 MW wind turbine generators.",
-            risk_level="Policy Supercycle",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="IREDA.NS",
-            name="IREDA",
-            approx_price="₹195.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="State financing backbone underwriting national solar parks, green hydrogen hubs, and EV charging grids.",
-            why_it_matters="Nearly every sovereign green infrastructure project in India is financed by IREDA.",
-            risk_level="Sovereign Megatrend",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="EXIDEIND.NS",
-            name="Exide Industries",
-            approx_price="₹420.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Building India's largest lithium-ion battery cell gigafactory with global supply ties to Hyundai and Kia.",
-            why_it_matters="Ends India's foreign dependence on imported battery packs for the upcoming EV mass adoption cycle.",
-            risk_level="EV Infrastructure",
-            risk_badge="🟢 Emerging Leader",
-        ),
-        ThematicStockItem(
-            ticker="TITAGARH.NS",
-            name="Titagarh Rail Systems",
-            approx_price="₹1,120.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Contractor for Vande Bharat sleeper trainsets and advanced metro train bodies for major Indian smart cities.",
-            why_it_matters="Direct beneficiary of government budget allocation toward high-speed modern rail transit.",
-            risk_level="Infrastructure Supercycle",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="JSWENERGY.NS",
-            name="JSW Energy",
-            approx_price="₹640.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Massive pivot toward renewable power with multi-gigawatt battery energy storage systems (BESS).",
-            why_it_matters="Solves renewable intermittency by providing round-the-clock baseload green power to commercial grids.",
-            risk_level="Energy Transition",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="KPITTECH.NS",
-            name="KPIT Technologies",
-            approx_price="₹1,350.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Dedicated automotive software partner developing autonomous driving and electric powertrain architectures for global OEMs.",
-            why_it_matters="Modern vehicles are computers on wheels. KPIT writes the core operating systems for future cars.",
-            risk_level="High Tech Multiple",
-            risk_badge="🟢 Secular Growth",
-        ),
-        ThematicStockItem(
-            ticker="TATAELXSI.NS",
-            name="Tata Elxsi",
-            approx_price="₹6,600.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="High-end industrial design and AI integration across connected autonomous mobility and medical devices.",
-            why_it_matters="Premium design arm of Tata Group commanding 25%+ margins and near-zero debt.",
-            risk_level="Premium Quality",
-            risk_badge="🟢 Safe Compounder",
-        ),
-        ThematicStockItem(
-            ticker="DEEPAKFERT.NS",
-            name="Deepak Fertilisers",
-            approx_price="₹950.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Commissioning specialized nitric acid and electronic-grade chemicals required for solar and semiconductor fabs.",
-            why_it_matters="Critical chemical feedstock supplier powering domestic mining, defense, and high-tech manufacturing.",
-            risk_level="Industrial Cyclical",
-            risk_badge="🟡 Emerging Value",
-        ),
-        ThematicStockItem(
-            ticker="L&TFH.NS",
-            name="L&T Finance Holdings",
-            approx_price="₹140.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Lakshya 2026 transformation into a 95%+ retail lender focusing on rural inclusion and farm tractors.",
-            why_it_matters="Direct proxy on rural disposable income growth and agricultural mechanization in Bharat.",
-            risk_level="Financial Inclusion",
-            risk_badge="🟢 High Dividend",
-        ),
-        ThematicStockItem(
-            ticker="PRESTIGE.NS",
-            name="Prestige Estates",
-            approx_price="₹1,600.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Premium residential and commercial office real estate boom across Bengaluru, Mumbai, and Hyderabad.",
-            why_it_matters="Captures the generational urbanization and wealth accumulation of India's technology workforce.",
-            risk_level="Real Estate Growth",
-            risk_badge="🟢 Strong Momentum",
-        ),
-    ],
-}
+    # Future Supercycles (Energy Transition, Grid, EVs)
+    {"ticker": "SUZLON.NS", "name": "Suzlon Energy", "base_category": "future", "why_it_matters": "Debt-free market leader in domestic wind turbines powering India's 500 GW renewable mandate."},
+    {"ticker": "IREDA.NS", "name": "IREDA", "base_category": "future", "why_it_matters": "State-owned non-banking finance institution underwriting sovereign green energy infrastructure."},
+    {"ticker": "EXIDEIND.NS", "name": "Exide Industries", "base_category": "future", "why_it_matters": "Building India's premier lithium-ion cell gigafactory with global supply ties to Hyundai & Kia."},
+    {"ticker": "TITAGARH.NS", "name": "Titagarh Rail Systems", "base_category": "future", "why_it_matters": "Builder of high-speed Vande Bharat trainsets and smart city metro coaches."},
+    {"ticker": "JSWENERGY.NS", "name": "JSW Energy", "base_category": "future", "why_it_matters": "Rapidly pivoting toward utility-scale renewable power and multi-gigawatt battery storage (BESS)."},
+    {"ticker": "KPITTECH.NS", "name": "KPIT Technologies", "base_category": "future", "why_it_matters": "Global software architecture specialist for electric powertrains and autonomous mobility."},
+    {"ticker": "TATAELXSI.NS", "name": "Tata Elxsi", "base_category": "future", "why_it_matters": "High-margin automotive engineering design and AI solutions for medical and tech OEMs."},
+    {"ticker": "DEEPAKFERT.NS", "name": "Deepak Fertilisers", "base_category": "future", "why_it_matters": "Key supplier of industrial nitric acid and electronic-grade chemicals for semiconductors."},
+    {"ticker": "PRESTIGE.NS", "name": "Prestige Estates", "base_category": "future", "why_it_matters": "Capturing generational urbanization and premium residential demand across Indian tech hubs."},
+
+    # Small-Priced Candidates (< ₹100 Target)
+    {"ticker": "IDEA.NS", "name": "Vodafone Idea", "base_category": "penny", "why_it_matters": "Sub-₹20 telecom turnaround candidate executing 5G network rollout with government backing."},
+    {"ticker": "YESBANK.NS", "name": "Yes Bank", "base_category": "penny", "why_it_matters": "Post-cleanup balance sheet recovery supported by low-cost retail deposit expansion."},
+    {"ticker": "SOUTHBANK.NS", "name": "South Indian Bank", "base_category": "penny", "why_it_matters": "Attractive price-to-book valuation with clean NPA reduction under professional management."},
+    {"ticker": "RPOWER.NS", "name": "Reliance Power", "base_category": "penny", "why_it_matters": "Rapidly deleveraging power producer benefiting from peak domestic electricity demand."},
+    {"ticker": "UCOBANK.NS", "name": "UCO Bank", "base_category": "penny", "why_it_matters": "State-backed lender experiencing sustained asset quality normalization and rising margins."},
+    {"ticker": "IOB.NS", "name": "Indian Overseas Bank", "base_category": "penny", "why_it_matters": "Recovered public lender with declining bad loans and sovereign capital backing."},
+    {"ticker": "NHPC.NS", "name": "NHPC Ltd", "base_category": "penny", "why_it_matters": "Defensive state-owned hydropower utility commanding long-term power purchase agreements."},
+    {"ticker": "NBCC.NS", "name": "NBCC (India) Ltd", "base_category": "penny", "why_it_matters": "Debt-free PSU managing mega-redevelopment construction projects on cost-plus basis."},
+    {"ticker": "SJVN.NS", "name": "SJVN Ltd", "base_category": "penny", "why_it_matters": "Expanding renewable utility executing massive solar and hydro projects across North India."},
+    {"ticker": "IDFCFIRSTB.NS", "name": "IDFC First Bank", "base_category": "penny", "why_it_matters": "High-CASA retail banking franchise with rapid branch expansion and clean underwriting."},
+    {"ticker": "PNB.NS", "name": "Punjab National Bank", "base_category": "penny", "why_it_matters": "Major state lender benefiting from corporate credit demand and low credit costs."},
+    {"ticker": "BANKBARODA.NS", "name": "Bank of Baroda", "base_category": "penny", "why_it_matters": "Top-tier public bank delivering double-digit ROE and international trade finance."},
+]
+
+US_SCAN_UNIVERSE = [
+    # Safe Havens / Fortress Blue-Chips
+    {"ticker": "MSFT", "name": "Microsoft Corporation", "base_category": "safe", "why_it_matters": "Enterprise software monopoly with Azure cloud infrastructure and multi-billion OpenAI stake."},
+    {"ticker": "AAPL", "name": "Apple Inc.", "base_category": "safe", "why_it_matters": "2.2B active device ecosystem generating $100B+ annual free cash flow with massive share buybacks."},
+    {"ticker": "BRK-B", "name": "Berkshire Hathaway", "base_category": "safe", "why_it_matters": "Warren Buffett's fortress balance sheet holding over $300B in cash reserves and Treasury bills."},
+    {"ticker": "GOOGL", "name": "Alphabet Inc.", "base_category": "safe", "why_it_matters": "Global search monopoly, YouTube streaming, Google Cloud profitability, and Waymo autonomous leadership."},
+    {"ticker": "AMZN", "name": "Amazon.com", "base_category": "safe", "why_it_matters": "E-commerce logistics dominance combined with high-margin AWS enterprise cloud computing."},
+    {"ticker": "JNJ", "name": "Johnson & Johnson", "base_category": "safe", "why_it_matters": "AAA-rated defensive healthcare giant providing essential pharmaceuticals and medical devices."},
+    {"ticker": "PG", "name": "Procter & Gamble", "base_category": "safe", "why_it_matters": "Unmatched consumer goods pricing power across household essentials with 60+ years of dividend hikes."},
+    {"ticker": "JPM", "name": "JPMorgan Chase", "base_category": "safe", "why_it_matters": "Premier global financial fortress benefiting from corporate dealmaking and net interest margins."},
+    {"ticker": "V", "name": "Visa Inc.", "base_category": "safe", "why_it_matters": "Duopoly payments tollbooth processing trillions in global electronic transactions at 50%+ margins."},
+    {"ticker": "COST", "name": "Costco Wholesale", "base_category": "safe", "why_it_matters": "Unshakable membership-based warehouse moat with 90%+ renewal rates and relentless customer traffic."},
+    {"ticker": "WMT", "name": "Walmart Inc.", "base_category": "safe", "why_it_matters": "World's largest retailer commanding grocery distribution and scaling high-margin retail media ads."},
+    {"ticker": "UNH", "name": "UnitedHealth Group", "base_category": "safe", "why_it_matters": "Vertically integrated healthcare giant combining health insurance with Optum clinical care."},
+
+    # New & Emerging Disruptors
+    {"ticker": "ARM", "name": "Arm Holdings", "base_category": "new", "why_it_matters": "Dominant low-power chip architecture powering 99% of smartphones and expanding into AI datacenters."},
+    {"ticker": "RDDT", "name": "Reddit Inc.", "base_category": "new", "why_it_matters": "High-growth social forum platform monetizing unique human discussion data for LLM training."},
+    {"ticker": "ALAB", "name": "Astera Labs", "base_category": "new", "why_it_matters": "Crucial PCIe and CXL semiconductor connectivity modules required for high-bandwidth AI GPU clusters."},
+    {"ticker": "CAVA", "name": "CAVA Group", "base_category": "new", "why_it_matters": "Rapidly scaling Mediterranean fast-casual chain with industry-leading unit economics and same-store sales."},
+    {"ticker": "TOST", "name": "Toast Inc.", "base_category": "new", "why_it_matters": "Cloud operating system and payments gateway powering tens of thousands of restaurant operations."},
+    {"ticker": "DUOL", "name": "Duolingo", "base_category": "new", "why_it_matters": "Gamified language learning platform leveraging GenAI to drive high-margin paid subscriptions."},
+    {"ticker": "KVYO", "name": "Klaviyo", "base_category": "new", "why_it_matters": "Customer data and email automation platform powering targeted modern e-commerce campaigns."},
+    {"ticker": "CART", "name": "Maplebear (Instacart)", "base_category": "new", "why_it_matters": "Leading grocery technology platform expanding into digital shopping carts and retail ad networks."},
+    {"ticker": "MNDY", "name": "Monday.com", "base_category": "new", "why_it_matters": "Cloud work management platform delivering high net retention and expanding enterprise contracts."},
+    {"ticker": "CELH", "name": "Celsius Holdings", "base_category": "new", "why_it_matters": "Fast-growing fitness energy drink brand leveraging PepsiCo's nationwide distribution channels."},
+
+    # High Beta / Trending / Momentum Leaders
+    {"ticker": "NVDA", "name": "NVIDIA Corporation", "base_category": "trending", "why_it_matters": "Global monopoly in AI GPUs and CUDA software stack powering hyperscale datacenters."},
+    {"ticker": "TSLA", "name": "Tesla Inc.", "base_category": "trending", "why_it_matters": "Electric vehicle volume leader scaling Full Self-Driving neural networks and Cybercab robotics."},
+    {"ticker": "PLTR", "name": "Palantir Technologies", "base_category": "trending", "why_it_matters": "Commercial and defense AI ontology platform seeing explosive demand from US government and Fortune 500."},
+    {"ticker": "AMD", "name": "Advanced Micro Devices", "base_category": "trending", "why_it_matters": "Primary competitor in x86 CPUs and emerging alternative in datacenter AI accelerators (MI300)."},
+    {"ticker": "META", "name": "Meta Platforms", "base_category": "trending", "why_it_matters": "Advertising cash engine funding open-source Llama AI models and smart glasses technology."},
+    {"ticker": "SMCI", "name": "Super Micro Computer", "base_category": "trending", "why_it_matters": "Direct liquid cooling and modular server architecture built for dense GPU computing clusters."},
+    {"ticker": "COIN", "name": "Coinbase Global", "base_category": "trending", "why_it_matters": "Leading US regulated digital asset custodian and exchange benefiting from institutional crypto ETF inflows."},
+    {"ticker": "MSTR", "name": "MicroStrategy", "base_category": "trending", "why_it_matters": "Algorithmic treasury vehicle accumulating institutional Bitcoin reserves with software cash flow."},
+    {"ticker": "APP", "name": "AppLovin", "base_category": "trending", "why_it_matters": "Axon 2.0 AI recommendation engine revolutionizing mobile app advertising and e-commerce conversion."},
+    {"ticker": "HOOD", "name": "Robinhood Markets", "base_category": "trending", "why_it_matters": "Fast-scaling retail brokerage expanding into crypto staking, retirement accounts, and gold tier."},
+
+    # Future Supercycles (Nuclear, Thermal Grid, Industrial AI)
+    {"ticker": "VRT", "name": "Vertiv Holdings", "base_category": "future", "why_it_matters": "Critical thermal liquid cooling and power solutions required to prevent AI chips from overheating."},
+    {"ticker": "CEG", "name": "Constellation Energy", "base_category": "future", "why_it_matters": "Largest US clean nuclear fleet securing multi-decade power purchase agreements with hyperscalers."},
+    {"ticker": "ETN", "name": "Eaton Corporation", "base_category": "future", "why_it_matters": "Essential switchgear and power distribution equipment modernizing aging electrical grids."},
+    {"ticker": "NVO", "name": "Novo Nordisk", "base_category": "future", "why_it_matters": "Ozempic and Wegovy pioneer transforming metabolic health and cardiovascular disease prevention."},
+    {"ticker": "GEV", "name": "GE Vernova", "base_category": "future", "why_it_matters": "Gas turbines, wind power, and grid electrification software meeting soaring electricity demand."},
+    {"ticker": "CRWD", "name": "CrowdStrike Holdings", "base_category": "future", "why_it_matters": "AI-native cloud security platform protecting enterprise endpoints against sophisticated cyber attacks."},
+    {"ticker": "AXON", "name": "Axon Enterprise", "base_category": "future", "why_it_matters": "TASER devices, body cameras, and cloud evidence management modernizing global law enforcement."},
+    {"ticker": "OKLO", "name": "Oklo Inc.", "base_category": "future", "why_it_matters": "Developing fast fission micro-reactors to provide emission-free power directly to data center sites."},
+    {"ticker": "SMR", "name": "NuScale Power", "base_category": "future", "why_it_matters": "Pioneering certified small modular nuclear reactors for clean commercial baseload electricity."},
+    {"ticker": "BWXT", "name": "BWX Technologies", "base_category": "future", "why_it_matters": "Manufactures nuclear reactor components for US Navy submarines and medical radioisotopes."},
+
+    # Small-Priced Candidates (< $15 Target)
+    {"ticker": "SOUN", "name": "SoundHound AI", "base_category": "penny", "why_it_matters": "Conversational voice AI powering automotive dashboards and restaurant drive-thrus."},
+    {"ticker": "PLUG", "name": "Plug Power", "base_category": "penny", "why_it_matters": "Sub-$5 clean hydrogen ecosystem and turnkey fuel cell production infrastructure."},
+    {"ticker": "ACHR", "name": "Archer Aviation", "base_category": "penny", "why_it_matters": "FAA commercial certification for 'Midnight' electric air taxis backed by United Airlines and Stellantis."},
+    {"ticker": "JOBY", "name": "Joby Aviation", "base_category": "penny", "why_it_matters": "Pioneering commercial aerial ridesharing with strategic funding from Toyota and Delta Air Lines."},
+    {"ticker": "ASTS", "name": "AST SpaceMobile", "base_category": "penny", "why_it_matters": "Low Earth orbit satellite network connecting directly to unmodified cellular smartphones."},
+    {"ticker": "LUNR", "name": "Intuitive Machines", "base_category": "penny", "why_it_matters": "First commercial entity to land on the Moon under NASA's Artemis lunar exploration contracts."},
+    {"ticker": "RKLB", "name": "Rocket Lab USA", "base_category": "penny", "why_it_matters": "Proven orbital launch provider and satellite component manufacturer behind SpaceX."},
+    {"ticker": "BBAI", "name": "BigBear.ai", "base_category": "penny", "why_it_matters": "Decision-intelligence software contractor serving US defense and homeland security agencies."},
+    {"ticker": "OPEN", "name": "Opendoor Technologies", "base_category": "penny", "why_it_matters": "Algorithmic home-buying platform with high operating leverage to falling mortgage interest rates."},
+    {"ticker": "CLOV", "name": "Clover Health", "base_category": "penny", "why_it_matters": "Physician enablement software cutting Medicare hospitalization costs with positive operational cash flow."},
+    {"ticker": "DNA", "name": "Ginkgo Bioworks", "base_category": "penny", "why_it_matters": "Biological cell programming foundry serving commercial pharmaceutical and agricultural clients."},
+    {"ticker": "RGTI", "name": "Rigetti Computing", "base_category": "penny", "why_it_matters": "Full-stack quantum computing systems developing superconducting quantum processors."},
+    {"ticker": "IONQ", "name": "IonQ Inc.", "base_category": "penny", "why_it_matters": "Commercial quantum computer manufacturer developing trapped-ion hardware architectures."},
+]
 
 
-# =============================================================================
-# US MARKETS (NYSE / NASDAQ) THEMATIC RADAR — EXPANDED INSTITUTIONAL UNIVERSE
-# =============================================================================
-US_THEMATIC_RADAR: Dict[str, List[ThematicStockItem]] = {
-    "penny": [
-        ThematicStockItem(
-            ticker="BBAI",
-            name="BigBear.ai",
-            approx_price="$1.95",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="AI decision-support contractor securing US Department of Defense and airport biometrics deals.",
-            why_it_matters="Micro-cap price with sovereign government backing, though prone to wide percentage swings.",
-            risk_level="Speculative Contractor",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="OPEN",
-            name="Opendoor Technologies",
-            approx_price="$1.90",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Algorithmic digital real estate e-commerce platform highly sensitive to Federal Reserve interest rate cuts.",
-            why_it_matters="High operating leverage turnaround play as US mortgage rates ease and existing home sales recover.",
-            risk_level="Rate Sensitive / Speculative",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="PLUG",
-            name="Plug Power",
-            approx_price="$2.10",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Green hydrogen ecosystem and fuel cell infrastructure subsidized by US Department of Energy loans.",
-            why_it_matters="Sub-$5 energy transition stock; highly volatile and dependent on clean energy policy support.",
-            risk_level="Cash Burn Warning",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="CLOV",
-            name="Clover Health",
-            approx_price="$3.10",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="AI-driven healthcare SaaS platform (Clover Assistant) reaching positive GAAP operational profitability.",
-            why_it_matters="Turnaround in Medicare Advantage insurance using predictive data to cut patient hospitalization costs.",
-            risk_level="Healthcare Turnaround",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="ACHR",
-            name="Archer Aviation",
-            approx_price="$4.10",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="FAA commercial certification of 'Midnight' electric air taxis with strategic backing from United Airlines and Stellantis.",
-            why_it_matters="Leading the future of urban air mobility to bypass crowded metropolitan highway traffic.",
-            risk_level="Pre-Revenue Frontier",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="SOUN",
-            name="SoundHound AI",
-            approx_price="$4.85",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Voice-AI platform partnered with NVIDIA, Stellantis, and major enterprise restaurant chains.",
-            why_it_matters="Low dollar entry to the AI wave. High volatility, but rapidly compounding enterprise backlog.",
-            risk_level="High Risk / Speculative",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="JOBY",
-            name="Joby Aviation",
-            approx_price="$5.30",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Electric vertical takeoff and landing (eVTOL) pioneer with $500M investment from Toyota and Delta Air Lines.",
-            why_it_matters="Advanced testing stages with the FAA to operate zero-emission aerial airport shuttles by 2025/2026.",
-            risk_level="Frontier Mobility",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="DNA",
-            name="Ginkgo Bioworks",
-            approx_price="$7.50",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Cell programming platform providing biological foundry services for pharmaceuticals and agriculture.",
-            why_it_matters="Pioneering the biological revolution where cells are programmed like computers, backed by major pharma royalties.",
-            risk_level="Biotech Platform",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="ASTS",
-            name="AST SpaceMobile",
-            approx_price="$8.50",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Space-based cellular broadband network connecting directly to standard everyday smartphones from low Earth orbit.",
-            why_it_matters="Commercial deals with AT&T, Verizon, and Google with the potential to eradicate global cellular dead zones.",
-            risk_level="High Growth / Space",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="LUNR",
-            name="Intuitive Machines",
-            approx_price="$9.20",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="First commercial company to land on the Moon under NASA's multi-billion dollar Artemis program.",
-            why_it_matters="Frontier space economy play holding exclusive NASA lunar telemetry and satellite communications contracts.",
-            risk_level="Space Economy",
-            risk_badge="🟡 Speculative",
-        ),
-        ThematicStockItem(
-            ticker="RKLB",
-            name="Rocket Lab USA",
-            approx_price="$9.80",
-            category_id="penny",
-            category_title="🪙 Small-Priced (< $10)",
-            catalyst_driver="Proven Electron small-rocket launch cadence and development of the larger reusable Neutron rocket.",
-            why_it_matters="The undisputed #2 commercial rocket launcher behind SpaceX with profitable satellite component manufacturing.",
-            risk_level="High Growth",
-            risk_badge="🟢 High Conviction",
-        ),
-    ],
+def _fetch_single_news(ticker: str) -> tuple[str, str, str]:
+    """Fetches the latest live news headline, publisher, and article URL for a ticker."""
+    try:
+        t = yf.Ticker(ticker)
+        news_items = t.news
+        if news_items and len(news_items) > 0:
+            first = news_items[0]
+            content = first.get("content", {})
+            if content:
+                title = content.get("title", "")
+                provider = content.get("provider", {}).get("displayName", "Market Feed")
+                url = content.get("canonicalUrl", {}).get("url", "")
+                if title:
+                    return ticker, f"📰 [{provider}] {title}", url
+            # Legacy schema fallback
+            title = first.get("title", "")
+            publisher = first.get("publisher", "Market Feed")
+            link = first.get("link", "")
+            if title:
+                return ticker, f"📰 [{publisher}] {title}", link
+    except Exception:
+        pass
+    return ticker, "", ""
 
-    "safe": [
-        ThematicStockItem(
-            ticker="MSFT",
-            name="Microsoft Corporation",
-            approx_price="$430.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Monopolies in Windows, Office 365, Azure Cloud, and multi-billion stake in OpenAI.",
-            why_it_matters="One of only two companies on Earth with a pristine AAA credit rating (higher than the US Government).",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="AAPL",
-            name="Apple Inc.",
-            approx_price="$228.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="2.2+ billion active devices worldwide creating an unbeatable high-margin Services software flywheel.",
-            why_it_matters="Generates over $100 Billion in annual free cash flow and routinely buys back billions of its own stock.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="BRK-B",
-            name="Berkshire Hathaway",
-            approx_price="$460.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Warren Buffett's conglomerate holding over $300 Billion in cash reserves and Treasury bills.",
-            why_it_matters="The ultimate defensive fortress during market downturns. Compounds steadily with pristine safety.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="GOOGL",
-            name="Alphabet Inc.",
-            approx_price="$175.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Global monopoly in Search, YouTube ad revenue, Google Cloud profitability, and Waymo autonomous leadership.",
-            why_it_matters="Massive cash generator with world-leading deep AI research capabilities through Google DeepMind.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="AMZN",
-            name="Amazon.com",
-            approx_price="$195.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Dominance in global e-commerce and high-margin AWS cloud infrastructure powering generative AI workloads.",
-            why_it_matters="Unmatched logistics and fulfillment network that would cost hundreds of billions of dollars to replicate.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="JNJ",
-            name="Johnson & Johnson",
-            approx_price="$162.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Pharmaceutical and medical devices giant with 62 consecutive years of increasing its dividend payout.",
-            why_it_matters="People need life-saving medicine and surgical equipment regardless of economic recessions.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="JPM",
-            name="JPMorgan Chase & Co.",
-            approx_price="$225.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="The most profitable tier-1 bank in global history, overseen by Jamie Dimon with fortress tier-1 capital.",
-            why_it_matters="During banking stress, deposits flee regional competitors directly into JPMorgan for safety.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="V",
-            name="Visa Inc.",
-            approx_price="$285.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Global payments network duopoly commanding incredible 50%+ operating margins on every swipe.",
-            why_it_matters="Asset-light tollbooth on global consumer spending that acts as a natural hedge against inflation.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="PG",
-            name="Procter & Gamble",
-            approx_price="$170.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Dominant consumer essentials portfolio (Tide, Pampers, Gillette) with exceptional brand pricing power.",
-            why_it_matters="Classic defensive staple that has paid growing dividends for over 67 consecutive years.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="COST",
-            name="Costco Wholesale",
-            approx_price="$890.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="93%+ annual membership renewal rates and high volume bulk buying power shielding consumers from inflation.",
-            why_it_matters="Legendary consumer loyalty and steady compounding with virtually zero inventory obsolescence risk.",
-            risk_level="Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="KO",
-            name="The Coca-Cola Company",
-            approx_price="$68.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="Unrivaled global beverage distribution footprint in over 200 nations with 62-year dividend king status.",
-            why_it_matters="Warren Buffett's favorite compounder that reliably pays income in all economic weather conditions.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-        ThematicStockItem(
-            ticker="WMT",
-            name="Walmart Inc.",
-            approx_price="$88.00",
-            category_id="safe",
-            category_title="🏰 Safe Havens (Fortress Blue-Chips)",
-            catalyst_driver="World's largest retailer capturing high-income shoppers and expanding automated retail media advertising.",
-            why_it_matters="The bedrock of American retail with an unmatched grocery distribution supply chain.",
-            risk_level="Very Low Risk",
-            risk_badge="🟢 Safe Haven",
-        ),
-    ],
 
-    "new": [
-        ThematicStockItem(
-            ticker="ARM",
-            name="Arm Holdings",
-            approx_price="$135.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Power-efficient chip architecture used inside 99% of smartphones and rapidly taking over AI cloud servers.",
-            why_it_matters="Recent high-profile IPO that collects a royalty license fee on every advanced computing chip sold.",
-            risk_level="Growth / High Multiple",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="RDDT",
-            name="Reddit Inc.",
-            approx_price="$110.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Newly public platform licensing proprietary human conversational data to Google and OpenAI for model training.",
-            why_it_matters="Fastest-growing community discussion platform converting user interaction into pure high-margin AI licensing revenue.",
-            risk_level="High Growth",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="ALAB",
-            name="Astera Labs",
-            approx_price="$72.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Specialized PCIe connectivity chips linking thousands of GPUs together inside AI datacenter clusters.",
-            why_it_matters="Critical 'picks-and-shovels' component provider for hyperscale datacenters run by Amazon, Microsoft, and Google.",
-            risk_level="Growth / Tech",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="CAVA",
-            name="CAVA Group",
-            approx_price="$130.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="High-growth Mediterranean fast-casual dining chain achieving industry-leading same-store sales comps.",
-            why_it_matters="Widely viewed on Wall Street as the next Chipotle with decades of national store expansion runway.",
-            risk_level="High Multiple Growth",
-            risk_badge="🟡 High Multiple",
-        ),
-        ThematicStockItem(
-            ticker="KVYO",
-            name="Klaviyo",
-            approx_price="$35.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Intelligent marketing automation and customer data platform deeply integrated into Shopify storefronts.",
-            why_it_matters="Essential software infrastructure for direct-to-consumer digital commerce generating strong cash flows.",
-            risk_level="Growth SaaS",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="CART",
-            name="Maplebear (Instacart)",
-            approx_price="$42.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Dominant North American grocery delivery marketplace expanding into high-margin retail media advertising.",
-            why_it_matters="Partnered with over 1,500 grocery banners with strong cash generation and share repurchase programs.",
-            risk_level="Moderate",
-            risk_badge="🟢 Cash Flow Positive",
-        ),
-        ThematicStockItem(
-            ticker="BIRK",
-            name="Birkenstock Holding",
-            approx_price="$50.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Centuries-old heritage footwear brand executing successful direct-to-consumer expansion backed by LVMH.",
-            why_it_matters="Cult consumer following with strong gross margins and pricing power in premium casual footwear.",
-            risk_level="Consumer Luxury",
-            risk_badge="🟢 Brand Moat",
-        ),
-        ThematicStockItem(
-            ticker="TOST",
-            name="Toast Inc.",
-            approx_price="$32.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="All-in-one cloud POS and payment operating system powering over 100,000 independent restaurant locations.",
-            why_it_matters="Sticky restaurant operating system benefiting from cashless transactions and recurring software SaaS fees.",
-            risk_level="Growth / Fintech",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="RIVN",
-            name="Rivian Automotive",
-            approx_price="$11.50",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Electric R1T and R2 platform launch backed by a landmark $5 Billion software partnership with Volkswagen.",
-            why_it_matters="High engineering capability and Amazon commercial delivery van fleet contract, though capital intensive.",
-            risk_level="High Volatility / EV",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="DUOL",
-            name="Duolingo",
-            approx_price="$280.00",
-            category_id="new",
-            category_title="🌱 New & Emerging Disruptors",
-            catalyst_driver="Gamified language and education platform achieving viral user growth with generative AI conversation tutors.",
-            why_it_matters="Exceptional subscription conversion rate and operating leverage with zero debt on the balance sheet.",
-            risk_level="High Growth",
-            risk_badge="🟢 High Quality",
-        ),
-    ],
+def _fetch_news_concurrently(tickers: List[str]) -> Dict[str, tuple[str, str]]:
+    """Concurrently fetches news headlines and URLs using ThreadPoolExecutor."""
+    results = {}
+    if not tickers:
+        return results
 
-    "trending": [
-        ThematicStockItem(
-            ticker="NVDA",
-            name="NVIDIA Corporation",
-            approx_price="$128.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="The supreme hardware engine of generative AI with insatiable worldwide demand for Blackwell architecture GPUs.",
-            why_it_matters="The #1 most watched and traded stock in the world today. Sets the tone for the entire global technology sector.",
-            risk_level="High Momentum",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="TSLA",
-            name="Tesla Inc.",
-            approx_price="$235.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Cybercab autonomous robotaxi unveil, Full Self-Driving v13, and scaling Megapack grid energy storage.",
-            why_it_matters="Extreme retail and institutional liquidity with unmatched retail interest in autonomous transport and robotics.",
-            risk_level="High Volatility",
-            risk_badge="🟡 Caution",
-        ),
-        ThematicStockItem(
-            ticker="PLTR",
-            name="Palantir Technologies",
-            approx_price="$58.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="S&P 500 inclusion and massive adoption of its Artificial Intelligence Platform (AIP) by defense and commercial firms.",
-            why_it_matters="High-conviction institutional and retail compounder expanding operating margins at extraordinary speed.",
-            risk_level="High Momentum",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="AMD",
-            name="Advanced Micro Devices",
-            approx_price="$155.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="MI300X AI GPU accelerators capturing datacenter share alongside dominant EPYC server processor sales.",
-            why_it_matters="The prime viable alternative to NVIDIA in hyperscale AI computing under CEO Lisa Su.",
-            risk_level="Momentum",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="META",
-            name="Meta Platforms",
-            approx_price="$585.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Open-source Llama AI models supercharging ad conversions across 3.2 billion daily active users on Instagram and WhatsApp.",
-            why_it_matters="Printing massive free cash flow while leading the global open-source artificial intelligence movement.",
-            risk_level="Low to Moderate",
-            risk_badge="🟢 Safe Compounder",
-        ),
-        ThematicStockItem(
-            ticker="SMCI",
-            name="Super Micro Computer",
-            approx_price="$45.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Leading designer of custom liquid-cooled server rack solutions for high-density NVIDIA Blackwell clusters.",
-            why_it_matters="High beta AI hardware player experiencing elevated volatility amid accounting auditor turnover.",
-            risk_level="High Volatility",
-            risk_badge="🔴 High Risk",
-        ),
-        ThematicStockItem(
-            ticker="COIN",
-            name="Coinbase Global",
-            approx_price="$215.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Official custodian for 80%+ of spot Bitcoin and Ethereum ETFs approved by the US SEC.",
-            why_it_matters="Primary regulated gateway for Wall Street institutional capital to interact with digital assets and stablecoins.",
-            risk_level="Crypto Beta",
-            risk_badge="🟡 High Volatility",
-        ),
-        ThematicStockItem(
-            ticker="HOOD",
-            name="Robinhood Markets",
-            approx_price="$28.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Rapid expansion into desktop trading, Gold subscriptions, credit cards, and international crypto markets.",
-            why_it_matters="Benefiting directly from retail trading resurgence and rising interest income on customer cash deposits.",
-            risk_level="Fintech Growth",
-            risk_badge="🟢 Bullish",
-        ),
-        ThematicStockItem(
-            ticker="U",
-            name="Unity Software",
-            approx_price="$22.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Restructured management resetting pricing models for mobile game developers and spatial computing simulations.",
-            why_it_matters="Powers over 60% of all mobile games globally; turnaround candidate under new operational leadership.",
-            risk_level="Turnaround",
-            risk_badge="🟡 Moderate",
-        ),
-        ThematicStockItem(
-            ticker="MSTR",
-            name="MicroStrategy",
-            approx_price="$220.00",
-            category_id="trending",
-            category_title="🔥 Trending Today",
-            catalyst_driver="Pioneered institutional Bitcoin treasury reserve strategy, accumulating over 250,000 BTC.",
-            why_it_matters="Extreme volatility proxy for Bitcoin adoption traded heavily by institutional hedge funds.",
-            risk_level="High Volatility",
-            risk_badge="🔴 Speculative",
-        ),
-    ],
+    max_workers = min(12, max(2, len(tickers)))
+    try:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for sym, driver, url in executor.map(_fetch_single_news, tickers):
+                if driver:
+                    results[sym] = (driver, url)
+    except Exception:
+        pass
+    return results
 
-    "future": [
-        ThematicStockItem(
-            ticker="VRT",
-            name="Vertiv Holdings",
-            approx_price="$112.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Liquid immersion cooling systems and critical power architecture required for high-density AI data centers.",
-            why_it_matters="Next-gen AI chips generate so much thermal heat that traditional air conditioning is obsolete. Liquid cooling is mandatory.",
-            risk_level="Infrastructure Supercycle",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="CEG",
-            name="Constellation Energy",
-            approx_price="$260.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Landmark 20-year power contract with Microsoft to restart Three Mile Island nuclear unit for clean AI electricity.",
-            why_it_matters="World leaders recognize that nuclear baseload is the only zero-carbon source capable of 24/7 AI power.",
-            risk_level="Nuclear Renaissance",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="ETN",
-            name="Eaton Corporation",
-            approx_price="$350.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Multi-trillion dollar modernization of the US electrical grid to handle EVs, clean power, and AI campuses.",
-            why_it_matters="Substation transformers and switchgear equipment are sold out years in advance with immense pricing power.",
-            risk_level="Grid Modernization",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="CCJ",
-            name="Cameco Corporation",
-            approx_price="$55.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Largest pure-play uranium miner in Western nations holding ownership in Westinghouse nuclear reactors.",
-            why_it_matters="Severe structural deficit in global uranium fuel supply as 60+ new nuclear reactors are constructed worldwide.",
-            risk_level="Commodity Supercycle",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="XYL",
-            name="Xylem Inc.",
-            approx_price="$135.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Global leader in smart water metering, municipal wastewater treatment, and industrial desalination equipment.",
-            why_it_matters="Planetary freshwater scarcity and aging water piping networks represent a non-discretionary global capex cycle.",
-            risk_level="Resource Scarcity",
-            risk_badge="🟢 Safe Compounder",
-        ),
-        ThematicStockItem(
-            ticker="LLY",
-            name="Eli Lilly and Company",
-            approx_price="$880.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Mounjaro and Zepbound GLP-1 treatments addressing the multi-billion dollar global obesity and diabetes epidemic.",
-            why_it_matters="Projected to become the first pharmaceutical company to achieve a $1 Trillion market valuation.",
-            risk_level="Healthcare Supercycle",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="NVO",
-            name="Novo Nordisk",
-            approx_price="$120.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Ozempic and Wegovy pioneer transforming metabolic health, cardiovascular care, and kidney disease prevention.",
-            why_it_matters="Deep manufacturing moat and clinical data dominance in preventative metabolic healthcare.",
-            risk_level="Healthcare Supercycle",
-            risk_badge="🟢 Safe Compounder",
-        ),
-        ThematicStockItem(
-            ticker="GEV",
-            name="GE Vernova",
-            approx_price="$270.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="Pure-play power generation spinoff supplying high-efficiency gas turbines, wind blades, and grid software.",
-            why_it_matters="Utilities worldwide are ordering gas turbines at record rates to bridge the power gap for hyperscale datacenters.",
-            risk_level="Power Supercycle",
-            risk_badge="🟢 Strong Momentum",
-        ),
-        ThematicStockItem(
-            ticker="CRWD",
-            name="CrowdStrike Holdings",
-            approx_price="$295.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="AI-native Falcon platform defending cloud endpoints against state-sponsored and autonomous cyber threats.",
-            why_it_matters="Cybersecurity is a mandatory sovereign defense expenditure with high customer contract retention.",
-            risk_level="High Quality Growth",
-            risk_badge="🟢 High Conviction",
-        ),
-        ThematicStockItem(
-            ticker="AXON",
-            name="Axon Enterprise",
-            approx_price="$430.00",
-            category_id="future",
-            category_title="🚀 Future Mega-Trends (Supercycles)",
-            catalyst_driver="TASER devices, body cameras, and AI-powered evidence management modernizing global law enforcement.",
-            why_it_matters="Dominant public safety monopoly expanding software SaaS subscriptions with virtually zero customer churn.",
-            risk_level="Defense & Safety",
-            risk_badge="🟢 High Conviction",
-        ),
-    ],
-}
+
+def scan_live_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicStockItem]]:
+    """
+    Executes a pure live quantitative market scan across the candidate universe.
+    
+    1. Downloads 5-day OHLCV in a single batch via yf.download.
+    2. Calculates live price, day change %, 5-day average volume, and relative volume.
+    3. Dynamically screens and sorts candidates into 5 categories:
+       - 'penny': Live price < ₹100 (IN) or < $15 (US), sorted by relative volume.
+       - 'safe': Fortress blue-chips, sorted by 5-day stability/low volatility.
+       - 'new': Disruptors & new listings, sorted by momentum.
+       - 'trending': Market-wide top gainers & volume breakouts (all scanned stocks).
+       - 'future': Secular megatrends, sorted by relative strength.
+    4. Concurrently extracts live financial news headlines.
+    """
+    universe = INDIAN_SCAN_UNIVERSE if is_indian else US_SCAN_UNIVERSE
+    currency_sym = "₹" if is_indian else "$"
+    symbols = [item["ticker"] for item in universe]
+    meta_by_sym = {item["ticker"]: item for item in universe}
+
+    # Step 1: Batch download latest 5-day market data
+    try:
+        df = yf.download(symbols, period="5d", interval="1d", progress=False)
+    except Exception:
+        df = pd.DataFrame()
+
+    live_metrics = {}
+
+    if not df.empty and "Close" in df.columns:
+        close_df = df["Close"]
+        vol_df = df["Volume"] if "Volume" in df.columns else pd.DataFrame()
+
+        for sym in symbols:
+            try:
+                if sym in close_df.columns:
+                    s_close = close_df[sym].dropna()
+                    s_vol = vol_df[sym].dropna() if (not vol_df.empty and sym in vol_df.columns) else pd.Series()
+
+                    if len(s_close) >= 2:
+                        last_p = float(s_close.iloc[-1])
+                        prev_p = float(s_close.iloc[-2])
+                        chg_pct = ((last_p - prev_p) / prev_p) * 100.0
+
+                        if len(s_vol) >= 2:
+                            avg_v = float(s_vol.iloc[:-1].mean())
+                            cur_v = float(s_vol.iloc[-1])
+                            rel_v = (cur_v / avg_v) if avg_v > 0 else 1.0
+                        else:
+                            rel_v = 1.0
+
+                        # Calculate 5-day return volatility
+                        ret_pcts = s_close.pct_change().dropna()
+                        volatility_5d = float(ret_pcts.std() * 100.0) if len(ret_pcts) > 1 else 1.5
+
+                        live_metrics[sym] = {
+                            "price": last_p,
+                            "change_pct": chg_pct,
+                            "rel_volume": rel_v,
+                            "volatility": volatility_5d,
+                        }
+            except Exception:
+                continue
+
+    # Step 2: Dynamic Categorization & Quantitative Ranking
+    penny_items = []
+    safe_items = []
+    new_items = []
+    trending_candidates = []
+    future_items = []
+
+    price_ceiling = 100.0 if is_indian else 15.0
+
+    for sym, meta in meta_by_sym.items():
+        m = live_metrics.get(sym, None)
+        if not m:
+            continue
+
+        price = m["price"]
+        chg_pct = m["change_pct"]
+        rel_v = m["rel_volume"]
+        vol = m["volatility"]
+        base_cat = meta["base_category"]
+
+        # 1. Penny / Small-Priced condition (Strict live price ceiling)
+        if price <= price_ceiling:
+            risk_badge = "🔴 High Risk" if vol > 3.5 else "🟡 Moderate"
+            risk_level = f"Volatile ({vol:.1f}% swing)" if vol > 3.5 else "Moderate Risk"
+            penny_items.append((rel_v, sym, price, chg_pct, rel_v, risk_badge, risk_level))
+
+        # 2. Safe Havens
+        if base_cat == "safe":
+            safe_items.append((-vol, sym, price, chg_pct, rel_v, "🟢 Safe Haven", "Low Volatility / Fortress"))
+
+        # 3. New & Emerging
+        if base_cat == "new":
+            score = (chg_pct * 0.6) + (rel_v * 1.5)
+            badge = "🟢 High Conviction" if chg_pct > 0 and rel_v >= 1.2 else "🟡 Emerging Growth"
+            new_items.append((score, sym, price, chg_pct, rel_v, badge, "Growth / Innovation"))
+
+        # 4. Future Supercycles
+        if base_cat == "future":
+            score = chg_pct + (rel_v * 1.2)
+            future_items.append((score, sym, price, chg_pct, rel_v, "🟢 Secular Megatrend", "Secular Supercycle"))
+
+        # 5. Trending Today Candidate (Evaluated across the ENTIRE universe!)
+        # Ranked by composite momentum: day change % and volume breakout
+        trend_score = (chg_pct * 0.7) + ((rel_v - 1.0) * 8.0)
+        t_badge = "🟢 Bullish Momentum" if chg_pct >= 0 else "⚡ Heavy Volume Action"
+        t_level = f"High Momentum (+{chg_pct:.1f}%)" if chg_pct >= 0 else f"High Turnover ({rel_v:.1f}x Vol)"
+        trending_candidates.append((trend_score, sym, price, chg_pct, rel_v, t_badge, t_level))
+
+    # Sort each list by their quantitative scores
+    penny_items.sort(key=lambda x: x[0], reverse=True)           # Highest volume surge first
+    safe_items.sort(key=lambda x: x[0], reverse=True)            # Lowest volatility first
+    new_items.sort(key=lambda x: x[0], reverse=True)             # Highest momentum first
+    trending_candidates.sort(key=lambda x: x[0], reverse=True)   # Best trend score first
+    future_items.sort(key=lambda x: x[0], reverse=True)          # Highest relative strength first
+
+    # Pick top 10 for each category
+    selected_penny = penny_items[:10]
+    selected_safe = safe_items[:10]
+    selected_new = new_items[:10]
+    selected_trending = trending_candidates[:10]
+    selected_future = future_items[:10]
+
+    # Collect unique tickers to fetch live news for
+    all_selected_tickers = list({
+        row[1] for row in (selected_penny + selected_safe + selected_new + selected_trending + selected_future)
+    })
+
+    # Step 3: Concurrently fetch real-time news articles
+    news_map = _fetch_news_concurrently(all_selected_tickers)
+
+    # Step 4: Build ThematicStockItem records with live data
+    def build_items(raw_rows, cat_id: str, cat_title: str) -> List[ThematicStockItem]:
+        items = []
+        for row in raw_rows:
+            _, sym, price, chg_pct, rel_v, risk_badge, risk_level = row
+            meta = meta_by_sym.get(sym, {})
+            name = meta.get("name", sym)
+            why_it_matters = meta.get("why_it_matters", "Strategic market player.")
+
+            chg_sign = "+" if chg_pct >= 0 else ""
+            change_str = f"{chg_sign}{chg_pct:.2f}%"
+            approx_price = f"{currency_sym}{price:,.2f}"
+
+            # Check if live news was retrieved
+            if sym in news_map:
+                driver, url = news_map[sym]
+            else:
+                # Dynamic quantitative momentum driver
+                v_desc = f"{rel_v:.1f}x ADV" if rel_v >= 1.0 else "steady volume"
+                driver = f"⚡ Live Market Action: Trading at {approx_price} ({change_str} today) on {v_desc}."
+                url = ""
+
+            items.append(
+                ThematicStockItem(
+                    ticker=sym,
+                    name=name,
+                    approx_price=approx_price,
+                    category_id=cat_id,
+                    category_title=cat_title,
+                    catalyst_driver=driver,
+                    why_it_matters=why_it_matters,
+                    risk_level=risk_level,
+                    risk_badge=risk_badge,
+                    change_pct=chg_pct,
+                    change_str=change_str,
+                    volume_multiple=rel_v,
+                    news_url=url,
+                )
+            )
+        return items
+
+    result: Dict[str, List[ThematicStockItem]] = {
+        "penny": build_items(selected_penny, "penny", f"🪙 Small-Priced (< {currency_sym}{int(price_ceiling)})"),
+        "safe": build_items(selected_safe, "safe", "🏰 Safe Havens (Fortress Blue-Chips)"),
+        "new": build_items(selected_new, "new", "🌱 New & Emerging Disruptors"),
+        "trending": build_items(selected_trending, "trending", "🔥 Trending Today"),
+        "future": build_items(selected_future, "future", "🚀 Future Mega-Trends (Supercycles)"),
+    }
+
+    return result
 
 
 def get_thematic_market_radar(is_indian: bool = False) -> Dict[str, List[ThematicStockItem]]:
-    """Returns curated thematic discovery lists synchronized to the selected stock exchange."""
-    return INDIAN_THEMATIC_RADAR if is_indian else US_THEMATIC_RADAR
+    """
+    Primary interface for fetching the thematic market radar.
+    Executes a real-time dynamic market scan without any hardcoded data.
+    """
+    return scan_live_market_radar(is_indian=is_indian)
