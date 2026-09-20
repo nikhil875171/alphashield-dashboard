@@ -14,6 +14,9 @@ from src.stock_universe import (
     get_all_sectors,
     get_all_cap_tiers,
     search_stock_universe,
+    infer_company_sector,
+    infer_cap_tier,
+    get_ticker_sector_map,
 )
 
 
@@ -130,6 +133,28 @@ class TestStockUniverse(unittest.TestCase):
                 or "tata" in s.plain_english_role.lower()
             )
         self.assertTrue(any("tata" in s.name.lower() for s in tata_results))
+
+    def test_inference_and_ticker_mapping(self):
+        """Test inference of sectors, cap tiers, and fast lookup dictionary."""
+        # 1. Ticker map
+        t_map = get_ticker_sector_map()
+        self.assertIn("RELIANCE.NS", t_map)
+        self.assertEqual(t_map["RELIANCE.NS"][0], "Energy, Power & Utilities")
+
+        # 2. Sector keyword inference
+        self.assertEqual(infer_company_sector("Vodafone Idea Telecom", "IDEA.NS"), "Telecommunications & Networks")
+        self.assertEqual(infer_company_sector("Alok Textile Mills", "ALOKTEXT.NS"), "Textiles, Technical Fibers & Apparel")
+        self.assertEqual(infer_company_sector("Punjab National Bank", "PNB.NS"), "Banking & Financial Services")
+        self.assertEqual(infer_company_sector("Maruti Suzuki Motors", "MARUTI.NS"), "Automobile & Ancillaries")
+        self.assertEqual(infer_company_sector("Cipla Pharmaceuticals", "CIPLA.NS"), "Healthcare & Pharmaceuticals")
+        self.assertEqual(infer_company_sector("Tata Power Solar", "TATAPOWER.NS"), "Energy, Power & Utilities")
+        self.assertEqual(infer_company_sector("Infosys Software Technologies", "INFY.NS"), "IT Industry & High-Tech Software")
+        self.assertEqual(infer_company_sector("Britannia Food & FMCG", "BRITANNIA.NS"), "FMCG (Fast-Moving Consumer Goods)")
+
+        # 3. Cap tier inference
+        self.assertEqual(infer_cap_tier(25.0, category_id="penny"), "Small-Cap")
+        self.assertEqual(infer_cap_tier(1500.0, turnover=2000.0, category_id="safe"), "Large-Cap")
+        self.assertEqual(infer_cap_tier(250.0, turnover=100.0), "Mid-Cap")
 
 
 if __name__ == "__main__":

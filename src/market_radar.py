@@ -38,6 +38,8 @@ class ThematicStockItem:
     change_str: str = "0.00%"
     volume_multiple: float = 1.0
     news_url: str = ""
+    sector: str = "General Equities"
+    market_cap_tier: str = "Mid-Cap"
 
     def __getattr__(self, name: str):
         # Backward compatibility safeguard for deserialized cached objects
@@ -49,6 +51,10 @@ class ThematicStockItem:
             return 1.0
         if name == "news_url":
             return ""
+        if name == "sector":
+            return "General Equities"
+        if name == "market_cap_tier":
+            return "Mid-Cap"
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 

@@ -7,7 +7,7 @@ the 17 Standard Institutional Industry Sectors.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Tuple
 
 
 @dataclass
@@ -88,6 +88,7 @@ STOCK_UNIVERSE: List[StockEntry] = [
     # -------------------------------------------------------------------------
     # 5. Energy, Power & Utilities
     # -------------------------------------------------------------------------
+    StockEntry("RELIANCE.NS", "Reliance Industries", "INDIA", "Large-Cap", "Energy, Power & Utilities", "Integrated Energy, Petrochemicals & Retail", "India's largest enterprise spanning oil-to-chemicals refining, Jio digital services, and green energy gigafactories.", "Energy Transition & Grid"),
     StockEntry("NTPC.NS", "NTPC Limited", "INDIA", "Large-Cap", "Energy, Power & Utilities", "Thermal & Green Power Utility", "India's largest electricity generator expanding aggressively into utility-scale solar and green hydrogen.", "Energy Transition & Grid"),
     StockEntry("POWERGRID.NS", "Power Grid Corp of India", "INDIA", "Large-Cap", "Energy, Power & Utilities", "Sovereign Transmission Grid", "Near-monopoly in interstate electricity transmission with guaranteed regulated return on equity.", "Energy Transition & Grid"),
     StockEntry("TATAPOWER.NS", "Tata Power", "INDIA", "Mid-Cap", "Energy, Power & Utilities", "Integrated Renewables & EV Charging", "Scaling national EV fast-charging corridors, rooftop solar EPC, and pumped hydro storage.", "Energy Transition & Grid"),
@@ -286,3 +287,66 @@ def search_stock_universe(
         or q in e.plain_english_role.lower()
         or q in e.thematic_anchor.lower()
     ]
+
+
+def infer_company_sector(name: str, ticker: str = "") -> str:
+    """
+    Infers one of the 17 standardized Master Spec sectors from company name & ticker keywords.
+    """
+    text = f"{name} {ticker}".upper()
+
+    if any(k in text for k in ["TELECOM", "COMMUNICATION", "BROADBAND", "OPTICAL", "FIBER", "TOWER", "NETWORK", "5G", "6G"]):
+        return "Telecommunications & Networks"
+    if any(k in text for k in ["TEXTILE", "SPINNING", "MILLS", "FABRIC", "YARN", "WEAVING", "COTTON", "SILK", "SYNTHETIC", "GARMENT", "DENIM"]):
+        return "Textiles, Technical Fibers & Apparel"
+    if any(k in text for k in ["BANK", "FINANC", "CAPITAL", "INVEST", "HOLDING", "INSUR", "LEASING", "SECURIT", "BROK"]):
+        return "Banking & Financial Services"
+    if any(k in text for k in ["AUTO", "MOTOR", "TYRE", "TIRE", "WHEEL", "BEARING", "BRAKE", "ENGINE", "AXLE", "TRANSMISSION"]):
+        return "Automobile & Ancillaries"
+    if any(k in text for k in ["PHARMA", "HEALTH", "DRUG", "BIO", "MEDIC", "LABORAT", "HOSPITAL", "CLINIC", "LIFE SCIENCE"]):
+        return "Healthcare & Pharmaceuticals"
+    if any(k in text for k in ["POWER", "ENERGY", "SOLAR", "WIND", "HYDRO", "ELECTRIC", "GRID", "GAS", "PETRO", "RENEWABLE"]):
+        return "Energy, Power & Utilities"
+    if any(k in text for k in ["SOFTWARE", "INFOTECH", "TECH", "DIGITAL", "SYSTEMS", "COMPUT", "CYBER", "CLOUD", "AI"]):
+        return "IT Industry & High-Tech Software"
+    if any(k in text for k in ["FOOD", "FMCG", "BEVERAGE", "DAIRY", "BREWER", "DISTILL", "SUGAR", "CONSUMER", "TEA", "COFFEE", "SNACK", "FLOUR"]):
+        return "FMCG (Fast-Moving Consumer Goods)"
+    if any(k in text for k in ["STEEL", "IRON", "MINING", "METAL", "ALUMIN", "ZINC", "COPPER", "MINERAL", "ORES", "FOUNDRY"]):
+        return "Raw Materials, Metals & Mining"
+    if any(k in text for k in ["LOGISTIC", "TRANSPORT", "CARRIER", "SHIPPING", "PORT", "FREIGHT", "EXPRESS", "DELIVER", "RAIL"]):
+        return "Logistics, Freight & Maritime"
+    if any(k in text for k in ["CHEM", "POLY", "PLASTIC", "FERT", "PEST", "CARBON", "RESIN", "PIGMENT", "COATING"]):
+        return "Derived Materials & Chemicals"
+    if any(k in text for k in ["AGRO", "AGRI", "CROP", "SEED", "TRACTOR", "IRRIGATION"]):
+        return "Agricultural & Farm Products"
+    if any(k in text for k in ["HOTEL", "RESORT", "TRAVEL", "AIRLINE", "AVIATION", "TOUR", "HOSPITALITY", "RESTAURANT"]):
+        return "Hospitality, Travel & Aviation"
+    if any(k in text for k in ["MEDIA", "ENTERTAIN", "FILM", "CINEMA", "BROADCAST", "PUBLISH", "TV", "RADIO"]):
+        return "Media & Entertainment"
+    if any(k in text for k in ["JEWEL", "WATCH", "FOOTWEAR", "RETAIL", "APPAREL", "FASHION", "LIFESTYLE", "LUXURY"]):
+        return "Apparel & Accessories"
+    if any(k in text for k in ["ELECTRONIC", "APPLIANCE", "AIRCON", "REFRIG", "LAMP", "LIGHT", "GADGET", "DISPLAY"]):
+        return "Consumer Durables & Electronics"
+
+    return "Industrial Products & Capital Goods"
+
+
+def infer_cap_tier(price: float, turnover: float = 0.0, category_id: str = "") -> str:
+    """
+    Infers standardized market capitalization tier (Large-Cap, Mid-Cap, Small-Cap).
+    """
+    if category_id == "penny" or price < 100.0:
+        return "Small-Cap"
+    if category_id == "safe" or (price >= 500.0 and turnover >= 500.0):
+        return "Large-Cap"
+    return "Mid-Cap"
+
+
+def get_ticker_sector_map() -> Dict[str, Tuple[str, str, str]]:
+    """
+    Returns a fast lookup dictionary mapping ticker -> (sector, market_cap_tier, plain_english_role).
+    """
+    return {
+        entry.ticker: (entry.sector, entry.market_cap_tier, entry.plain_english_role)
+        for entry in STOCK_UNIVERSE
+    }

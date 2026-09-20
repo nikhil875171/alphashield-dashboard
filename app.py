@@ -32,6 +32,14 @@ from src.trap_guards import evaluate_all_traps
 from src.risk_engine import calculate_algorithmic_execution, ExecutionRiskReport
 from src.ai_agent import generate_institutional_trade_plan, FullInstitutionalTradePlan
 from src.market_radar import get_thematic_market_radar, ThematicStockItem
+from src.stock_universe import (
+    get_stock_universe,
+    get_all_sectors,
+    get_all_cap_tiers,
+    infer_company_sector,
+    infer_cap_tier,
+    get_ticker_sector_map,
+)
 
 load_dotenv()
 
@@ -350,6 +358,123 @@ def fetch_radar_cached_v2(is_ind: bool) -> Dict[str, List[ThematicStockItem]]:
     return get_thematic_market_radar(is_indian=is_ind)
 
 
+# =============================================================================
+# GLOBAL MODAL DIALOG: INSTITUTIONAL STOCK PROFILE & 1-CLICK AUDIT
+# =============================================================================
+@st.dialog("🏢 Company Profile & Live Catalyst", width="large")
+def show_stock_inspection_modal(stock: ThematicStockItem):
+    chg_val = getattr(stock, "change_pct", 0.0)
+    chg_str = getattr(stock, "change_str", f"{chg_val:+.2f}%")
+    rel_vol = getattr(stock, "volume_multiple", 1.0)
+    r_badge = getattr(stock, "risk_badge", "🟢 Normal")
+    n_url = getattr(stock, "news_url", "")
+    sec_tag = getattr(stock, "sector", "")
+    cap_tag = getattr(stock, "market_cap_tier", "")
+
+    chg_pill = f"<span class='pastel-pill-mint'>▲ {chg_str} Today</span>" if chg_val >= 0 else f"<span class='pastel-pill-rose'>▼ {chg_str} Today</span>"
+    vol_pill = f"<span class='pastel-pill-lilac'>⚡ {rel_vol:.1f}x ADV</span>"
+    risk_pill = f"<span class='pastel-pill-amber'>{r_badge}</span>"
+    sec_pill = f"<span class='pastel-pill'>{sec_tag}</span>" if sec_tag else ""
+    cap_pill = f"<span class='pastel-pill'>{cap_tag}</span>" if cap_tag else ""
+
+    st.markdown(f"""
+    <div style='background: linear-gradient(135deg, #121A2B 0%, #162238 100%); border-radius: 14px; padding: 18px 20px; border: 1px solid rgba(147, 197, 253, 0.25); margin-bottom: 16px;'>
+        <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;'>
+            <div>
+                <div style='font-size: 1.50rem; font-weight: 800; color: #F8FAFC;'>{stock.name}</div>
+                <div style='font-size: 1.05rem; font-weight: 700; color: #93C5FD; margin-top: 2px;'>{stock.ticker} <span style='font-size: 0.85rem; color: #94A3B8; font-weight: 500;'>• {stock.category_title}</span></div>
+            </div>
+            <div style='text-align: right;'>
+                <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Live Market Price</div>
+                <div style='font-size: 1.65rem; font-weight: 800; color: #38BDF8;'>{stock.approx_price}</div>
+            </div>
+        </div>
+        <div style='display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap;'>
+            {chg_pill}
+            {vol_pill}
+            {risk_pill}
+            {sec_pill}
+            {cap_pill}
+            <span class='pastel-pill'>{stock.risk_level}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("#### 📰 **Live Catalyst & Market Action**")
+    news_link = f" <a href='{n_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600;'>[Open Full Article ↗]</a>" if n_url else ""
+    st.info(f"{stock.catalyst_driver}{news_link}")
+
+    st.markdown("#### 🔗 **Institutional Role & Strategic Thesis**")
+    st.markdown(f"""
+    <div style='background: rgba(255, 255, 255, 0.03); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.95rem; color: #CBD5E1; line-height: 1.55; margin-bottom: 20px;'>
+        <strong>Macro & Supply Chain Context:</strong> {stock.why_it_matters}
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button(f"⚡ Run Full AlphaShield Audit on {stock.ticker}", key=f"modal_audit_btn_{stock.ticker}", type="primary", use_container_width=True):
+        st.session_state["active_ticker"] = stock.ticker
+        st.rerun()
+
+
+# Cached unified full-market universe with sectors and cap tiers
+@st.cache_data(ttl=180, show_spinner=False)
+def get_unified_market_universe(is_ind: bool) -> List[ThematicStockItem]:
+    radar_data = fetch_radar_cached_v2(is_ind)
+    ticker_map = get_ticker_sector_map()
+    market_str = "INDIA" if is_ind else "US"
+
+    cat_keys = ["safe", "trending", "future", "new", "penny"]
+    unified_stocks: Dict[str, ThematicStockItem] = {}
+
+    for c_key in cat_keys:
+        for item in radar_data.get(c_key, []):
+            sym = item.ticker.upper().strip()
+            if sym not in unified_stocks:
+                if sym in ticker_map:
+                    sec, cap, role = ticker_map[sym]
+                    item.sector = sec
+                    item.market_cap_tier = cap
+                    if not item.why_it_matters or "Series" in item.why_it_matters:
+                        item.why_it_matters = f"{role} | {sec}"
+                else:
+                    item.sector = infer_company_sector(item.name, sym)
+                    raw_p = item.approx_price.replace("₹", "").replace("$", "").replace(",", "").strip()
+                    try:
+                        p_val = float(raw_p)
+                    except Exception:
+                        p_val = 50.0
+                    item.market_cap_tier = infer_cap_tier(
+                        price=p_val,
+                        category_id=item.category_id
+                    )
+                unified_stocks[sym] = item
+
+    curated_entries = get_stock_universe(market=market_str)
+    for entry in curated_entries:
+        sym = entry.ticker.upper().strip()
+        if sym not in unified_stocks:
+            p_str = "₹---" if is_ind else "$---"
+            unified_stocks[sym] = ThematicStockItem(
+                ticker=entry.ticker,
+                name=entry.name,
+                approx_price=p_str,
+                category_id="safe" if entry.market_cap_tier == "Large-Cap" else ("penny" if entry.market_cap_tier == "Small-Cap" else "future"),
+                category_title=f"Thematic Universe ({entry.thematic_anchor})",
+                catalyst_driver=entry.plain_english_role,
+                why_it_matters=f"{entry.plain_english_role} | {entry.thematic_anchor}",
+                risk_level="Institutional Anchor" if entry.market_cap_tier == "Large-Cap" else "Secular Growth",
+                risk_badge="🟢 Safe Haven" if entry.market_cap_tier == "Large-Cap" else "🟡 Moderate",
+                change_pct=0.0,
+                change_str="0.00%",
+                volume_multiple=1.0,
+                sector=entry.sector,
+                market_cap_tier=entry.market_cap_tier,
+                news_url=""
+            )
+
+    return list(unified_stocks.values())
+
+
 # --- SIDEBAR: CONTROLS & BEGINNER CAPITAL ALLOCATION ---
 with st.sidebar:
     render_user_profile_sidebar()
@@ -477,14 +602,38 @@ with m_col5:
 st.markdown("<hr style='margin: 14px 0; border-color: #232D3F;'>", unsafe_allow_html=True)
 
 # =============================================================================
-# MODULE 11.2: INTERACTIVE SECTOR UNIVERSE EXPLORER WINDOW
+# MODULE 11.2: INTERACTIVE SECTOR UNIVERSE EXPLORER TERMINAL
 # =============================================================================
-from src.stock_universe import get_stock_universe, get_all_sectors, get_all_cap_tiers
-
 with st.expander("📊 **Explore Market Universe by Cap & Sector** (Click to Expand / Browse Categories)", expanded=False):
-    col_cap, col_sec, col_search = st.columns([1.1, 1.7, 1.4])
+    # Fetch live radar data for category counts
+    radar_data = fetch_radar_cached_v2(is_indian)
+    count_penny = len(radar_data.get("penny", []))
+    count_safe = len(radar_data.get("safe", []))
+    count_new = len(radar_data.get("new", []))
+    count_trending = len(radar_data.get("trending", []))
+    count_future = len(radar_data.get("future", []))
 
-    market_str = "INDIA" if is_indian else "US"
+    # Fetch unified market universe with sectors and cap tiers
+    all_universe_stocks = get_unified_market_universe(is_indian)
+
+    category_options = [
+        f"All Categories ({len(all_universe_stocks):,} Stocks)",
+        f"🪙 Small-Priced ({count_penny:,})",
+        f"🏰 Safe Havens ({count_safe:,})",
+        f"🌱 New & Emerging ({count_new:,})",
+        f"🔥 Trending Today ({count_trending:,})",
+        f"🚀 Future Supercycles ({count_future:,})",
+    ]
+
+    col_cat, col_cap, col_sec, col_search = st.columns([1.5, 1.0, 1.4, 1.3])
+
+    with col_cat:
+        selected_cat_str = st.selectbox(
+            "Filter by Category",
+            options=category_options,
+            index=0,
+            key="sector_explorer_cat"
+        )
 
     with col_cap:
         selected_cap = st.selectbox(
@@ -495,6 +644,7 @@ with st.expander("📊 **Explore Market Universe by Cap & Sector** (Click to Exp
         )
 
     with col_sec:
+        market_str = "INDIA" if is_indian else "US"
         available_sectors = ["All Sectors"] + get_all_sectors(market=market_str)
         selected_sector = st.selectbox(
             "Filter by Sector",
@@ -507,53 +657,120 @@ with st.expander("📊 **Explore Market Universe by Cap & Sector** (Click to Exp
         sec_query = st.text_input(
             "Quick Filter",
             "",
-            placeholder="e.g. 5G, Optical, Yarn, EV, Defense...",
+            placeholder="e.g. Tata, 5G, Defense, Bank, Solar...",
             key="sector_explorer_query"
         ).strip().lower()
 
-    filtered_entries = get_stock_universe(
-        market=market_str,
-        cap_tier=selected_cap if selected_cap != "All Caps" else None,
-        sector=selected_sector if selected_sector != "All Sectors" else None
-    )
+    # Apply category filter
+    if "Small-Priced" in selected_cat_str:
+        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "penny"]
+    elif "Safe Havens" in selected_cat_str:
+        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "safe"]
+    elif "New & Emerging" in selected_cat_str:
+        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "new"]
+    elif "Trending Today" in selected_cat_str:
+        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "trending"]
+    elif "Future Supercycles" in selected_cat_str:
+        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "future"]
+    else:
+        filtered_stocks = all_universe_stocks
 
+    # Apply cap tier filter
+    if selected_cap != "All Caps":
+        filtered_stocks = [s for s in filtered_stocks if getattr(s, "market_cap_tier", "Mid-Cap") == selected_cap]
+
+    # Apply sector filter
+    if selected_sector != "All Sectors":
+        filtered_stocks = [s for s in filtered_stocks if getattr(s, "sector", "") == selected_sector]
+
+    # Apply text search filter
     if sec_query:
-        filtered_entries = [
-            e for e in filtered_entries
-            if sec_query in e.ticker.lower()
-            or sec_query in e.name.lower()
-            or sec_query in e.plain_english_role.lower()
-            or sec_query in e.sub_sector.lower()
-            or sec_query in e.thematic_anchor.lower()
+        filtered_stocks = [
+            s for s in filtered_stocks
+            if sec_query in s.ticker.lower()
+            or sec_query in s.name.lower()
+            or sec_query in getattr(s, "sector", "").lower()
+            or sec_query in getattr(s, "market_cap_tier", "").lower()
+            or sec_query in s.catalyst_driver.lower()
+            or sec_query in s.why_it_matters.lower()
         ]
 
-    st.caption(f"Showing **{len(filtered_entries)}** companies in `{selected_sector}` ({selected_cap}) for **{'🇮🇳 India (NSE / BSE)' if is_indian else '🇺🇸 US Markets'}**:")
-
-    if not filtered_entries:
-        st.info("No companies found matching the selected cap and sector criteria.")
+    if not filtered_stocks:
+        st.info("No companies found matching the selected category, cap tier, and sector criteria.")
     else:
-        card_cols = st.columns(3)
-        for idx, entry in enumerate(filtered_entries):
-            with card_cols[idx % 3]:
-                badge_class = (
-                    "pastel-pill-mint" if entry.market_cap_tier == "Large-Cap"
-                    else ("pastel-pill-lilac" if entry.market_cap_tier == "Mid-Cap" else "pastel-pill-rose")
-                )
-                st.markdown(f"""
-                <div style='background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between;'>
-                    <div>
-                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
-                            <strong style='color: #F8FAFC; font-size: 0.98rem;'>{entry.ticker}</strong>
-                            <span class='{badge_class}' style='font-size: 0.72rem; padding: 2px 7px;'>{entry.market_cap_tier}</span>
-                        </div>
-                        <div style='color: #93C5FD; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;'>{entry.name}</div>
-                        <div style='color: #CBD5E1; font-size: 0.78rem; line-height: 1.4;'>{entry.plain_english_role}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button(f"⚡ Analyze {entry.ticker}", key=f"btn_univ_analyze_{entry.ticker}", use_container_width=True):
-                    st.session_state["active_ticker"] = entry.ticker
-                    st.rerun()
+        # Build tabular DataFrame
+        table_rows = []
+        for s in filtered_stocks:
+            cat_label = (
+                "🪙 Small-Priced" if s.category_id == "penny"
+                else ("🏰 Safe Haven" if s.category_id == "safe"
+                else ("🌱 Emerging" if s.category_id == "new"
+                else ("🔥 Trending" if s.category_id == "trending"
+                else "🚀 Supercycle")))
+            )
+            chg_val = getattr(s, "change_pct", 0.0)
+            rel_vol = getattr(s, "volume_multiple", 1.0)
+            table_rows.append({
+                "Ticker": s.ticker,
+                "Company Name": s.name,
+                "Category": cat_label,
+                "Sector": getattr(s, "sector", "General Equities"),
+                "Cap Tier": getattr(s, "market_cap_tier", "Mid-Cap"),
+                "Live Price": s.approx_price,
+                "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
+                "Volume Multiple": f"{rel_vol:.1f}x ADV",
+                "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
+                "Live Catalyst": s.catalyst_driver,
+            })
+        table_df = pd.DataFrame(table_rows)
+
+        col_hint, col_quick_sel = st.columns([2.8, 1.4])
+        with col_hint:
+            clean_cat_title = selected_cat_str.split('(')[0].strip()
+            st.caption(f"Showing **{len(filtered_stocks):,}** stocks in `{selected_sector}` ({selected_cap}) matching `{clean_cat_title}`. Click any row below to open its profile popup and run an immediate audit.")
+        with col_quick_sel:
+            sel_sym = st.selectbox(
+                "Quick Inspect:",
+                options=[s.ticker for s in filtered_stocks],
+                format_func=lambda t: f"{t} — {next((s.name for s in filtered_stocks if s.ticker == t), t)[:20]}",
+                key="select_inspect_universe_drawer",
+                label_visibility="collapsed",
+            )
+
+        # Interactive Scrollable Table with Row Selection
+        table_event = st.dataframe(
+            table_df,
+            use_container_width=True,
+            hide_index=True,
+            height=440,
+            on_select="rerun",
+            selection_mode="single-row",
+            column_config={
+                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
+                "Category": st.column_config.TextColumn("Category", width="small"),
+                "Sector": st.column_config.TextColumn("Sector", width="medium"),
+                "Cap Tier": st.column_config.TextColumn("Cap Tier", width="small"),
+                "Live Price": st.column_config.TextColumn("Live Price", width="small"),
+                "Change %": st.column_config.TextColumn("Change %", width="small"),
+                "Volume Multiple": st.column_config.TextColumn("Volume Multiple", width="small"),
+                "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
+                "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
+            },
+            key="sector_universe_table",
+        )
+
+        # Open modal popup if a row is clicked
+        if table_event and table_event.selection and len(table_event.selection.rows) > 0:
+            clicked_idx = table_event.selection.rows[0]
+            if 0 <= clicked_idx < len(filtered_stocks):
+                show_stock_inspection_modal(filtered_stocks[clicked_idx])
+
+        # Action button for quick select
+        if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key="btn_quick_inspect_universe_drawer", use_container_width=True):
+            matched_stock = next((s for s in filtered_stocks if s.ticker == sel_sym), None)
+            if matched_stock:
+                show_stock_inspection_modal(matched_stock)
 
 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
@@ -921,57 +1138,6 @@ if audit_results and audit_results[0] is not None:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-    # =========================================================================
-    # MODAL DIALOG: INSTITUTIONAL STOCK PROFILE & 1-CLICK AUDIT
-    # =========================================================================
-    @st.dialog("🏢 Company Profile & Live Catalyst", width="large")
-    def show_stock_inspection_modal(stock: ThematicStockItem):
-        chg_val = getattr(stock, "change_pct", 0.0)
-        chg_str = getattr(stock, "change_str", f"{chg_val:+.2f}%")
-        rel_vol = getattr(stock, "volume_multiple", 1.0)
-        r_badge = getattr(stock, "risk_badge", "🟢 Normal")
-        n_url = getattr(stock, "news_url", "")
-
-        chg_pill = f"<span class='pastel-pill-mint'>▲ {chg_str} Today</span>" if chg_val >= 0 else f"<span class='pastel-pill-rose'>▼ {chg_str} Today</span>"
-        vol_pill = f"<span class='pastel-pill-lilac'>⚡ {rel_vol:.1f}x ADV</span>"
-        risk_pill = f"<span class='pastel-pill-amber'>{r_badge}</span>"
-
-        st.markdown(f"""
-        <div style='background: linear-gradient(135deg, #121A2B 0%, #162238 100%); border-radius: 14px; padding: 18px 20px; border: 1px solid rgba(147, 197, 253, 0.25); margin-bottom: 16px;'>
-            <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;'>
-                <div>
-                    <div style='font-size: 1.50rem; font-weight: 800; color: #F8FAFC;'>{stock.name}</div>
-                    <div style='font-size: 1.05rem; font-weight: 700; color: #93C5FD; margin-top: 2px;'>{stock.ticker} <span style='font-size: 0.85rem; color: #94A3B8; font-weight: 500;'>• {stock.category_title}</span></div>
-                </div>
-                <div style='text-align: right;'>
-                    <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Live Market Price</div>
-                    <div style='font-size: 1.65rem; font-weight: 800; color: #38BDF8;'>{stock.approx_price}</div>
-                </div>
-            </div>
-            <div style='display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap;'>
-                {chg_pill}
-                {vol_pill}
-                {risk_pill}
-                <span class='pastel-pill'>{stock.risk_level}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("#### 📰 **Live Catalyst & Market Action**")
-        news_link = f" <a href='{n_url}' target='_blank' style='color: #93C5FD; text-decoration: none; font-weight: 600;'>[Open Full Article ↗]</a>" if n_url else ""
-        st.info(f"{stock.catalyst_driver}{news_link}")
-
-        st.markdown("#### 🔗 **Institutional Role & Strategic Thesis**")
-        st.markdown(f"""
-        <div style='background: rgba(255, 255, 255, 0.03); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.95rem; color: #CBD5E1; line-height: 1.55; margin-bottom: 20px;'>
-            <strong>Macro & Supply Chain Context:</strong> {stock.why_it_matters}
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button(f"⚡ Run Full AlphaShield Audit on {stock.ticker}", key=f"modal_audit_btn_{stock.ticker}", type="primary", use_container_width=True):
-            st.session_state["active_ticker"] = stock.ticker
-            st.rerun()
 
     # =========================================================================
     # TAB 3: THEMATIC MARKET RADAR (100% LIVE DYNAMIC QUANTITATIVE SCREENER)
