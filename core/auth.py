@@ -51,12 +51,50 @@ def _check_streamlit_cloud_github_user() -> Optional[Tuple[str, str, str]]:
     return None
 
 
+def get_all_users() -> dict:
+    """Returns the current user registry from session state or default."""
+    if "user_registry" not in st.session_state:
+        st.session_state["user_registry"] = dict(USER_REGISTRY)
+    return st.session_state["user_registry"]
+
+
+def update_user_credentials(
+    username: str,
+    new_password: Optional[str] = None,
+    name: Optional[str] = None,
+    role: Optional[str] = None,
+    badge: Optional[str] = None,
+) -> bool:
+    """Updates or creates user credentials in session registry (Restricted to Global Admin)."""
+    users = get_all_users()
+    cleaned = username.strip()
+    if cleaned in users:
+        if new_password:
+            users[cleaned]["password"] = new_password
+        if name:
+            users[cleaned]["name"] = name
+        if role:
+            users[cleaned]["role"] = role
+        if badge:
+            users[cleaned]["badge"] = badge
+    else:
+        users[cleaned] = {
+            "password": new_password or "default_pass_2026",
+            "name": name or cleaned,
+            "role": role or ROLE_USER,
+            "badge": badge or "👤 Standard Analyst",
+        }
+    st.session_state["user_registry"] = users
+    return True
+
+
 def authenticate_user(username: str, password: str) -> Optional[dict]:
     """Validates user credentials and returns user metadata dict if valid."""
     cleaned_user = username.strip().lower()
+    users = get_all_users()
 
     # Check registry
-    for reg_user, data in USER_REGISTRY.items():
+    for reg_user, data in users.items():
         if reg_user.lower() == cleaned_user and data["password"] == password:
             return {
                 "username": reg_user,
@@ -69,6 +107,9 @@ def authenticate_user(username: str, password: str) -> Optional[dict]:
 
 def init_session_state():
     """Initializes authentication keys in st.session_state."""
+    if "user_registry" not in st.session_state:
+        st.session_state["user_registry"] = dict(USER_REGISTRY)
+
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
         st.session_state["username"] = None
@@ -171,6 +212,10 @@ def render_user_profile_sidebar():
     st.sidebar.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
     st.sidebar.markdown(f"**User:** `{st.session_state.get('display_name', 'Analyst')}`")
     st.sidebar.markdown(f"**Role:** {st.session_state.get('user_badge', '👤 User')}")
+
+    # GitHub Repository link shown ONLY for Global Administrator
+    if is_global_admin():
+        st.sidebar.markdown("🔗 **[GitHub Repository (Owner) ↗](https://github.com/nikhil875171/alphashield-dashboard)**")
 
     if st.sidebar.button("🚪 Sign Out", use_container_width=True):
         logout()

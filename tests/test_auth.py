@@ -52,6 +52,19 @@ def test_auth_credentials():
     assert owner_res["role"] == ROLE_GLOBAL_ADMIN, "nikhil875171 must have Global Admin rights"
     print("    [+] Strict role boundary verified: ONLY nikhil875171 holds Global Admin rights!")
 
+    # 7. Test get_all_users and update_user_credentials
+    from core.auth import get_all_users, update_user_credentials
+    users = get_all_users()
+    assert "nikhil875171" in users
+    assert "nkk_admin" in users
+    assert "nkk_user" in users
+
+    update_user_credentials("test_analyst", "test_pass_123", name="Test Analyst", role=ROLE_USER)
+    new_user_res = authenticate_user("test_analyst", "test_pass_123")
+    assert new_user_res is not None
+    assert new_user_res["name"] == "Test Analyst"
+    print("    [+] User credential management verified: dynamic account addition and authentication successful.")
+
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)

@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 
 # Import core infrastructure & authentication
 from core.auth import (
+    init_session_state,
     render_login_gate,
     render_user_profile_sidebar,
     is_admin,
     is_global_admin,
+    get_all_users,
+    update_user_credentials,
 )
 from core.technical_engine import compute_technical_snapshot
 from core.visualizer import build_interactive_chart
@@ -56,7 +59,88 @@ st.set_page_config(
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
+
+# Initialize session state for role-based security
+init_session_state()
+
+# RBAC Enforcement: Hide GitHub Icon, Edit options, and Streamlit Cloud toolbar unless user is Global Admin
+if not is_global_admin():
+    st.markdown("""
+    <style>
+        /* Hide Main Menu Hamburger */
+        #MainMenu {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        /* Hide Streamlit Header, Toolbar, Deploy & Edit Buttons */
+        header[data-testid="stHeader"] {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0px !important;
+        }
+        [data-testid="stToolbar"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        .stAppDeployButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        [data-testid="stToolbarActions"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        [data-testid="stActionButton"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        /* Hide GitHub icons, repository links, and fork badges */
+        a[href*="github.com"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        [title*="GitHub"], [aria-label*="GitHub"], [title*="github"], [aria-label*="github"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        /* Hide Edit options, pencil badges, and Streamlit Cloud viewer bar */
+        button[title*="Edit"], a[title*="Edit"], [aria-label*="Edit"], a[href*="edit"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        [class*="viewerBadge"], [class*="manageApp"], .viewerBadge_container__r5tak {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        footer {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        .main .block-container {
+            padding-top: 1.5rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <style>
+        /* Global Admin has complete root access: display developer toolbar & indicators */
+        header[data-testid="stHeader"] {
+            display: block !important;
+            visibility: visible !important;
+        }
+        [data-testid="stToolbar"] {
+            display: block !important;
+            visibility: visible !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Custom High-Contrast Modern Theme CSS
 st.markdown("""
@@ -1472,6 +1556,46 @@ if audit_results and audit_results[0] is not None:
                 | `nkk_admin` | **System Administrator** | Operational Telemetry & Monitoring |
                 | `nkk_user` | **Standard Analyst** | Asset Analysis & Interactive Tiles |
                 """)
+
+                st.markdown("---")
+                st.markdown("#### 🔐 **Edit Authorized User Logins (Global Admin Only)**")
+                user_dict = get_all_users()
+                edit_uname = st.selectbox(
+                    "Select Account to Edit",
+                    options=list(user_dict.keys()) + ["[+ Add New User]"],
+                    key="admin_user_select"
+                )
+
+                if edit_uname == "[+ Add New User]":
+                    with st.form("form_add_new_user"):
+                        st.caption("Create a new authorized analyst or administrator account.")
+                        new_u = st.text_input("New Username", placeholder="e.g. analyst_new").strip().lower()
+                        new_p = st.text_input("New Security Passphrase", type="password", placeholder="••••••••••••")
+                        new_n = st.text_input("Full Display Name", placeholder="e.g. Senior Analyst")
+                        new_r = st.selectbox("Role Permission", options=["USER", "ADMIN", "GLOBAL_ADMIN"], index=0)
+                        new_b = st.text_input("Role Badge Label", value="👤 Standard Analyst")
+                        add_sub = st.form_submit_button("➕ Create User Account", type="primary", use_container_width=True)
+                        if add_sub:
+                            if new_u and new_p:
+                                update_user_credentials(new_u, new_p, new_n, new_r, new_b)
+                                st.success(f"User `{new_u}` successfully created!")
+                                st.rerun()
+                            else:
+                                st.error("Username and password required.")
+                else:
+                    curr_data = user_dict.get(edit_uname, {})
+                    with st.form(f"form_edit_{edit_uname}"):
+                        st.caption(f"Edit credentials and access tier for `{edit_uname}`")
+                        edit_p = st.text_input("Update Passphrase", value=curr_data.get("password", ""), type="password")
+                        edit_n = st.text_input("Display Name", value=curr_data.get("name", ""))
+                        default_role_idx = 0 if curr_data.get("role") == "USER" else (1 if curr_data.get("role") == "ADMIN" else 2)
+                        edit_r = st.selectbox("Role Permission", options=["USER", "ADMIN", "GLOBAL_ADMIN"], index=default_role_idx)
+                        edit_b = st.text_input("Role Badge Label", value=curr_data.get("badge", ""))
+                        save_sub = st.form_submit_button(f"💾 Save Changes for {edit_uname}", type="primary", use_container_width=True)
+                        if save_sub:
+                            update_user_credentials(edit_uname, edit_p, edit_n, edit_r, edit_b)
+                            st.success(f"Credentials for `{edit_uname}` updated successfully!")
+                            st.rerun()
 
     elif is_admin():
         with tabs[5]:
