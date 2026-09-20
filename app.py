@@ -836,50 +836,78 @@ if audit_results and audit_results[0] is not None:
     # TAB 3: THEMATIC MARKET RADAR
     # =========================================================================
     with tabs[2]:
-        st.markdown(f"### 🧭 **Curated Stock Discovery Radar ({'India NSE' if is_indian else 'US Markets'})**")
-        st.caption("Discover hand-picked companies categorized by investment style, world leader policies, and news catalysts. Click any stock to analyze it immediately!")
-
         radar_data = get_thematic_market_radar(is_indian)
+        total_curated = sum(len(stocks) for stocks in radar_data.values())
+
+        st.markdown(f"### 🧭 **Curated Stock Discovery Radar ({'India NSE' if is_indian else 'US Markets'})**")
+        st.caption(f"Tracking **{total_curated}** hand-picked institutional companies across 5 strategic investment categories. Click any stock to audit it immediately!")
+
+        # Search / Filter Bar inside the Radar
+        radar_search = st.text_input(
+            "🔎 Filter curated stocks by name, ticker, or catalyst keyword:",
+            "",
+            placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV...",
+            key="radar_filter_input"
+        ).strip().lower()
 
         r_tabs = st.tabs([
-            "🪙 Small-Priced (< $10 / < ₹100)",
-            "🏰 Safe Havens (Blue-Chips)",
-            "🌱 New & Emerging Stocks",
-            "🔥 Trending Today",
-            "🚀 Future Mega-Trends (Supercycles)",
+            f"🪙 Small-Priced ({len(radar_data.get('penny', []))})",
+            f"🏰 Safe Havens ({len(radar_data.get('safe', []))})",
+            f"🌱 New & Emerging ({len(radar_data.get('new', []))})",
+            f"🔥 Trending Today ({len(radar_data.get('trending', []))})",
+            f"🚀 Future Supercycles ({len(radar_data.get('future', []))})",
         ])
 
         categories = ["penny", "safe", "new", "trending", "future"]
 
         for c_idx, cat_key in enumerate(categories):
             with r_tabs[c_idx]:
-                stock_list = radar_data.get(cat_key, [])
-                for stock in stock_list:
-                    st.markdown(f"""
-                    <div class='radar-card'>
-                        <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;'>
-                            <div>
-                                <span style='font-size: 1.15rem; font-weight: 700; color: #93C5FD;'>{stock.ticker}</span>
-                                <span style='font-size: 0.95rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
-                                <span style='margin-left: 12px; font-weight: 600; color: #F8FAFC;'>{stock.approx_price}</span>
-                            </div>
-                            <div>
-                                <span class='pastel-pill-mint'>{stock.risk_badge}</span>
-                            </div>
-                        </div>
-                        <div style='margin-top: 8px; font-size: 0.92rem; color: #CBD5E1;'>
-                            <strong>Catalyst:</strong> {stock.catalyst_driver}
-                        </div>
-                        <div style='margin-top: 4px; font-size: 0.88rem; color: #94A3B8;'>
-                            <strong>Why it matters:</strong> {stock.why_it_matters}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                raw_list = radar_data.get(cat_key, [])
+                if radar_search:
+                    stock_list = [
+                        s for s in raw_list
+                        if radar_search in s.ticker.lower()
+                        or radar_search in s.name.lower()
+                        or radar_search in s.catalyst_driver.lower()
+                        or radar_search in s.why_it_matters.lower()
+                    ]
+                else:
+                    stock_list = raw_list
 
-                    # 1-Click Action to audit this stock with uniquely scoped key
-                    if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{cat_key}_{stock.ticker}_{c_idx}"):
-                        st.session_state["active_ticker"] = stock.ticker
-                        st.rerun()
+                if not stock_list:
+                    st.info(f"No curated stocks found matching '{radar_search}' in this category.")
+                else:
+                    for i in range(0, len(stock_list), 2):
+                        col_left, col_right = st.columns(2)
+                        pair = [col_left] if i + 1 >= len(stock_list) else [col_left, col_right]
+
+                        for offset, col in enumerate(pair):
+                            stock = stock_list[i + offset]
+                            with col:
+                                st.markdown(f"""
+                                <div class='radar-card'>
+                                    <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;'>
+                                        <div>
+                                            <span style='font-size: 1.15rem; font-weight: 700; color: #93C5FD;'>{stock.ticker}</span>
+                                            <span style='font-size: 0.95rem; color: #94A3B8; margin-left: 8px;'>{stock.name}</span>
+                                            <span style='margin-left: 12px; font-weight: 600; color: #F8FAFC;'>{stock.approx_price}</span>
+                                        </div>
+                                        <div>
+                                            <span class='pastel-pill-mint'>{stock.risk_badge}</span>
+                                        </div>
+                                    </div>
+                                    <div style='margin-top: 8px; font-size: 0.90rem; color: #CBD5E1;'>
+                                        <strong>Catalyst:</strong> {stock.catalyst_driver}
+                                    </div>
+                                    <div style='margin-top: 4px; font-size: 0.86rem; color: #94A3B8;'>
+                                        <strong>Why it matters:</strong> {stock.why_it_matters}
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+                                if st.button(f"⚡ Audit {stock.ticker} Now", key=f"radar_audit_{cat_key}_{stock.ticker}_{i + offset}", use_container_width=True):
+                                    st.session_state["active_ticker"] = stock.ticker
+                                    st.rerun()
 
     # =========================================================================
     # TAB 4: SUPPLY CHAIN & RIPPLE GRAPH
