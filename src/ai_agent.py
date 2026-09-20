@@ -198,3 +198,4 @@ def _build_algorithmic_trade_plan(
         supply_chain_spillovers=spillover_summary if spillover_summary else ["Direct sector transmission."],
         execution_kill_switches=kill_switches,
     )
+

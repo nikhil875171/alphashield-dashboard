@@ -209,3 +209,4 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
         altman_z_score=z_score,
         piotroski_f_score=f_score,
     )
+

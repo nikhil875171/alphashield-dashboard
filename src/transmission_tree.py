@@ -182,3 +182,4 @@ def detect_company_catalyst(symbol: str, sector: str = "", industry: str = "") -
         return "REAL_ESTATE_INFRA"
 
     return "REAL_ESTATE_INFRA"
+

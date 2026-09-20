@@ -1,13 +1,15 @@
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from typing import Any, Optional
 from core.schemas import AlphaShieldRecommendation, TechnicalSnapshot
 
 
 def build_interactive_chart(
     df: pd.DataFrame,
     tech: TechnicalSnapshot,
-    rec: AlphaShieldRecommendation
+    rec: Any,
+    currency_symbol: Optional[str] = None
 ) -> go.Figure:
     """
     Constructs an institutional 3-tier Plotly chart:
@@ -67,6 +69,10 @@ def build_interactive_chart(
             row=1, col=1
         )
 
+    # Auto-detect currency symbol if not explicitly provided
+    if not currency_symbol:
+        currency_symbol = "₹" if (tech.symbol.endswith(".NS") or tech.symbol.endswith(".BO")) else "$"
+
     # Support both AlphaShieldRecommendation and InstitutionalTradePlan schemas safely
     stop_loss = getattr(rec, "algorithmic_stop_loss", None)
     if stop_loss is None:
@@ -90,7 +96,7 @@ def build_interactive_chart(
             line_dash="dash",
             line_color="#FF1744",
             line_width=2,
-            annotation_text=f"Hard Stop: ₹{stop_loss}",
+            annotation_text=f"Hard Stop: {currency_symbol}{stop_loss}",
             annotation_position="bottom right",
             annotation_font_color="#FF1744",
             row=1, col=1
@@ -106,7 +112,7 @@ def build_interactive_chart(
             line_width=1,
             line_dash="dot",
             line_color="#2196F3",
-            annotation_text=f"Entry Zone (₹{entry_low} - ₹{entry_high})",
+            annotation_text=f"Entry Zone ({currency_symbol}{entry_low} - {currency_symbol}{entry_high})",
             annotation_position="top left",
             row=1, col=1
         )
@@ -121,7 +127,7 @@ def build_interactive_chart(
                 line_dash="dashdot",
                 line_color=color,
                 line_width=1.5,
-                annotation_text=f"Target {idx + 1}: ₹{target}",
+                annotation_text=f"Target {idx + 1}: {currency_symbol}{target}",
                 annotation_position="top right",
                 annotation_font_color=color,
                 row=1, col=1
@@ -187,7 +193,7 @@ def build_interactive_chart(
     # Update axes styling
     fig.update_xaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.06)")
     fig.update_yaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.06)")
-    fig.update_yaxes(title_text="Price (₹/$)", row=1, col=1)
+    fig.update_yaxes(title_text=f"Price ({currency_symbol})", row=1, col=1)
     fig.update_yaxes(title_text="Volume", row=2, col=1)
     fig.update_yaxes(title_text="RSI", range=[10, 90], row=3, col=1)
 

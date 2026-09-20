@@ -186,3 +186,4 @@ def validate_microstructure(symbol: str, df: pd.DataFrame, info: Optional[dict] 
         liquidity_passed=liquidity_passed,
         microstructure_warnings=warnings,
     )
+

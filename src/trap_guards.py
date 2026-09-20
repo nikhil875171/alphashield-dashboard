@@ -119,3 +119,4 @@ def evaluate_all_traps(df: pd.DataFrame, info: Optional[dict] = None) -> List[st
         traps.append(cyc_msg)
 
     return traps
+

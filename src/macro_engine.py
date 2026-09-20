@@ -27,6 +27,12 @@ class MacroRegimeState:
     industrial_momentum: str = "Balanced"
     hy_credit_spread_proxy: float = 0.72  # HYG / LQD price ratio
     systemic_credit_risk: str = "Normal"
+    benchmark_name: str = "S&P 500"
+    benchmark_price: float = 5600.0
+    benchmark_change_pct: float = 0.0
+    market_mood_label: str = "Calm & Supportive"
+    market_mood_color: str = "green"
+    market_mood_desc: str = "Overall market conditions are calm and favorable for investing."
 
     @property
     def macro_regime(self) -> str:
@@ -66,10 +72,13 @@ def compute_macro_transmission(is_indian_market: bool = False) -> MacroRegimeSta
     6. 4-tier Volatility (VIX) scaling
     """
     vix_symbol = "^INDIAVIX" if is_indian_market else "^VIX"
+    benchmark_symbol = "^NSEI" if is_indian_market else "^GSPC"
+    benchmark_name = "Nifty 50" if is_indian_market else "S&P 500"
 
     # Parallelize data retrieval for sub-second execution
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=9) as executor:
         f_vix = executor.submit(_safe_fetch_series, vix_symbol, "1mo")
+        f_bench = executor.submit(_safe_fetch_series, benchmark_symbol, "5d")
         f_dxy = executor.submit(_safe_fetch_series, "DX-Y.NYB", "2mo")
         f_10y = executor.submit(_safe_fetch_series, "^TNX", "1mo")
         f_2y = executor.submit(_safe_fetch_series, "2YY=F", "1mo")  # 2Y Treasury Futures
@@ -80,6 +89,7 @@ def compute_macro_transmission(is_indian_market: bool = False) -> MacroRegimeSta
         f_lqd = executor.submit(_safe_fetch_series, "LQD", "1mo")     # Investment Grade ETF
 
         s_vix = f_vix.result()
+        s_bench = f_bench.result()
         s_dxy = f_dxy.result()
         s_10y = f_10y.result()
         s_2y = f_2y.result()
@@ -88,6 +98,18 @@ def compute_macro_transmission(is_indian_market: bool = False) -> MacroRegimeSta
         s_gold = f_gold.result()
         s_hyg = f_hyg.result()
         s_lqd = f_lqd.result()
+
+    # Benchmark Price & 1-day Change
+    if not s_bench.empty:
+        bench_price = round(float(s_bench.iloc[-1]), 2)
+        if len(s_bench) >= 2:
+            prev_bench = float(s_bench.iloc[-2])
+            bench_chg = round(((bench_price - prev_bench) / max(prev_bench, 1.0)) * 100.0, 2)
+        else:
+            bench_chg = 0.0
+    else:
+        bench_price = 24500.0 if is_indian_market else 5600.0
+        bench_chg = 0.0
 
     headwinds: List[str] = []
 
@@ -203,6 +225,20 @@ def compute_macro_transmission(is_indian_market: bool = False) -> MacroRegimeSta
     else:
         regime = "EXPANSION"
 
+    # Plain-English Market Mood for Beginners
+    if vix_val > 25.0 or regime == "VOLATILITY_HALT":
+        mood_label = "Stormy / High Fear"
+        mood_color = "red"
+        mood_desc = "High market turbulence and anxiety. Big institutions are cautious; prioritize protecting your money over taking big risks."
+    elif vix_val >= 18.0 or spread < 0 or dxy_20d_roc > 2.0:
+        mood_label = "Choppy / Caution Advised"
+        mood_color = "yellow"
+        mood_desc = "Market is choppy with mixed economic signals. Be selective; stick only to high-quality companies with proven earnings."
+    else:
+        mood_label = "Calm & Supportive"
+        mood_color = "green"
+        mood_desc = "Market waters are calm, interest volatility is low, and liquidity is flowing smoothly. Favorable climate for investing."
+
     return MacroRegimeState(
         regime_label=regime,
         liquidity_bias=liquidity_bias,
@@ -222,4 +258,10 @@ def compute_macro_transmission(is_indian_market: bool = False) -> MacroRegimeSta
         industrial_momentum=ind_momentum,
         hy_credit_spread_proxy=credit_ratio,
         systemic_credit_risk=credit_risk,
+        benchmark_name=benchmark_name,
+        benchmark_price=bench_price,
+        benchmark_change_pct=bench_chg,
+        market_mood_label=mood_label,
+        market_mood_color=mood_color,
+        market_mood_desc=mood_desc,
     )
