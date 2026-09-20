@@ -24,9 +24,14 @@ class TestSupplyChainGraph(unittest.TestCase):
             self.assertEqual(self.G.nodes[t1]["tier"], "TIER_1")
 
         # Check key Tier-2 suppliers exist
-        for t2 in ["SONACOMS.NS", "COHR"]:
+        for t2 in ["SONACOMS.NS", "COHR", "6324.T", "6268.T"]:
             self.assertIn(t2, self.G.nodes)
             self.assertEqual(self.G.nodes[t2]["tier"], "TIER_2")
+
+        # Check key Tier-3 suppliers exist
+        for t3 in ["2049.TW", "MOG.A", "WELCORP.NS", "DD"]:
+            self.assertIn(t3, self.G.nodes)
+            self.assertEqual(self.G.nodes[t3]["tier"], "TIER_3")
 
     def test_supplier_ripple_lookup(self):
         """Verify ripple effect lookup for specific anchors and suppliers."""
@@ -39,6 +44,16 @@ class TestSupplyChainGraph(unittest.TestCase):
         # Check Sona BLW (SONACOMS.NS) in EV Case
         ripple_sona = get_supplier_ripple_effect("SONACOMS.NS")
         self.assertEqual(ripple_sona.role, "TIER_2")
+
+        # Check Harmonic Drive Systems (6324.T) in Humanoid Automation Case
+        ripple_harmonic = get_supplier_ripple_effect("6324.T")
+        self.assertEqual(ripple_harmonic.role, "TIER_2")
+        self.assertEqual(ripple_harmonic.case_name, "Humanoid & Factory Automation")
+
+        # Check Energy Recovery (ERII) in Desalination Case
+        ripple_erii = get_supplier_ripple_effect("ERII")
+        self.assertEqual(ripple_erii.role, "TIER_2")
+        self.assertEqual(ripple_erii.case_name, "Water Desalination & Treatment")
 
     def test_interactive_plot_rendering(self):
         """Verify Plotly figure is generated without errors."""

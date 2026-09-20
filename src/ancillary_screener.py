@@ -31,9 +31,20 @@ KNOWN_CUSTOMER_CONCENTRATION: Dict[str, Tuple[float, str]] = {
     "COHR": (22.5, "NVIDIA & Cloud Transceiver Integrators"),
     "TSM": (25.0, "Apple Inc. (Sole Foundry for A/M Series Chips)"),
     "ERII": (35.0, "Global Desalination EPC Consortiums"),
+    "FLS": (18.0, "Municipal Water Authorities & Energy Primes"),
+    "DD": (14.0, "Global Water Treatment Systems Integrators"),
     "WELCORP.NS": (31.0, "Public Water Infrastructure Authorities"),
     "BEL.NS": (78.0, "Indian Armed Forces / Ministry of Defense"),
     "HAL.NS": (88.0, "Indian Air Force & Defense Procurement"),
+    "KAYNES.NS": (34.0, "Railways & Defense Electronics Primes"),
+    "6324.T": (38.0, "Fanuc, Yaskawa & Global Robotics OEMs"),
+    "6268.T": (42.0, "Industrial Automation & Robotics Primes"),
+    "2049.TW": (26.0, "Precision CNC & Semiconductor Equipment Makers"),
+    "MOG.A": (22.0, "Aerospace & Defense Robotics Primes"),
+    "JSWSTEEL.NS": (19.0, "Automotive OEMs & Power Transformer Builders"),
+    "PRY.MI": (24.0, "Subsea Grid Interconnect Utilities"),
+    "WST": (36.0, "Novo Nordisk & Eli Lilly (GLP-1 Injectors)"),
+    "LONN.SW": (29.0, "Commercial Biopharma Scale-Up Partners"),
 }
 
 

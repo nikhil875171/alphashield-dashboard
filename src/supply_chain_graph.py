@@ -70,6 +70,7 @@ def build_supply_chain_network() -> nx.DiGraph:
         ("VRT", "Vertiv Holdings", "Coolant Distribution Units (CDUs) & Liquid Cooling"),
         ("MOD", "Modine Manufacturing", "High-Density Liquid Chillers & Air Handlers"),
         ("ETN", "Eaton Corporation", "High-Voltage Switchgear, Transformers & Power Distribution"),
+        ("SU.PA", "Schneider Electric", "EcoStruxure Data Center Infrastructure & Transformers"),
     ]
     for sym, name, component in tier1_ai:
         G.add_node(sym, tier="TIER_1", label=f"{sym} ({name})", case="Hyperscale AI Datacenter", desc=component)
@@ -79,7 +80,9 @@ def build_supply_chain_network() -> nx.DiGraph:
     # Tier 2
     tier2_ai = [
         ("COHR", "Coherent Corp", "800G & 1.6T Silicon Photonics Optical Transceivers"),
+        ("300308.SZ", "Innolight Technology", "Optical Transceiver Modules for AI Clusters"),
         ("CAT", "Caterpillar Inc", "Industrial Mission-Critical Diesel/Gas Backup Gensets"),
+        ("CMI", "Cummins Inc", "High-Output Backup Power Generator Systems"),
     ]
     for sym, name, component in tier2_ai:
         G.add_node(sym, tier="TIER_2", label=f"{sym} ({name})", case="Hyperscale AI Datacenter", desc=component)
@@ -90,6 +93,8 @@ def build_supply_chain_network() -> nx.DiGraph:
     tier3_ai = [
         ("NVDA", "NVIDIA Corporation", "Core Parallel Acceleration Silicon & NVLink Interconnect"),
         ("TSM", "TSMC", "Advanced 3nm/2nm Foundries & CoWoS Packaging"),
+        ("4062.T", "Ibiden Co", "High-Speed Flip-Chip BGA Packaging Substrates"),
+        ("5401.T", "Nippon Steel", "High-Purity Grain-Oriented Electrical Steel (GOES)"),
     ]
     for sym, name, component in tier3_ai:
         G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="Hyperscale AI Datacenter", desc=component)
@@ -97,10 +102,16 @@ def build_supply_chain_network() -> nx.DiGraph:
         G.add_edge("NVDA", "TSM", relationship="Manufactures Custom Silicon at")
 
     # --- CASE C: Municipal Water Desalination Project ---
-    anchors_water = ["EPC_MUNICIPAL", "XYL"]
+    anchors_water = ["EPC_MUNICIPAL"]
     G.add_node("EPC_MUNICIPAL", tier="ANCHOR_OEM", label="Municipal Water Authority", case="Water Desalination & Treatment", desc="Sovereign Public Works Sponsor")
-    G.add_node("XYL", tier="TIER_1", label="Xylem (XYL)", case="Water Desalination & Treatment", desc="Global Water Systems Engineering & Integrator")
-    G.add_edge("EPC_MUNICIPAL", "XYL", relationship="Awards Desalination EPC to")
+
+    tier1_water = [
+        ("XYL", "Xylem Inc", "Global Water Systems Engineering & Desalination EPC"),
+        ("VIE.PA", "Veolia Environnement", "Municipal Water Treatment & Desalination Concessions"),
+    ]
+    for sym, name, component in tier1_water:
+        G.add_node(sym, tier="TIER_1", label=f"{sym} ({name})", case="Water Desalination & Treatment", desc=component)
+        G.add_edge("EPC_MUNICIPAL", sym, relationship="Awards Desalination EPC to")
 
     tier2_water = [
         ("ERII", "Energy Recovery Inc", "Pressure Exchangers (Recovers 60% of pumping energy)"),
@@ -109,6 +120,7 @@ def build_supply_chain_network() -> nx.DiGraph:
     for sym, name, component in tier2_water:
         G.add_node(sym, tier="TIER_2", label=f"{sym} ({name})", case="Water Desalination & Treatment", desc=component)
         G.add_edge("XYL", sym, relationship="Procures Energy Recovery Technology from")
+        G.add_edge("VIE.PA", sym, relationship="Integrates Heavy Pumping Systems from")
 
     tier3_water = [
         ("DD", "DuPont de Nemours", "FilmTec Reverse Osmosis Thin-Film Composite Membranes"),
@@ -118,6 +130,41 @@ def build_supply_chain_network() -> nx.DiGraph:
         G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="Water Desalination & Treatment", desc=component)
         G.add_edge("ERII", sym, relationship="Houses Membranes & High-Pressure Plumbing from")
         G.add_edge("FLS", sym, relationship="Pumps Fluid Through Heavy Piping from")
+
+    # --- CASE D: Humanoid & Factory Automation ---
+    anchors_auto = ["6954.T", "6506.T", "ABBN.SW"]
+    auto_primes = [
+        ("6954.T", "Fanuc Corp", "CNC Controllers & Industrial Humanoid Robotics Prime"),
+        ("6506.T", "Yaskawa Electric", "Motoman Mechatronics & Factory Servo Automation"),
+        ("ABBN.SW", "ABB Ltd", "Collaborative Robots & Discrete Industrial Automation"),
+    ]
+    for sym, name, desc in auto_primes:
+        G.add_node(sym, tier="ANCHOR_OEM", label=f"{sym} ({name})", case="Humanoid & Factory Automation", desc=desc)
+
+    tier1_auto = [
+        ("MOTION_CTRL", "Motion Systems Integrator", "Multi-Axis Force-Torque Sensors & Motion Computing"),
+    ]
+    for sym, name, component in tier1_auto:
+        G.add_node(sym, tier="TIER_1", label=f"{sym} ({name})", case="Humanoid & Factory Automation", desc=component)
+        for a in anchors_auto:
+            G.add_edge(a, sym, relationship="Directs Actuation Requirements to")
+
+    tier2_auto = [
+        ("6324.T", "Harmonic Drive Systems", "Strain-Wave Harmonic Precision Gearboxes for Humanoid Joints"),
+        ("6268.T", "Nabtesco Corp", "Precision Cycloidal Reducers for Heavy Robotic Articulation"),
+    ]
+    for sym, name, component in tier2_auto:
+        G.add_node(sym, tier="TIER_2", label=f"{sym} ({name})", case="Humanoid & Factory Automation", desc=component)
+        G.add_edge("MOTION_CTRL", sym, relationship="Integrates Precision Reduction Gearboxes from")
+
+    tier3_auto = [
+        ("2049.TW", "Hiwin Technologies", "High-Precision Ground Ball Screws & Linear Guides"),
+        ("MOG.A", "Moog Inc", "Frameless Brushless Torque Motors & Fluid Artuation"),
+    ]
+    for sym, name, component in tier3_auto:
+        G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="Humanoid & Factory Automation", desc=component)
+        G.add_edge("6324.T", sym, relationship="Sources Miniature Ball Screws from")
+        G.add_edge("6268.T", sym, relationship="Couples Heavy Torque Motors from")
 
     return G
 
