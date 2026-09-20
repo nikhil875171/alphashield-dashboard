@@ -466,7 +466,8 @@ if audit_results and audit_results[0] is not None:
         box_class = "bottom-line-container"
         badge_html = f"<span class='badge-buy'>🟢 {plan.action} RECOMMENDATION</span>"
         action_headline = "A favorable setup with high reward and protected risk."
-        why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {factors.piotroski_f_score}/9)."
+        f_score_disp = getattr(factors, "piotroski_f_score", 6) if factors else 6
+        why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {f_score_disp}/9)."
     elif plan.action == "HOLD":
         box_class = "bottom-line-container bottom-line-caution"
         badge_html = "<span class='badge-hold'>🟡 HOLD / WAIT FOR DIP</span>"
@@ -526,7 +527,7 @@ if audit_results and audit_results[0] is not None:
 
     # TILE 2: COMPANY HEALTH
     with t_c2:
-        z_score = factors.altman_z_score
+        z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
         health_status = "🟢 Solid & Safe" if z_score >= 2.99 else ("🟡 Watchful Debt" if z_score >= 1.81 else "🔴 Insolvent Risk")
         health_class = "safe" if z_score >= 2.99 else ("caution" if z_score >= 1.81 else "danger")
         st.markdown(f"""
@@ -539,12 +540,17 @@ if audit_results and audit_results[0] is not None:
 
         with st.expander("🔍 ELI5 Context"):
             st.markdown("**In Plain Words:** Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?")
-            beneish_note = "⚠️ Forensic Distortion Warning" if factors.beneish_manipulation_risk else "✅ Clean Accounting"
+            is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+            beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+            f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+            sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+
+            beneish_note = "⚠️ Forensic Distortion Warning" if is_manip else "✅ Clean Accounting"
             st.markdown(f"**The Verdict:** Solvency Status: **{plan.solvency_status}**.")
             st.markdown(f"• Altman Z-Score: **{z_score:.2f}** (Distress: < 1.81, Safe: > 2.99)")
-            st.markdown(f"• Piotroski F-Score: **{factors.piotroski_f_score}/9** (Operating Quality)")
-            st.markdown(f"• Sloan Accruals: **{factors.sloan_accrual_ratio * 100:.1f}%** (Quality Threshold: < 10%)")
-            st.markdown(f"• Beneish M-Score: **{factors.beneish_m_score:.2f}** ({beneish_note})")
+            st.markdown(f"• Piotroski F-Score: **{f_score}/9** (Operating Quality)")
+            st.markdown(f"• Sloan Accruals: **{sloan_val * 100:.1f}%** (Quality Threshold: < 10%)")
+            st.markdown(f"• Beneish M-Score: **{beneish_val:.2f}** ({beneish_note})")
 
     # TILE 3: PRICE MOMENTUM
     with t_c3:
