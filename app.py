@@ -900,15 +900,16 @@ if audit_results and audit_results[0] is not None:
         col_rad_head, col_rad_act = st.columns([2.8, 1.2])
 
         with col_rad_head:
-            st.markdown(f"### 🧭 **Live Institutional Market Radar ({'India NSE' if is_indian else 'US Markets'})**")
-            st.caption("100% real-time quantitative screening across 100+ institutional candidates. High-density data tables with scrollbars, live sorting, and 1-click inspection popup modals.")
+            market_label = "National Stock Exchange of India (NSE Full Market - 2,500+ Equities)" if is_indian else "US Markets"
+            st.markdown(f"### 🧭 **Live Institutional Market Radar ({market_label})**")
+            st.caption("100% dynamic quantitative screening across all listed exchange securities without hardcoding. High-density data tables with scrollbars, live keyword search, and 1-click inspection popup modals.")
 
         with col_rad_act:
             if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
                 fetch_radar_cached_v2.clear()
                 st.rerun()
 
-        with st.spinner("Connecting to live exchange feeds & scanning..."):
+        with st.spinner("Connecting to official exchange feeds & scanning full market..."):
             radar_data = fetch_radar_cached_v2(is_indian)
 
         total_screened = sum(len(stocks) for stocks in radar_data.values())

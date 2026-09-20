@@ -329,20 +329,43 @@ def _fetch_news_concurrently(tickers: List[str]) -> Dict[str, tuple[str, str]]:
     return results
 
 
-def scan_live_market_radar(is_indian: bool = True) -> Dict[str, List[ThematicStockItem]]:
+def scan_live_market_radar(is_indian: bool = True, use_full_nse: bool = True) -> Dict[str, List[ThematicStockItem]]:
     """
-    Executes a pure live quantitative market scan across the expanded candidate universe.
+    Executes a pure live quantitative market scan across the expanded universe.
     
-    1. Downloads 5-day OHLCV in a single batch via yf.download across 100+ candidates.
-    2. Calculates live price, day change %, 5-day average volume, and relative volume.
-    3. Dynamically screens and sorts candidates into 5 categories without artificial limits:
-       - 'penny': Live price <= ₹100 (IN) or <= $15 (US), sorted by relative volume surge.
-       - 'safe': Fortress blue-chips, sorted by 5-day stability/low volatility.
-       - 'new': Disruptors & new listings, sorted by momentum.
-       - 'trending': Market-wide top gainers & volume breakouts across all scanned stocks.
-       - 'future': Secular megatrends, sorted by relative strength.
-    4. Concurrently extracts live financial news headlines.
+    When is_indian=True and use_full_nse=True:
+    Dynamically scans and classifies ALL 2,500+ listed equities on the National Stock
+    Exchange of India (NSE) directly from official exchange feeds.
+    
+    Falls back gracefully to yfinance candidate batch downloading if needed.
     """
+    if is_indian and use_full_nse:
+        try:
+            from src.nse_full_market import build_full_nse_thematic_radar
+            radar_data = build_full_nse_thematic_radar()
+            if radar_data and len(radar_data.get("penny", [])) > 0:
+                # Concurrently attach real-time news for top tickers across categories
+                top_tickers = list({
+                    s.ticker for s in (
+                        radar_data.get("penny", [])[:6] +
+                        radar_data.get("safe", [])[:8] +
+                        radar_data.get("trending", [])[:8] +
+                        radar_data.get("new", [])[:6] +
+                        radar_data.get("future", [])[:6]
+                    )
+                })
+                news_map = _fetch_news_concurrently(top_tickers)
+                if news_map:
+                    for cat_key, items in radar_data.items():
+                        for item in items:
+                            if item.ticker in news_map:
+                                driver, url = news_map[item.ticker]
+                                item.catalyst_driver = driver
+                                item.news_url = url
+                return radar_data
+        except Exception:
+            pass  # Fall back to candidate scanning
+
     universe = INDIAN_SCAN_UNIVERSE if is_indian else US_SCAN_UNIVERSE
     currency_sym = "₹" if is_indian else "$"
     symbols = [item["ticker"] for item in universe]
