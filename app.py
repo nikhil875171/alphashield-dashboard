@@ -476,6 +476,86 @@ with m_col5:
 
 st.markdown("<hr style='margin: 14px 0; border-color: #232D3F;'>", unsafe_allow_html=True)
 
+# =============================================================================
+# MODULE 11.2: INTERACTIVE SECTOR UNIVERSE EXPLORER WINDOW
+# =============================================================================
+from src.stock_universe import get_stock_universe, get_all_sectors, get_all_cap_tiers
+
+with st.expander("📊 **Explore Market Universe by Cap & Sector** (Click to Expand / Browse Categories)", expanded=False):
+    col_cap, col_sec, col_search = st.columns([1.1, 1.7, 1.4])
+
+    market_str = "INDIA" if is_indian else "US"
+
+    with col_cap:
+        selected_cap = st.selectbox(
+            "Filter by Market Cap",
+            options=get_all_cap_tiers(),
+            index=0,
+            key="sector_explorer_cap"
+        )
+
+    with col_sec:
+        available_sectors = ["All Sectors"] + get_all_sectors(market=market_str)
+        selected_sector = st.selectbox(
+            "Filter by Sector",
+            options=available_sectors,
+            index=0,
+            key="sector_explorer_sec"
+        )
+
+    with col_search:
+        sec_query = st.text_input(
+            "Quick Filter",
+            "",
+            placeholder="e.g. 5G, Optical, Yarn, EV, Defense...",
+            key="sector_explorer_query"
+        ).strip().lower()
+
+    filtered_entries = get_stock_universe(
+        market=market_str,
+        cap_tier=selected_cap if selected_cap != "All Caps" else None,
+        sector=selected_sector if selected_sector != "All Sectors" else None
+    )
+
+    if sec_query:
+        filtered_entries = [
+            e for e in filtered_entries
+            if sec_query in e.ticker.lower()
+            or sec_query in e.name.lower()
+            or sec_query in e.plain_english_role.lower()
+            or sec_query in e.sub_sector.lower()
+            or sec_query in e.thematic_anchor.lower()
+        ]
+
+    st.caption(f"Showing **{len(filtered_entries)}** companies in `{selected_sector}` ({selected_cap}) for **{'🇮🇳 India (NSE / BSE)' if is_indian else '🇺🇸 US Markets'}**:")
+
+    if not filtered_entries:
+        st.info("No companies found matching the selected cap and sector criteria.")
+    else:
+        card_cols = st.columns(3)
+        for idx, entry in enumerate(filtered_entries):
+            with card_cols[idx % 3]:
+                badge_class = (
+                    "pastel-pill-mint" if entry.market_cap_tier == "Large-Cap"
+                    else ("pastel-pill-lilac" if entry.market_cap_tier == "Mid-Cap" else "pastel-pill-rose")
+                )
+                st.markdown(f"""
+                <div style='background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between;'>
+                    <div>
+                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
+                            <strong style='color: #F8FAFC; font-size: 0.98rem;'>{entry.ticker}</strong>
+                            <span class='{badge_class}' style='font-size: 0.72rem; padding: 2px 7px;'>{entry.market_cap_tier}</span>
+                        </div>
+                        <div style='color: #93C5FD; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;'>{entry.name}</div>
+                        <div style='color: #CBD5E1; font-size: 0.78rem; line-height: 1.4;'>{entry.plain_english_role}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"⚡ Analyze {entry.ticker}", key=f"btn_univ_analyze_{entry.ticker}", use_container_width=True):
+                    st.session_state["active_ticker"] = entry.ticker
+                    st.rerun()
+
+st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # --- MAIN PIPELINE EXECUTION ---
 ticker_to_run = st.session_state["active_ticker"]

@@ -26,6 +26,7 @@ class FullInstitutionalTradePlan(BaseModel):
     conviction_score: float = Field(ge=0.0, le=1.0)
     time_horizon: Literal["1_YEAR", "3_YEARS", "5_YEARS", "10_YEARS", "20_YEARS"]
     thematic_pillar: str = Field(description="e.g., AI Edge, Power Grid, Nuclear Baseload, Water Scarcity, Humanoid Robotics")
+    sector: str = Field(default="General Equities", description="Primary sector classification from registry")
     is_anchor_or_ancillary: Literal["ANCHOR_OEM", "TIER_1", "TIER_2", "TIER_3"]
     connected_anchors: List[str] = Field(description="List of anchor OEMs driving demand to this company")
     operating_leverage_score: float = Field(ge=0.0, le=5.0)

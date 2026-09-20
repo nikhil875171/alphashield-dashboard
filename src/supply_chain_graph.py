@@ -158,13 +158,84 @@ def build_supply_chain_network() -> nx.DiGraph:
         G.add_edge("MOTION_CTRL", sym, relationship="Integrates Precision Reduction Gearboxes from")
 
     tier3_auto = [
-        ("2049.TW", "Hiwin Technologies", "High-Precision Ground Ball Screws & Linear Guides"),
-        ("MOG.A", "Moog Inc", "Frameless Brushless Torque Motors & Fluid Artuation"),
+        ("2049.TW", "Hiwin Technologies", "High-Precision Ground Ballscrews & Linear Guideways"),
+        ("MOG.A", "Moog Inc", "High-Response Servo Valves & Multi-Axis Actuation"),
     ]
     for sym, name, component in tier3_auto:
         G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="Humanoid & Factory Automation", desc=component)
-        G.add_edge("6324.T", sym, relationship="Sources Miniature Ball Screws from")
-        G.add_edge("6268.T", sym, relationship="Couples Heavy Torque Motors from")
+        G.add_edge("6324.T", sym, relationship="Sources Miniature Ground Ballscrews from")
+        G.add_edge("6268.T", sym, relationship="Integrates Precision Electrohydraulic Valves from")
+
+    # --- CASE E: Telecommunications & 5G/6G Networks ---
+    anchors_telecom = ["VZ", "T", "BHARTIARTL.NS"]
+    for a in anchors_telecom:
+        name = "Bharti Airtel" if a == "BHARTIARTL.NS" else ("Verizon" if a == "VZ" else "AT&T")
+        G.add_node(a, tier="ANCHOR_OEM", label=f"{a} ({name})", case="5G/6G Telecom & Networks", desc="Tier-1 Telecom Carrier Capex Deployer")
+
+    tier1_telecom = [
+        ("AMT", "American Tower", "Passive Macro Cell Towers & Fiber REIT"),
+        ("INDUSTOWER.NS", "Indus Towers", "Nationwide Telecom Tower Infrastructure"),
+        ("ERIC", "Ericsson", "5G Core Base Stations & Massive MIMO Antennas"),
+    ]
+    for sym, name, component in tier1_telecom:
+        G.add_node(sym, tier="TIER_1", label=f"{sym} ({name})", case="5G/6G Telecom & Networks", desc=component)
+        for a in anchors_telecom:
+            G.add_edge(a, sym, relationship="Leases Tower Capacity & Awards RAN to")
+
+    tier2_telecom = [
+        ("CIEN", "Ciena Corp", "High-Bandwidth Coherent Optical Wave Servers"),
+        ("TEJASNET.NS", "Tejas Networks", "Optical Backhaul & Indigenous 4G/5G Wireless Radios"),
+        ("HFCL.NS", "HFCL Limited", "FTTH Drop Cables, 5G Routers & Telecom Switches"),
+    ]
+    for sym, name, component in tier2_telecom:
+        G.add_node(sym, tier="TIER_2", label=f"{sym} ({name})", case="5G/6G Telecom & Networks", desc=component)
+        G.add_edge("INDUSTOWER.NS", sym, relationship="Procures Optical Backhaul & Switches from")
+        G.add_edge("AMT", sym, relationship="Deploys Optical Routing Systems from")
+        G.add_edge("ERIC", sym, relationship="Integrates Radio Frequency Modules with")
+
+    tier3_telecom = [
+        ("GLW", "Corning Inc", "Ultra-Low-Loss Optical Glass Preforms"),
+        ("STLTECH.NS", "Sterlite Technologies", "Specialty Optical Fiber Ribbons & Interconnects"),
+    ]
+    for sym, name, component in tier3_telecom:
+        G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="5G/6G Telecom & Networks", desc=component)
+        G.add_edge("CIEN", sym, relationship="Sources Optical Glass Preforms from")
+        G.add_edge("TEJASNET.NS", sym, relationship="Draws Optical Core Fiber from")
+        G.add_edge("HFCL.NS", sym, relationship="Manufactures Cables Using Preforms from")
+
+    # --- CASE F: Textiles, Technical Fibers & High-Performance Fabrics ---
+    anchors_textile = ["NKE", "PAGEIND.NS"]
+    for a in anchors_textile:
+        name = "Nike Inc" if a == "NKE" else "Page Industries (Jockey)"
+        G.add_node(a, tier="ANCHOR_OEM", label=f"{a} ({name})", case="Textiles, Technical Fibers & High-Performance Fabrics", desc="Global Apparel & Sportswear Brand Anchor")
+
+    tier1_textile = [
+        ("GOKEX.NS", "Gokaldas Exports", "Outerwear & Functional Sportswear Integration"),
+        ("KPRMILL.NS", "KPR Mill", "Knitted Garments & High-Speed Automated Apparel"),
+    ]
+    for sym, name, component in tier1_textile:
+        G.add_node(sym, tier="TIER_1", label=f"{sym} ({name})", case="Textiles, Technical Fibers & High-Performance Fabrics", desc=component)
+        for a in anchors_textile:
+            G.add_edge(a, sym, relationship="Awards Multi-Million Export Sourcing to")
+
+    tier2_textile = [
+        ("ARVIND.NS", "Arvind Ltd", "Protective Technical Textiles, Fire-Retardant Fabrics & Denim"),
+        ("VTL.NS", "Vardhman Textiles", "Specialty Ring-Spun Yarns & Mercerized Fabrics"),
+        ("3402.T", "Toray Industries", "Carbon Fiber & Synthetic Microfiber Weaving"),
+    ]
+    for sym, name, component in tier2_textile:
+        G.add_node(sym, tier="TIER_2", label=f"{sym} ({name})", case="Textiles, Technical Fibers & High-Performance Fabrics", desc=component)
+        G.add_edge("GOKEX.NS", sym, relationship="Procures Performance Technical Weaves from")
+        G.add_edge("KPRMILL.NS", sym, relationship="Spins & Weaves Specialty Cotton Yarns from")
+
+    tier3_textile = [
+        ("RELIANCE.NS", "Reliance Industries", "Purified Terephthalic Acid (PTA) & Polyester Polymers"),
+        ("GRASIM.NS", "Grasim Industries", "Viscose Staple Fiber (VSF) & Rayon Wood Pulp"),
+    ]
+    for sym, name, component in tier3_textile:
+        G.add_node(sym, tier="TIER_3", label=f"{sym} ({name})", case="Textiles, Technical Fibers & High-Performance Fabrics", desc=component)
+        G.add_edge("ARVIND.NS", sym, relationship="Sources Synthetic Fiber Monomers from")
+        G.add_edge("VTL.NS", sym, relationship="Procures Viscose Cellulosic Feedstock from")
 
     return G
 
@@ -185,10 +256,16 @@ def get_supplier_ripple_effect(ticker: str) -> SupplierRippleResult:
 
         # Find upstream parents (who drives demand to this company)
         pred = list(G.predecessors(sym))
-        # Find downstream successors (who receives components from this company)
+        # Find downstream beneficiaries (who receives components from this company)
         succ = list(G.successors(sym))
 
-        anchors = [p for p in pred if G.nodes[p].get("tier") == "ANCHOR_OEM"] or pred
+        # Identify anchor OEMs: direct predecessors if any, else root ANCHOR_OEM ancestors in the DAG
+        direct_anchors = [p for p in pred if G.nodes[p].get("tier") == "ANCHOR_OEM"]
+        if direct_anchors:
+            anchors = direct_anchors
+        else:
+            root_anchors = [a for a in nx.ancestors(G, sym) if G.nodes[a].get("tier") == "ANCHOR_OEM"]
+            anchors = root_anchors if root_anchors else pred
 
         if tier == "ANCHOR_OEM":
             leverage_text = "Anchor OEM commanding direct pricing power and deploying mega-capex budgets."

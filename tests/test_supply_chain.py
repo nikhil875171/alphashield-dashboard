@@ -55,6 +55,18 @@ class TestSupplyChainGraph(unittest.TestCase):
         self.assertEqual(ripple_erii.role, "TIER_2")
         self.assertEqual(ripple_erii.case_name, "Water Desalination & Treatment")
 
+        # Check Telecom Case E
+        ripple_tejas = get_supplier_ripple_effect("TEJASNET.NS")
+        self.assertEqual(ripple_tejas.role, "TIER_2")
+        self.assertIn("BHARTIARTL.NS", ripple_tejas.connected_anchors)
+        self.assertEqual(ripple_tejas.case_name, "5G/6G Telecom & Networks")
+
+        # Check Textiles Case F
+        ripple_arvind = get_supplier_ripple_effect("ARVIND.NS")
+        self.assertEqual(ripple_arvind.role, "TIER_2")
+        self.assertIn("PAGEIND.NS", ripple_arvind.connected_anchors)
+        self.assertEqual(ripple_arvind.case_name, "Textiles, Technical Fibers & High-Performance Fabrics")
+
     def test_interactive_plot_rendering(self):
         """Verify Plotly figure is generated without errors."""
         fig = render_interactive_network_graph(highlight_ticker="VRT")
