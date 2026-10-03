@@ -17,7 +17,7 @@ def compute_technical_snapshot(
     ticker = yf.Ticker(symbol)
     df = ticker.history(period=period, interval=interval)
 
-    if df.empty or len(df) < 30:
+    if df.empty or len(df) < 1:
         raise ValueError(f"Insufficient historical candle data retrieved for '{symbol}'.")
 
     # Clean DataFrame
@@ -25,23 +25,27 @@ def compute_technical_snapshot(
     if df.index.tz is not None:
         df.index = df.index.tz_localize(None)
 
-    # 1. Exponential Moving Averages (20, 50, 200)
-    df["EMA_20"] = df["Close"].ewm(span=20, adjust=False).mean()
-    df["EMA_50"] = df["Close"].ewm(span=50, adjust=False).mean()
-    df["EMA_200"] = df["Close"].ewm(span=min(200, len(df)), adjust=False).mean()
+    n_candles = len(df)
+
+    # 1. Exponential Moving Averages (20, 50, 200) - adaptive span for newly listed equities
+    df["EMA_20"] = df["Close"].ewm(span=min(20, n_candles), adjust=False).mean()
+    df["EMA_50"] = df["Close"].ewm(span=min(50, n_candles), adjust=False).mean()
+    df["EMA_200"] = df["Close"].ewm(span=min(200, n_candles), adjust=False).mean()
 
     # 2. RSI (14-period)
+    rsi_window = min(14, max(2, n_candles))
     delta = df["Close"].diff()
-    gain = (delta.where(delta > 0, 0.0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0.0)).rolling(window=14).mean()
+    gain = (delta.where(delta > 0, 0.0)).rolling(window=rsi_window, min_periods=1).mean()
+    loss = (-delta.where(delta < 0, 0.0)).rolling(window=rsi_window, min_periods=1).mean()
     rs = gain / (loss.replace(0, 0.00001))
     df["RSI_14"] = 100 - (100 / (1 + rs))
+    df["RSI_14"] = df["RSI_14"].fillna(50.0)
 
     # 3. MACD (12, 26, 9)
-    ema_12 = df["Close"].ewm(span=12, adjust=False).mean()
-    ema_26 = df["Close"].ewm(span=26, adjust=False).mean()
+    ema_12 = df["Close"].ewm(span=min(12, n_candles), adjust=False).mean()
+    ema_26 = df["Close"].ewm(span=min(26, n_candles), adjust=False).mean()
     df["MACD"] = ema_12 - ema_26
-    df["MACD_SIGNAL"] = df["MACD"].ewm(span=9, adjust=False).mean()
+    df["MACD_SIGNAL"] = df["MACD"].ewm(span=min(9, n_candles), adjust=False).mean()
     df["MACD_HIST"] = df["MACD"] - df["MACD_SIGNAL"]
 
     # 4. Volume Weighted Average Price (VWAP)
@@ -51,23 +55,25 @@ def compute_technical_snapshot(
     df["VWAP"] = cum_vp / cum_vol.replace(0, 1)
 
     # 5. Average True Range (ATR 14)
+    atr_window = min(14, max(1, n_candles))
     high_low = df["High"] - df["Low"]
     high_close = (df["High"] - df["Close"].shift()).abs()
     low_close = (df["Low"] - df["Close"].shift()).abs()
     true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
-    df["ATR_14"] = true_range.rolling(window=14).mean()
+    df["ATR_14"] = true_range.rolling(window=atr_window, min_periods=1).mean()
     # Backfill ATR for early periods if needed
-    df["ATR_14"] = df["ATR_14"].bfill()
+    df["ATR_14"] = df["ATR_14"].bfill().fillna(df["Close"].iloc[-1] * 0.02)
 
     # 6. Volume Microstructure & Spread Impact
-    df["VOL_SMA_20"] = df["Volume"].rolling(window=20).mean().bfill()
+    vol_window = min(20, max(1, n_candles))
+    df["VOL_SMA_20"] = df["Volume"].rolling(window=vol_window, min_periods=1).mean().bfill()
 
     latest = df.iloc[-1]
-    prev = df.iloc[-2]
+    prev = df.iloc[-2] if n_candles > 1 else df.iloc[-1]
 
     curr_price = float(latest["Close"])
     prev_close = float(prev["Close"])
-    change_pct = round(((curr_price - prev_close) / prev_close) * 100.0, 2)
+    change_pct = round(((curr_price - prev_close) / prev_close) * 100.0, 2) if prev_close > 0 else 0.0
     atr = float(latest["ATR_14"]) if not np.isnan(latest["ATR_14"]) else (curr_price * 0.02)
     adv_20 = int(latest["VOL_SMA_20"]) if not np.isnan(latest["VOL_SMA_20"]) else int(latest["Volume"])
     vol_surge = round(float(latest["Volume"]) / max(adv_20, 1), 2)

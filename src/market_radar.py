@@ -98,9 +98,11 @@ INDIAN_SCAN_UNIVERSE = [
     {"ticker": "CIPLA.NS", "name": "Cipla Limited", "base_category": "safe", "why_it_matters": "Defensive pharmaceutical major specializing in respiratory inhalers and anti-retrovirals."},
     {"ticker": "DRREDDY.NS", "name": "Dr. Reddy's Laboratories", "base_category": "safe", "why_it_matters": "Global generic pharmaceutical manufacturer with expanding biosimilar pipeline in US and Europe."},
     {"ticker": "EICHERMOT.NS", "name": "Eicher Motors", "base_category": "safe", "why_it_matters": "Parent of Royal Enfield commanding the middleweight premium motorcycle segment in India."},
+    {"ticker": "HEROMOTOCO.NS", "name": "Hero MotoCorp", "base_category": "safe", "why_it_matters": "World's largest manufacturer of motorcycles & scooters, defensive rural cash cow with consistent dividend yield."},
     {"ticker": "BRITANNIA.NS", "name": "Britannia Industries", "base_category": "safe", "why_it_matters": "Defensive biscuit and bakery FMCG leader with extensive rural and urban distribution reach."},
 
     # New & Emerging Disruptors
+    {"ticker": "HEROMOTORS.NS", "name": "Hero Motors", "base_category": "new", "why_it_matters": "Newly listed Tier-1 auto ancillary manufacturing precision gears, transmissions, and EV powertrains."},
     {"ticker": "JIOFIN.NS", "name": "Jio Financial Services", "base_category": "new", "why_it_matters": "BlackRock JV partner with balance sheet depth to disrupt lending, broking, and asset management."},
     {"ticker": "SWIGGY.NS", "name": "Swiggy Ltd", "base_category": "new", "why_it_matters": "Urban food delivery and quick-commerce duopoly with expanding dark store operating margins."},
     {"ticker": "TATATECH.NS", "name": "Tata Technologies", "base_category": "new", "why_it_matters": "Pure-play engineering R&D services powering OEM transitions to software-defined EVs."},

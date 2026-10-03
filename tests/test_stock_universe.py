@@ -156,6 +156,20 @@ class TestStockUniverse(unittest.TestCase):
         self.assertEqual(infer_cap_tier(1500.0, turnover=2000.0, category_id="safe"), "Large-Cap")
         self.assertEqual(infer_cap_tier(250.0, turnover=100.0), "Mid-Cap")
 
+    def test_hero_stocks_indexed(self):
+        """Verify both Hero Motors and Hero MotoCorp are properly registered and distinguished."""
+        t_map = get_ticker_sector_map()
+        self.assertIn("HEROMOTORS.NS", t_map)
+        self.assertIn("HEROMOTOCO.NS", t_map)
+
+        sec_motors, cap_motors, _ = t_map["HEROMOTORS.NS"]
+        self.assertEqual(sec_motors, "Automobile & Ancillaries")
+        self.assertEqual(cap_motors, "Mid-Cap")
+
+        sec_motoco, cap_motoco, _ = t_map["HEROMOTOCO.NS"]
+        self.assertEqual(sec_motoco, "Automobile & Ancillaries")
+        self.assertEqual(cap_motoco, "Large-Cap")
+
 
 if __name__ == "__main__":
     unittest.main()

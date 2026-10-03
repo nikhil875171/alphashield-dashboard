@@ -65,6 +65,22 @@ def test_technical_engine():
     return tech, df
 
 
+def test_technical_engine_ipo_short_history():
+    print("[*] Testing Technical Engine with Newly Listed IPO (HEROMOTORS.NS < 30 candles)...")
+    tech, df = compute_technical_snapshot("HEROMOTORS.NS", period="1y", interval="1d")
+    assert isinstance(tech, TechnicalSnapshot)
+    assert not df.empty
+    assert len(df) < 30
+    assert "EMA_20" in df.columns
+    assert "RSI_14" in df.columns
+    assert "ATR_14" in df.columns
+    assert tech.current_price > 0
+    assert tech.rsi_14 >= 0
+    print(f"    [+] IPO Tech Price: ₹{tech.current_price}, RSI: {tech.rsi_14}, Candles: {len(df)}")
+    return tech, df
+
+
+
 def test_risk_manager(tech: TechnicalSnapshot):
     print("[*] Testing Zero-Ruin Risk Manager...")
     account_size = 1_000_000.0  # ₹10 Lakhs
@@ -124,6 +140,7 @@ if __name__ == "__main__":
     test_macro_engine()
     test_sentiment_lexicon()
     tech, df = test_technical_engine()
+    test_technical_engine_ipo_short_history()
     risk = test_risk_manager(tech)
     fund = test_fundamental_engine()
     test_advisor_and_chart(tech, df, fund, risk)
