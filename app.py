@@ -593,12 +593,19 @@ st.markdown("""
         border-radius: var(--radius-lg);
         padding: 20px 22px;
         height: 100%;
+        min-height: 440px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         box-shadow: var(--shadow-card);
         transition: all 0.24s var(--ease-luxury);
         margin-bottom: var(--space-2);
+        box-sizing: border-box;
+    }
+    .dim-card-body {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
     }
     .dimension-card:hover {
         border-color: rgba(56, 189, 248, 0.32);
@@ -1445,6 +1452,16 @@ def run_full_audit(ticker: str):
             return None, None, None, None, None, None, None, None, None, None, None, {}
 
 
+def render_clean_html(html_str: str):
+    """
+    Renders custom HTML in Streamlit while stripping leading indentation.
+    Prevents CommonMark from mistakenly interpreting indented lines as <pre><code> blocks,
+    which otherwise breaks DOM hierarchy, causes unclosed tags, and unaligns grid cards.
+    """
+    cleaned = re.sub(r'^[ \t]+', '', html_str.strip(), flags=re.MULTILINE)
+    st.markdown(cleaned, unsafe_allow_html=True)
+
+
 audit_results = run_full_audit(ticker_to_run)
 if audit_results and audit_results[0] is not None:
     tech, df, factors, micro, traps, spill, risk, plan, thematic, ripple, ancillary, info = audit_results
@@ -1677,53 +1694,49 @@ if audit_results and audit_results[0] is not None:
             r1_c1, r1_c2, r1_c3 = st.columns(3)
             with r1_c1:
                 # 1. Market Mood
-                p1 = dim_scores["Market Mood"]
-                eli5_html = """
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.</div>
-                </div>
-                """ if show_eli5_insights else ""
-                st.markdown(f"""
+                p1_d = dim_scores["Market Mood"]
+                eli5_p1 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.</div>
+</div>""" if show_eli5_insights else ""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>1. 🌡️ Market Mood</span>
-                            <span class='tile-status-{p1["class"]}'>{p1["status"]}</span>
+                            <span class='tile-status-{p1_d["class"]}'>{p1_d["status"]}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p1["class"]}' style='width: {p1["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p1_d["class"]}' style='width: {p1_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>VIX: <strong>{macro.vix:.1f}</strong> • Volatility Regime: <strong>{macro.regime.value if hasattr(macro, "regime") else "NORMAL"}</strong></div>
-                        {eli5_html}
+                        {eli5_p1}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Institutional Verdict:</strong> {macro.market_mood_desc}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             with r1_c2:
                 # 2. Company Health
-                p2 = dim_scores["Company Health"]
-                eli5_html = """
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?</div>
-                </div>
-                """ if show_eli5_insights else ""
-                st.markdown(f"""
+                p2_d = dim_scores["Company Health"]
+                eli5_p2 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?</div>
+</div>""" if show_eli5_insights else ""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>2. 🏥 Company Health</span>
-                            <span class='tile-status-{p2["class"]}'>{p2["status"]}</span>
+                            <span class='tile-status-{p2_d["class"]}'>{p2_d["status"]}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p2["class"]}' style='width: {p2["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p2_d["class"]}' style='width: {p2_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>Altman Z: <strong>{z_score:.2f}</strong> • Solvency: <strong>{plan.solvency_status}</strong></div>
-                        {eli5_html}
+                        {eli5_p2}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Forensic Gate Checks:</strong>
@@ -1735,88 +1748,82 @@ if audit_results and audit_results[0] is not None:
                         </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             with r1_c3:
                 # 3. Price Trend
-                p3 = dim_scores["Price Trend"]
-                eli5_html = """
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>Are more buyers rushing in, or are investors quietly heading for the exits? Moving averages reveal the institutional money footprint.</div>
-                </div>
-                """ if show_eli5_insights else ""
+                p3_d = dim_scores["Price Trend"]
+                eli5_p3 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>Are more buyers rushing in, or are investors quietly heading for the exits? Moving averages reveal the institutional money footprint.</div>
+</div>""" if show_eli5_insights else ""
                 trend_msg = "above 50-day baseline" if tech.current_price > tech.ema_50 else "below 50-day baseline"
-                st.markdown(f"""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>3. 🚀 Price Trend</span>
-                            <span class='tile-status-{p3["class"]}'>{p3["status"]}</span>
+                            <span class='tile-status-{p3_d["class"]}'>{p3_d["status"]}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p3["class"]}' style='width: {p3["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p3_d["class"]}' style='width: {p3_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>RSI: <strong>{tech.rsi_14:.1f}</strong> • Price vs 50 EMA: <strong>{((tech.current_price - tech.ema_50) / tech.ema_50) * 100:+.1f}%</strong></div>
-                        {eli5_html}
+                        {eli5_p3}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Institutional Verdict:</strong> Price is <strong>{trend_msg}</strong>.<br>
                         <span style='font-size: 0.80rem; color: #94A3B8;'>20 EMA: {currency_sym}{tech.ema_20:,.2f} | 50 EMA: {currency_sym}{tech.ema_50:,.2f} | 200 EMA: {currency_sym}{tech.ema_200:,.2f}</span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             r2_c1, r2_c2, r2_c3 = st.columns(3)
             with r2_c1:
                 # 4. Smart Money
-                p4 = dim_scores["Smart Money"]
-                eli5_html = """
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.</div>
-                </div>
-                """ if show_eli5_insights else ""
-                st.markdown(f"""
+                p4_d = dim_scores["Smart Money"]
+                eli5_p4 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative churn.</div>
+</div>""" if show_eli5_insights else ""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>4. 🐋 Smart Money</span>
-                            <span class='tile-status-{p4["class"]}'>{p4["status"]}</span>
+                            <span class='tile-status-{p4_d["class"]}'>{p4_d["status"]}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p4["class"]}' style='width: {p4["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p4_d["class"]}' style='width: {p4_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>Delivery: <strong>{micro.delivery_pct:.1f}%</strong> • Flow Validity: <strong>{'VALID' if micro.delivery_valid else 'DAY-TRADING'}</strong></div>
-                        {eli5_html}
+                        {eli5_p4}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Microstructure Verdict:</strong> {micro.delivery_status_msg}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             with r2_c2:
                 # 5. Secular Horizon
-                p5 = dim_scores["Secular Horizon"]
-                eli5_html = f"""
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>{thematic.plain_english_takeaway}</div>
-                </div>
-                """ if show_eli5_insights else ""
-                st.markdown(f"""
+                p5_d = dim_scores["Secular Horizon"]
+                eli5_p5 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>{thematic.plain_english_takeaway}</div>
+</div>""" if show_eli5_insights else ""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>5. ⏳ Secular Horizon</span>
-                            <span class='tile-status-{p5["class"]}'>{thematic.timeframe}</span>
+                            <span class='tile-status-{p5_d["class"]}'>{thematic.timeframe}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p5["class"]}' style='width: {p5["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p5_d["class"]}' style='width: {p5_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>Wave: <strong>{thematic.horizon_code}</strong> • <strong>{thematic.horizon_title}</strong></div>
-                        {eli5_html}
+                        {eli5_p5}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Megatrend & Scarcity:</strong><br>
@@ -1824,36 +1831,34 @@ if audit_results and audit_results[0] is not None:
                         <span style='font-size: 0.82rem;'>• Bottleneck: <code style='color: #38BDF8;'>{thematic.resource_scarcity_exposure}</code></span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             with r2_c3:
                 # 6. Safety Gauge
-                p6 = dim_scores["Safety Gauge"]
-                eli5_html = """
-                <div class='eli5-callout'>
-                    <div class='eli5-label'>💡 In Plain English (ELI5)</div>
-                    <div class='eli5-text'>Never take a trade where the upside isn't at least 2.5x larger than the risk. Protect capital first, profits come second.</div>
-                </div>
-                """ if show_eli5_insights else ""
-                st.markdown(f"""
+                p6_d = dim_scores["Safety Gauge"]
+                eli5_p6 = f"""<div class='eli5-callout'>
+<div class='eli5-label'>💡 In Plain English (ELI5)</div>
+<div class='eli5-text'>Never take a trade where the upside isn't at least 2.5x larger than the risk. Protect capital first, profits come second.</div>
+</div>""" if show_eli5_insights else ""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div>
+                    <div class='dim-card-body'>
                         <div class='dim-card-header'>
                             <span class='dim-title'>6. 🛡️ Safety Gauge</span>
-                            <span class='tile-status-{p6["class"]}'>{p6["status"]}</span>
+                            <span class='tile-status-{p6_d["class"]}'>{p6_d["status"]}</span>
                         </div>
                         <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{p6["class"]}' style='width: {p6["score"]}%;'></div>
+                            <div class='dim-meter-fill-{p6_d["class"]}' style='width: {p6_d["score"]}%;'></div>
                         </div>
                         <div class='dim-metric-sub'>Reward-to-Risk: <strong>{odds_disp}</strong> • Asymmetry: <strong>{'PASS (>=2.5x)' if risk.asymmetric_rr_passed else 'REJECTED'}</strong></div>
-                        {eli5_html}
+                        {eli5_p6}
                     </div>
                     <div class='verdict-box'>
                         <strong>🏛️ Risk Sizing Verdict:</strong> Max allocation: <strong>{alloc_disp}</strong>.<br>
                         <span style='font-size: 0.80rem; color: #FDA4AF;'>Hard Stop-Loss: {currency_sym}{plan.algorithmic_stop_loss} caps max equity loss at {currency_sym}{risk.max_equity_at_risk:,.2f}.</span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
         # -------------------------------------------------------------------------
         # VIEW 2: INTERACTIVE SPIDER RADAR
@@ -1895,23 +1900,25 @@ if audit_results and audit_results[0] is not None:
 
             sp_col1, sp_col2 = st.columns([1.2, 1.8])
             with sp_col1:
-                st.markdown(f"""
+                render_clean_html(f"""
                 <div class='dimension-card'>
-                    <div class='dim-card-header'>
-                        <span class='dim-title'>{selected_pillar}</span>
-                        <span class='tile-status-{sp_data["class"]}'>{sp_data["status"]}</span>
-                    </div>
-                    <div class='dim-meter-track'>
-                        <div class='dim-meter-fill-{sp_data["class"]}' style='width: {sp_data["score"]}%;'></div>
-                    </div>
-                    <div style='font-size: 2.2rem; font-weight: 800; color: #38BDF8; margin: 10px 0;'>{sp_data["score"]} / 100</div>
-                    <div class='dim-metric-sub'>Key Metric: <strong>{sp_data["metric"]}</strong></div>
-                    <div class='eli5-callout'>
-                        <div class='eli5-label'>💡 Plain English Intuition</div>
-                        <div class='eli5-text'>Institutional investors use this pillar to rigorously test corporate reality against public sentiment.</div>
+                    <div class='dim-card-body'>
+                        <div class='dim-card-header'>
+                            <span class='dim-title'>{selected_pillar}</span>
+                            <span class='tile-status-{sp_data["class"]}'>{sp_data["status"]}</span>
+                        </div>
+                        <div class='dim-meter-track'>
+                            <div class='dim-meter-fill-{sp_data["class"]}' style='width: {sp_data["score"]}%;'></div>
+                        </div>
+                        <div class='mono-data' style='font-size: 2.2rem; font-weight: 800; color: #38BDF8; margin: 10px 0;'>{sp_data["score"]} / 100</div>
+                        <div class='dim-metric-sub'>Key Metric: <strong>{sp_data["metric"]}</strong></div>
+                        <div class='eli5-callout'>
+                            <div class='eli5-label'>💡 Plain English Intuition</div>
+                            <div class='eli5-text'>Institutional investors use this pillar to rigorously test corporate reality against public sentiment.</div>
+                        </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
             with sp_col2:
                 if selected_pillar == "Company Health":
                     st.markdown("#### 🔬 **Forensic Solvency & Earnings Quality Matrix**")
