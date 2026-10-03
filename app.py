@@ -165,276 +165,506 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-# Custom High-Contrast Modern Theme CSS
+# Custom Executive-Grade Luxury Theme CSS (Tier-1 Design System)
 st.markdown("""
 <style>
-    /* Obsidian Luxury Canvas & Classy Pastel Accents */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    /* =========================================================================
+       DESIGN TOKEN SYSTEM: TIER-1 LUXURY PALETTE & SPATIAL DISCIPLINE
+       ========================================================================= */
+    :root {
+        /* Obsidian & Slate Canvas Ramp */
+        --canvas-bg: #08090C;
+        --surface-0: #0B0E14;
+        --surface-1: #0F141E;
+        --surface-2: #141A26;
+        --surface-3: #1B2332;
+        --surface-glass: rgba(15, 20, 30, 0.78);
+        --surface-highlight: rgba(255, 255, 255, 0.035);
+
+        /* Translucent Hair-Thin Borders */
+        --border-subtle: rgba(255, 255, 255, 0.065);
+        --border-medium: rgba(255, 255, 255, 0.10);
+        --border-specular: rgba(255, 255, 255, 0.14);
+        --border-accent: rgba(56, 189, 248, 0.35);
+
+        /* Text Contrast Tiers */
+        --text-primary: #F8FAFC;
+        --text-secondary: #94A3B8;
+        --text-tertiary: #64748B;
+        --text-muted: #475569;
+
+        /* Bespoke Muted Functional Accents */
+        --accent-cyan: #38BDF8;
+        --accent-blue: #60A5FA;
+        --safe-mint: #34D399;
+        --caution-amber: #FBBF24;
+        --danger-rose: #FB7185;
+        --orbit-lilac: #A78BFA;
+
+        /* Multi-Layered Diffused Ambient Depth */
+        --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px -2px rgba(0, 0, 0, 0.28), 0 20px 40px -10px rgba(0, 0, 0, 0.45);
+        --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.35), 0 16px 36px -4px rgba(0, 0, 0, 0.45), 0 32px 64px -12px rgba(0, 0, 0, 0.55);
+
+        /* 8-Point Spatial Grid */
+        --space-1: 8px;
+        --space-2: 16px;
+        --space-3: 24px;
+        --space-4: 32px;
+        --space-6: 48px;
+
+        /* Component Radii */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+
+        /* Transitions */
+        --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Base Body & Application Canvas */
     .stApp {
-        background-color: #0A0E1A;
-        background-image: radial-gradient(circle at 50% 0%, #131E33 0%, #0A0E1A 75%);
-        color: #E2E8F0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
-        font-variant-numeric: tabular-nums;
+        background-color: var(--canvas-bg);
+        background-image: 
+            radial-gradient(1200px circle at 50% -120px, rgba(30, 58, 138, 0.12) 0%, transparent 65%),
+            radial-gradient(800px circle at 85% 150px, rgba(14, 165, 233, 0.05) 0%, transparent 55%),
+            radial-gradient(900px circle at 15% 450px, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
+        background-attachment: fixed;
+        color: var(--text-primary);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.011em;
     }
 
-    /* Tabular numbers for all financial metrics */
-    div[data-testid="stMetricValue"], .radar-card, .interactive-tile, table {
-        font-variant-numeric: tabular-nums;
+    /* Tabular numerals for all financial figures */
+    div[data-testid="stMetricValue"], .radar-card, .interactive-tile, table, code, .mono-data {
+        font-family: 'JetBrains Mono', -apple-system, monospace !important;
+        font-feature-settings: 'tnum' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1 !important;
+        font-variant-numeric: tabular-nums !important;
     }
 
-    /* Top-Level Segmented Menu Bar (Pill Navigation) */
+    /* Executive Typography Scale */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
+        letter-spacing: -0.028em !important;
+        color: var(--text-primary) !important;
+        font-weight: 700 !important;
+    }
+
+    h1 { line-height: 1.15 !important; }
+    h2 { line-height: 1.20 !important; }
+    h3 { line-height: 1.25 !important; }
+
+    /* Modern Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* =========================================================================
+       EXECUTIVE MASTHEAD & BRAND HEADER
+       ========================================================================= */
+    .brand-masthead {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+    .brand-icon-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(30, 58, 138, 0.22) 100%);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        box-shadow: 0 0 20px -3px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        font-size: 1.4rem;
+    }
+    .brand-title-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .brand-headline {
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        background: linear-gradient(180deg, #FFFFFF 20%, #CBD5E1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.15;
+    }
+    .brand-subline {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        letter-spacing: -0.005em;
+        margin-top: 3px;
+    }
+    .brand-tag-intel {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        background: rgba(56, 189, 248, 0.08);
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent-cyan);
+        vertical-align: middle;
+        margin-left: 8px;
+    }
+    .brand-live-pulse {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--safe-mint);
+        box-shadow: 0 0 8px var(--safe-mint);
+        display: inline-block;
+    }
+
+    /* =========================================================================
+       SEGMENTED CONTROLS & TAB NAVIGATION (DOCK SYSTEM)
+       ========================================================================= */
     div[data-testid="stTabs"] > div > div[role="tablist"] {
         display: flex;
-        gap: 8px;
-        background: #0D1527;
-        padding: 7px 10px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-        margin-bottom: 22px;
+        gap: 6px;
+        background: rgba(15, 20, 30, 0.80);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 6px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        margin-bottom: var(--space-3);
         overflow-x: auto;
     }
     div[data-testid="stTabs"] button[role="tab"] {
         background: transparent;
-        color: #94A3B8;
-        border-radius: 12px;
-        padding: 10px 20px;
+        color: var(--text-secondary);
+        border-radius: var(--radius-md);
+        padding: 10px 18px;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
+        letter-spacing: -0.01em;
         border: 1px solid transparent;
-        transition: all 0.22s ease-in-out;
+        transition: all 0.20s var(--ease-luxury);
+        white-space: nowrap;
     }
     div[data-testid="stTabs"] button[role="tab"]:hover {
-        color: #F1F5F9;
+        color: var(--text-primary);
         background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.06);
+    }
+    div[data-testid="stTabs"] button[role="tab"]:active {
+        transform: scale(0.985);
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #93C5FD !important;
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
-        border: 1px solid rgba(147, 197, 253, 0.35) !important;
-        box-shadow: 0 4px 14px rgba(147, 197, 253, 0.12) !important;
+        color: #FFFFFF !important;
+        background: linear-gradient(145deg, #1A2232 0%, #121824 100%) !important;
+        border: 1px solid rgba(56, 189, 248, 0.28) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
     }
-    div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
+    div[data-testid="stTabs"] [data-baseweb="tab-highlight"],
     div[data-testid="stTabs"] [data-baseweb="tab-border"] {
         display: none !important;
     }
 
-    /* Elevated Metric Surfaces with Pastel Accents */
+    /* =========================================================================
+       MACRO TELEMETRY & METRIC SURFACES
+       ========================================================================= */
     div[data-testid="stMetric"] {
-        background: linear-gradient(135deg, #121A2B 0%, #162238 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        padding: 12px 18px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-        transition: border-color 0.2s ease, transform 0.2s ease;
+        background: linear-gradient(145deg, rgba(17, 23, 34, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-lg);
+        padding: 14px 18px;
+        box-shadow: var(--shadow-card);
+        transition: all 0.22s var(--ease-luxury);
     }
     div[data-testid="stMetric"]:hover {
-        border-color: rgba(147, 197, 253, 0.3);
-        transform: translateY(-1px);
+        border-color: rgba(56, 189, 248, 0.25);
+        border-top-color: rgba(56, 189, 248, 0.45);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card), 0 8px 24px -4px rgba(56, 189, 248, 0.10);
     }
     div[data-testid="stMetricLabel"] {
-        color: #94A3B8;
-        font-size: 0.80rem;
+        color: var(--text-secondary);
+        font-size: 0.76rem;
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
+        margin-bottom: 2px;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.35rem;
+        font-size: 1.40rem;
         font-weight: 700;
-        color: #F8FAFC;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+    div[data-testid="stMetricDelta"] {
+        font-size: 0.80rem;
+        font-weight: 600;
     }
 
-    /* Company Identity Card */
+    /* =========================================================================
+       COMPANY IDENTITY & EXECUTIVE BANNER
+       ========================================================================= */
     .company-profile-banner {
-        background: linear-gradient(135deg, #111A2D 0%, #17233D 100%);
-        border: 1px solid rgba(147, 197, 253, 0.18);
-        border-radius: 16px;
-        padding: 18px 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        background: radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
+                    linear-gradient(145deg, #101622 0%, #0C1018 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-xl);
+        padding: var(--space-3) var(--space-4);
+        margin-bottom: var(--space-3);
+        box-shadow: var(--shadow-card);
+        position: relative;
+        overflow: hidden;
+    }
+    .company-profile-banner::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.4) 50%, transparent 100%);
     }
 
-    /* 30-Second Bottom Line Executive Strip in Classy Pastels */
+    /* =========================================================================
+       30-SECOND BOTTOM LINE EXECUTIVE STRIP
+       ========================================================================= */
     .bottom-line-container {
-        background: linear-gradient(135deg, #111A2E 0%, #17243C 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-left: 6px solid #6EE7B7;
-        border-radius: 14px;
-        padding: 18px 24px;
-        margin-bottom: 22px;
-        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+        background: linear-gradient(145deg, rgba(16, 23, 34, 0.90) 0%, rgba(11, 16, 24, 0.95) 100%);
+        border: 1px solid var(--border-subtle);
+        border-left: 3px solid var(--safe-mint);
+        border-radius: var(--radius-lg);
+        padding: 20px 24px;
+        margin-bottom: var(--space-3);
+        box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: all 0.22s var(--ease-luxury);
+    }
+    .bottom-line-container:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-elevated);
     }
     .bottom-line-danger {
-        border-left-color: #FDA4AF !important;
+        border-left: 3px solid var(--danger-rose) !important;
     }
     .bottom-line-caution {
-        border-left-color: #FDE68A !important;
+        border-left: 3px solid var(--caution-amber) !important;
     }
 
-    /* Soft Pastel Action Badges */
+    /* =========================================================================
+       BESPOKE LUXURY ACTION BADGES
+       ========================================================================= */
     .badge-buy {
-        background: linear-gradient(135deg, rgba(5, 150, 105, 0.25) 0%, rgba(110, 231, 183, 0.2) 100%);
+        background: linear-gradient(135deg, rgba(52, 211, 153, 0.14) 0%, rgba(16, 185, 129, 0.08) 100%);
         color: #6EE7B7;
-        border: 1px solid rgba(110, 231, 183, 0.45);
-        padding: 6px 20px;
-        border-radius: 20px;
-        font-weight: 800;
-        font-size: 1.20rem;
-        display: inline-block;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+        padding: 6px 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         letter-spacing: 0.04em;
-        box-shadow: 0 0 16px rgba(110, 231, 183, 0.25);
+        text-transform: uppercase;
+        box-shadow: 0 0 18px -4px rgba(52, 211, 153, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
     .badge-sell {
-        background: linear-gradient(135deg, rgba(225, 29, 72, 0.25) 0%, rgba(253, 164, 175, 0.2) 100%);
+        background: linear-gradient(135deg, rgba(251, 113, 133, 0.14) 0%, rgba(225, 29, 72, 0.08) 100%);
         color: #FDA4AF;
-        border: 1px solid rgba(253, 164, 175, 0.45);
-        padding: 6px 20px;
-        border-radius: 20px;
-        font-weight: 800;
-        font-size: 1.20rem;
-        display: inline-block;
+        border: 1px solid rgba(251, 113, 133, 0.35);
+        padding: 6px 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         letter-spacing: 0.04em;
-        box-shadow: 0 0 16px rgba(253, 164, 175, 0.25);
+        text-transform: uppercase;
+        box-shadow: 0 0 18px -4px rgba(251, 113, 133, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
     .badge-hold {
-        background: linear-gradient(135deg, rgba(217, 119, 6, 0.25) 0%, rgba(253, 230, 138, 0.2) 100%);
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.14) 0%, rgba(217, 119, 6, 0.08) 100%);
         color: #FDE68A;
-        border: 1px solid rgba(253, 230, 138, 0.45);
-        padding: 6px 20px;
-        border-radius: 20px;
-        font-weight: 800;
-        font-size: 1.20rem;
-        display: inline-block;
+        border: 1px solid rgba(251, 191, 36, 0.35);
+        padding: 6px 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         letter-spacing: 0.04em;
-        box-shadow: 0 0 16px rgba(253, 230, 138, 0.25);
+        text-transform: uppercase;
+        box-shadow: 0 0 18px -4px rgba(251, 191, 36, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
     .badge-avoid {
-        background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(196, 181, 253, 0.2) 100%);
-        color: #C4B5FD;
-        border: 1px solid rgba(196, 181, 253, 0.45);
-        padding: 6px 20px;
-        border-radius: 20px;
-        font-weight: 800;
-        font-size: 1.20rem;
-        display: inline-block;
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.14) 0%, rgba(124, 58, 237, 0.08) 100%);
+        color: #DDD6FE;
+        border: 1px solid rgba(167, 139, 250, 0.35);
+        padding: 6px 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         letter-spacing: 0.04em;
-        box-shadow: 0 0 16px rgba(196, 181, 253, 0.25);
+        text-transform: uppercase;
+        box-shadow: 0 0 18px -4px rgba(167, 139, 250, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
 
-    /* Interactive Explanatory Tiles */
+    /* =========================================================================
+       INTERACTIVE EXPLANATORY TILES
+       ========================================================================= */
     .interactive-tile {
-        background: linear-gradient(135deg, #121A2B 0%, #162238 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        padding: 16px;
+        background: linear-gradient(145deg, #101622 0%, #0C1018 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
         height: 100%;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        box-shadow: var(--shadow-card);
+        transition: all 0.22s var(--ease-luxury);
     }
     .interactive-tile:hover {
-        border-color: rgba(147, 197, 253, 0.4);
+        border-color: rgba(56, 189, 248, 0.3);
+        border-top-color: rgba(56, 189, 248, 0.5);
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(147, 197, 253, 0.12);
+        box-shadow: var(--shadow-card), 0 8px 24px -4px rgba(56, 189, 248, 0.12);
     }
     .tile-header {
-        font-size: 0.78rem;
-        color: #94A3B8;
+        font-size: 0.76rem;
+        color: var(--text-secondary);
         text-transform: uppercase;
-        font-weight: 600;
-        margin-bottom: 6px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
     }
     .tile-status-safe {
-        color: #6EE7B7;
+        color: var(--safe-mint);
         font-weight: 700;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
     }
     .tile-status-caution {
-        color: #FDE68A;
+        color: var(--caution-amber);
         font-weight: 700;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
     }
     .tile-status-danger {
-        color: #FDA4AF;
+        color: var(--danger-rose);
         font-weight: 700;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
     }
 
-    /* 360-Degree Institutional Dimension Cards & ELI5 Containers */
+    /* =========================================================================
+       360° INSTITUTIONAL DIMENSION CARDS & METER TRACKS
+       ========================================================================= */
     .dimension-card {
-        background: linear-gradient(145deg, #101827 0%, #162035 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        padding: 16px 18px;
+        background: radial-gradient(circle at 90% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
+                    linear-gradient(145deg, #101522 0%, #0B0E16 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-lg);
+        padding: 20px 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-        margin-bottom: 14px;
+        box-shadow: var(--shadow-card);
+        transition: all 0.24s var(--ease-luxury);
+        margin-bottom: var(--space-2);
     }
     .dimension-card:hover {
-        border-color: rgba(56, 189, 248, 0.40);
+        border-color: rgba(56, 189, 248, 0.32);
+        border-top-color: rgba(56, 189, 248, 0.5);
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12);
+        box-shadow: var(--shadow-card), 0 10px 28px -4px rgba(56, 189, 248, 0.12);
     }
     .dim-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         gap: 8px;
     }
     .dim-title {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 700;
         text-transform: uppercase;
-        color: #94A3B8;
-        letter-spacing: 0.04em;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
     }
     .dim-meter-track {
-        background: rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.05);
         border-radius: 999px;
-        height: 5px;
+        height: 4px;
         width: 100%;
         overflow: hidden;
-        margin-bottom: 8px;
-    }
-    .dim-meter-fill-safe {
-        background: linear-gradient(90deg, #10B981, #34D399);
-        height: 100%;
-        border-radius: 999px;
-    }
-    .dim-meter-fill-caution {
-        background: linear-gradient(90deg, #F59E0B, #FBBF24);
-        height: 100%;
-        border-radius: 999px;
-    }
-    .dim-meter-fill-danger {
-        background: linear-gradient(90deg, #EF4444, #FB7185);
-        height: 100%;
-        border-radius: 999px;
-    }
-    .dim-metric-sub {
-        font-size: 0.84rem;
-        color: #94A3B8;
         margin-bottom: 10px;
     }
+    .dim-meter-fill-safe {
+        background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+        height: 100%;
+        border-radius: 999px;
+        box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+    }
+    .dim-meter-fill-caution {
+        background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
+        height: 100%;
+        border-radius: 999px;
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+    }
+    .dim-meter-fill-danger {
+        background: linear-gradient(90deg, #F43F5E 0%, #FB7185 100%);
+        height: 100%;
+        border-radius: 999px;
+        box-shadow: 0 0 10px rgba(251, 113, 133, 0.4);
+    }
+    .dim-metric-sub {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        line-height: 1.4;
+    }
     .eli5-callout {
-        background: rgba(30, 41, 59, 0.55);
-        border-left: 3px solid #38BDF8;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin: 8px 0;
+        background: rgba(20, 27, 40, 0.65);
+        border: 1px solid rgba(56, 189, 248, 0.14);
+        border-left: 3px solid var(--accent-cyan);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        margin: 10px 0;
+        backdrop-filter: blur(8px);
     }
     .eli5-label {
         font-size: 0.68rem;
         font-weight: 800;
-        color: #38BDF8;
+        color: var(--accent-cyan);
         letter-spacing: 0.06em;
         text-transform: uppercase;
         margin-bottom: 4px;
@@ -443,76 +673,196 @@ st.markdown("""
         gap: 5px;
     }
     .eli5-text {
-        font-size: 0.86rem;
+        font-size: 0.84rem;
         color: #E2E8F0;
-        line-height: 1.48;
-        font-style: italic;
+        line-height: 1.52;
     }
     .verdict-box {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         color: #CBD5E1;
-        line-height: 1.45;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        line-height: 1.5;
+        border-top: 1px solid var(--border-subtle);
         padding-top: 10px;
-        margin-top: 6px;
+        margin-top: 8px;
     }
     .dim-overview-banner {
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.10);
-        border-radius: 12px;
-        padding: 14px 18px;
-        margin-bottom: 16px;
+        background: linear-gradient(145deg, rgba(16, 22, 34, 0.90) 0%, rgba(12, 16, 25, 0.95) 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: var(--space-3);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
+        box-shadow: var(--shadow-card);
     }
 
-    /* Thematic Discovery Card */
+    /* =========================================================================
+       THEMATIC RADAR CARDS & LUXURY PILLS
+       ========================================================================= */
     .radar-card {
-        background: linear-gradient(135deg, #121A2B 0%, #162138 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
+        background: linear-gradient(145deg, #101622 0%, #0C1018 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-md);
         padding: 16px 18px;
         margin-bottom: 12px;
-        transition: border-color 0.18s ease, transform 0.18s ease;
+        box-shadow: var(--shadow-card);
+        transition: all 0.22s var(--ease-luxury);
     }
     .radar-card:hover {
-        border-color: rgba(147, 197, 253, 0.35);
+        border-color: rgba(56, 189, 248, 0.30);
+        border-top-color: rgba(56, 189, 248, 0.50);
         transform: translateY(-1px);
+        box-shadow: var(--shadow-card), 0 8px 20px -4px rgba(56, 189, 248, 0.10);
     }
 
-    /* Pastel Tag / Pill */
+    /* Refined Luxury Micro-Pills */
     .pastel-pill {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.82rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
         font-weight: 600;
-        background: rgba(147, 197, 253, 0.12);
-        color: #93C5FD;
-        border: 1px solid rgba(147, 197, 253, 0.25);
+        background: rgba(56, 189, 248, 0.08);
+        color: #7DD3FC;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        letter-spacing: 0.01em;
     }
     .pastel-pill-mint {
-        background: rgba(110, 231, 183, 0.12);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        background: rgba(52, 211, 153, 0.08);
         color: #6EE7B7;
-        border: 1px solid rgba(110, 231, 183, 0.25);
+        border: 1px solid rgba(52, 211, 153, 0.22);
+        letter-spacing: 0.01em;
     }
     .pastel-pill-amber {
-        background: rgba(253, 230, 138, 0.12);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        background: rgba(251, 191, 36, 0.08);
         color: #FDE68A;
-        border: 1px solid rgba(253, 230, 138, 0.25);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+        letter-spacing: 0.01em;
     }
     .pastel-pill-rose {
-        background: rgba(253, 164, 175, 0.12);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        background: rgba(251, 113, 133, 0.08);
         color: #FDA4AF;
-        border: 1px solid rgba(253, 164, 175, 0.25);
+        border: 1px solid rgba(251, 113, 133, 0.22);
+        letter-spacing: 0.01em;
     }
     .pastel-pill-lilac {
-        background: rgba(196, 181, 253, 0.12);
-        color: #C4B5FD;
-        border: 1px solid rgba(196, 181, 253, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        background: rgba(167, 139, 250, 0.08);
+        color: #DDD6FE;
+        border: 1px solid rgba(167, 139, 250, 0.22);
+        letter-spacing: 0.01em;
+    }
+
+    /* =========================================================================
+       NATIVE STREAMLIT COMPONENT RESKINS (BUTTONS, INPUTS, SELECTS)
+       ========================================================================= */
+    /* Primary CTA Button */
+    button[kind="primary"] {
+        background: linear-gradient(145deg, #0284C7 0%, #0369A1 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 0.90rem !important;
+        border-radius: var(--radius-md) !important;
+        border: 1px solid rgba(56, 189, 248, 0.4) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+        transition: all 0.20s var(--ease-luxury) !important;
+        padding: 8px 18px !important;
+    }
+    button[kind="primary"]:hover {
+        background: linear-gradient(145deg, #0369A1 0%, #075985 100%) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(2, 132, 199, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+        transform: translateY(-1px) !important;
+    }
+    button[kind="primary"]:active {
+        transform: scale(0.985) !important;
+    }
+
+    /* Secondary / Standard Buttons */
+    button[kind="secondary"] {
+        background: rgba(255, 255, 255, 0.035) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: var(--radius-md) !important;
+        font-size: 0.88rem !important;
+        font-weight: 500 !important;
+        transition: all 0.20s var(--ease-luxury) !important;
+    }
+    button[kind="secondary"]:hover {
+        background: rgba(255, 255, 255, 0.065) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px) !important;
+    }
+    button[kind="secondary"]:active {
+        transform: scale(0.985) !important;
+    }
+
+    /* Text Inputs, Number Inputs, Selectboxes */
+    div[data-baseweb="input"] {
+        background-color: var(--surface-0) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: var(--radius-md) !important;
+        transition: all 0.20s var(--ease-luxury) !important;
+    }
+    div[data-baseweb="input"]:focus-within {
+        border-color: var(--accent-cyan) !important;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.20) !important;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: var(--surface-0) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    /* Radio Group (Market Exchange Toggle) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
+        background: rgba(15, 20, 30, 0.75);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 4px 8px;
+        backdrop-filter: blur(12px);
+    }
+
+    /* Dataframe Styling */
+    div[data-testid="stDataFrame"] {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -526,8 +876,18 @@ if not render_login_gate():
 col_brand, col_market_selector = st.columns([1.6, 1.4])
 
 with col_brand:
-    st.markdown("## 🛡️ **AlphaShield** | Quantitative & Thematic Intelligence")
-    st.caption("Intermarket transmission, multi-horizon scarcity models, and directed supply chain ripple mapping.")
+    st.markdown("""
+    <div class='brand-masthead'>
+        <div class='brand-icon-badge'>🛡️</div>
+        <div class='brand-title-group'>
+            <div style='display: flex; align-items: center;'>
+                <span class='brand-headline'>AlphaShield</span>
+                <span class='brand-tag-intel'><span class='brand-live-pulse'></span> Tier-1 Intel</span>
+            </div>
+            <div class='brand-subline'>Quantitative Risk Architecture • Multi-Horizon Scarcity • Supply Chain Spillover</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col_market_selector:
     if "is_indian" not in st.session_state:
@@ -1131,33 +1491,33 @@ if audit_results and audit_results[0] is not None:
 
         st.markdown(f"""
         <div class='company-profile-banner'>
-            <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;'>
                 <div>
-                    <div style='display: flex; align-items: center; gap: 10px;'>
-                        <span style='font-size: 1.55rem; font-weight: 800; color: #F8FAFC;'>{company_name}</span>
-                        <span class='pastel-pill'>{plan.ticker}</span>
+                    <div style='display: flex; align-items: center; gap: 12px;'>
+                        <span style='font-size: 1.65rem; font-weight: 800; letter-spacing: -0.03em; color: #F8FAFC;'>{company_name}</span>
+                        <span class='pastel-pill mono-data'>{plan.ticker}</span>
                     </div>
-                    <div style='margin-top: 8px;'>
+                    <div style='margin-top: 8px; display: flex; gap: 8px;'>
                         <span class='pastel-pill-mint'>{sector}</span>
-                        <span class='pastel-pill-lilac' style='margin-left: 6px;'>{industry}</span>
+                        <span class='pastel-pill-lilac'>{industry}</span>
                     </div>
                 </div>
-                <div style='display: flex; gap: 24px; align-items: center; flex-wrap: wrap;'>
+                <div style='display: flex; gap: 28px; align-items: center; flex-wrap: wrap;'>
                     <div style='text-align: right;'>
-                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Market Price</div>
-                        <div style='font-size: 1.50rem; font-weight: 800; color: #38BDF8;'>{currency_sym}{tech.current_price:,.2f}</div>
+                        <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>Market Price</div>
+                        <div class='mono-data' style='font-size: 1.55rem; font-weight: 700; color: #38BDF8;'>{currency_sym}{tech.current_price:,.2f}</div>
                     </div>
                     <div style='text-align: right;'>
-                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Market Cap</div>
-                        <div style='font-size: 1.15rem; font-weight: 700; color: #E2E8F0;'>{mcap_str}</div>
+                        <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>Market Cap</div>
+                        <div class='mono-data' style='font-size: 1.15rem; font-weight: 600; color: #F1F5F9;'>{mcap_str}</div>
                     </div>
                     <div style='text-align: right;'>
-                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>P/E Ratio</div>
-                        <div style='font-size: 1.15rem; font-weight: 700; color: #E2E8F0;'>{pe_str}</div>
+                        <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>P/E Ratio</div>
+                        <div class='mono-data' style='font-size: 1.15rem; font-weight: 600; color: #F1F5F9;'>{pe_str}</div>
                     </div>
                     <div style='text-align: right;'>
-                        <div style='font-size: 0.75rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>52-Week Range</div>
-                        <div style='font-size: 0.95rem; font-weight: 600; color: #CBD5E1;'>{range_str}</div>
+                        <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>52-Week Range</div>
+                        <div class='mono-data' style='font-size: 0.92rem; font-weight: 600; color: #CBD5E1;'>{range_str}</div>
                     </div>
                 </div>
             </div>
@@ -1167,23 +1527,23 @@ if audit_results and audit_results[0] is not None:
         # The 30-Second "Bottom Line" Summary Strip
         if plan.action in ["BUY", "ACCUMULATE"]:
             box_class = "bottom-line-container"
-            badge_html = f"<span class='badge-buy'>🟢 {plan.action} RECOMMENDATION</span>"
+            badge_html = f"<span class='badge-buy'>✦ {plan.action} RECOMMENDATION</span>"
             action_headline = "A favorable setup with high reward and protected risk."
             f_score_disp = getattr(factors, "piotroski_f_score", 6) if factors else 6
             why_text = f"{plan.plain_english_verdict} (Operating leverage: {ancillary.operating_leverage_multiplier}x, Business Health: {f_score_disp}/9)."
         elif plan.action == "HOLD":
             box_class = "bottom-line-container bottom-line-caution"
-            badge_html = "<span class='badge-hold'>🟡 HOLD / WAIT FOR DIP</span>"
+            badge_html = "<span class='badge-hold'>✦ HOLD / WAIT FOR DIP</span>"
             action_headline = "Good company, but not the ideal moment to enter."
             why_text = f"{plan.plain_english_verdict} Wait for a clean pullback into the recommended entry zone."
         elif plan.action == "SELL":
             box_class = "bottom-line-container bottom-line-danger"
-            badge_html = "<span class='badge-sell'>🔴 EXIT / TAKE PROFIT</span>"
+            badge_html = "<span class='badge-sell'>✦ EXIT / TAKE PROFIT</span>"
             action_headline = "Momentum is breaking down or targets have been reached."
             why_text = plan.plain_english_verdict
         else:
             box_class = "bottom-line-container bottom-line-danger"
-            badge_html = "<span class='badge-avoid'>🔴 AVOID (HIGH RISK)</span>"
+            badge_html = "<span class='badge-avoid'>✦ AVOID (HIGH RISK)</span>"
             action_headline = "High risk of capital loss detected. Do not invest now."
             why_text = plan.plain_english_verdict
 
@@ -1191,20 +1551,21 @@ if audit_results and audit_results[0] is not None:
 
         st.markdown(f"""
         <div class='{box_class}'>
-            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;'>
-                <div>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;'>
+                <div style='display: flex; align-items: center; gap: 14px;'>
                     {badge_html}
-                    <span style='margin-left: 14px; font-size: 1.25rem; font-weight: 700; color: #F8FAFC;'>{plan.ticker} — {action_headline}</span>
+                    <span style='font-size: 1.18rem; font-weight: 700; letter-spacing: -0.02em; color: #F8FAFC;'>{plan.ticker} — {action_headline}</span>
                 </div>
-                <div style='font-size: 0.95rem; color: #94A3B8; font-weight: 600;'>
-                    Conviction: <strong style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong> | Role: <strong style='color: #93C5FD;'>{plan.supply_chain_role}</strong>
+                <div style='display: flex; align-items: center; gap: 10px;'>
+                    <span class='pastel-pill'>Conviction: <strong class='mono-data' style='color: #F8FAFC;'>{plan.conviction_score * 100:.0f}%</strong></span>
+                    <span class='pastel-pill-mint'>Role: <strong style='color: #6EE7B7;'>{plan.supply_chain_role}</strong></span>
                 </div>
             </div>
-            <div style='font-size: 1.02rem; line-height: 1.55; color: #CBD5E1; margin-bottom: 10px;'>
-                <strong>💡 Why:</strong> {why_text}
+            <div style='font-size: 0.95rem; line-height: 1.6; color: #CBD5E1; margin-bottom: 8px;'>
+                <strong style='color: #F8FAFC;'>💡 Core Rationale:</strong> {why_text}
             </div>
-            <div style='font-size: 1.02rem; line-height: 1.55; color: #FDA4AF;'>
-                <strong>⚠️ The #1 Risk to Watch:</strong> {risk_rule_text}
+            <div style='font-size: 0.95rem; line-height: 1.6; color: #FDA4AF;'>
+                <strong style='color: #FDA4AF;'>⚠️ Capital Preservation Sieve:</strong> {risk_rule_text}
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1246,24 +1607,24 @@ if audit_results and audit_results[0] is not None:
         st.markdown(f"""
         <div class='dim-overview-banner'>
             <div>
-                <span style='font-size: 0.78rem; text-transform: uppercase; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;'>Composite Multi-Factor Health</span>
-                <div style='display: flex; align-items: center; gap: 10px; margin-top: 4px;'>
-                    <span style='font-size: 1.55rem; font-weight: 800; color: {score_color};'>{avg_score} / 100</span>
-                    <span class='tile-status-{health_badge_class}' style='font-size: 0.88rem; padding: 4px 10px; background: rgba(255,255,255,0.05); border-radius: 999px;'>{health_grade}</span>
+                <span style='font-size: 0.72rem; text-transform: uppercase; color: #94A3B8; font-weight: 700; letter-spacing: 0.06em;'>Composite Multi-Factor Health</span>
+                <div style='display: flex; align-items: center; gap: 12px; margin-top: 4px;'>
+                    <span class='mono-data' style='font-size: 1.60rem; font-weight: 800; color: {score_color};'>{avg_score} / 100</span>
+                    <span class='pastel-pill-{health_badge_class}' style='font-size: 0.78rem; font-weight: 700; padding: 4px 12px;'>✦ {health_grade}</span>
                 </div>
             </div>
-            <div style='display: flex; gap: 14px; flex-wrap: wrap; align-items: center;'>
-                <div style='text-align: center; padding: 0 8px;'>
-                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Passing Gates</div>
-                    <div style='font-size: 1.15rem; font-weight: 700; color: #34D399;'>🟢 {passing_pillars} of 6</div>
+            <div style='display: flex; gap: 16px; flex-wrap: wrap; align-items: center;'>
+                <div style='text-align: center; padding: 0 10px;'>
+                    <div style='font-size: 0.70rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>Passing Gates</div>
+                    <div class='mono-data' style='font-size: 1.15rem; font-weight: 700; color: #34D399; margin-top: 2px;'>{passing_pillars} of 6</div>
                 </div>
-                <div style='text-align: center; padding: 0 8px; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);'>
-                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Caution</div>
-                    <div style='font-size: 1.15rem; font-weight: 700; color: #FBBF24;'>🟡 {caution_pillars}</div>
+                <div style='text-align: center; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08);'>
+                    <div style='font-size: 0.70rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>Caution</div>
+                    <div class='mono-data' style='font-size: 1.15rem; font-weight: 700; color: #FBBF24; margin-top: 2px;'>{caution_pillars}</div>
                 </div>
-                <div style='text-align: center; padding: 0 8px;'>
-                    <div style='font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;'>Distress / Danger</div>
-                    <div style='font-size: 1.15rem; font-weight: 700; color: #FB7185;'>🔴 {danger_pillars}</div>
+                <div style='text-align: center; padding: 0 10px;'>
+                    <div style='font-size: 0.70rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;'>Distress / Alert</div>
+                    <div class='mono-data' style='font-size: 1.15rem; font-weight: 700; color: #FB7185; margin-top: 2px;'>{danger_pillars}</div>
                 </div>
             </div>
         </div>
@@ -1833,42 +2194,42 @@ if audit_results and audit_results[0] is not None:
             st.markdown(f"""
             <div class='interactive-tile' style='margin-bottom: 12px;'>
                 <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong>Altman Z-Score (Bankruptcy Risk)</strong>
-                    <span class='{"tile-status-safe" if z_score >= 2.99 else ("tile-status-caution" if z_score >= 1.81 else "tile-status-danger")}'>{z_score:.2f}</span>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Altman Z-Score (Bankruptcy Risk)</strong>
+                    <span class='{"tile-status-safe" if z_score >= 2.99 else ("tile-status-caution" if z_score >= 1.81 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{z_score:.2f}</span>
                 </div>
-                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Status: {z_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Status: {z_status}</div>
             </div>
 
             <div class='interactive-tile' style='margin-bottom: 12px;'>
                 <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong>Piotroski F-Score (Operational Quality)</strong>
-                    <span class='{"tile-status-safe" if f_score >= 7 else ("tile-status-caution" if f_score >= 5 else "tile-status-danger")}'>{f_score} / 9</span>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Piotroski F-Score (Operational Quality)</strong>
+                    <span class='{"tile-status-safe" if f_score >= 7 else ("tile-status-caution" if f_score >= 5 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{f_score} / 9</span>
                 </div>
-                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Evaluates profitability, leverage, and operating efficiency.</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Evaluates profitability, leverage, and operating efficiency.</div>
             </div>
 
             <div class='interactive-tile' style='margin-bottom: 12px;'>
                 <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong>Sloan Accruals Ratio (Cash vs Paper Earnings)</strong>
-                    <span class='{"tile-status-safe" if abs(sloan_val) < 0.10 else "tile-status-danger"}'>{sloan_val * 100:.1f}%</span>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Sloan Accruals Ratio (Cash vs Paper Earnings)</strong>
+                    <span class='{"tile-status-safe" if abs(sloan_val) < 0.10 else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{sloan_val * 100:.1f}%</span>
                 </div>
-                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>Accruals < 10% indicates earnings are backed by hard cash flow.</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Accruals &lt; 10% indicates earnings are backed by hard cash flow.</div>
             </div>
 
             <div class='interactive-tile' style='margin-bottom: 12px;'>
                 <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong>Beneish M-Score (Forensic Manipulation Sieve)</strong>
-                    <span class='{"tile-status-safe" if not is_manip else "tile-status-danger"}'>{beneish_val:.2f}</span>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Beneish M-Score (Forensic Manipulation Sieve)</strong>
+                    <span class='{"tile-status-safe" if not is_manip else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{beneish_val:.2f}</span>
                 </div>
-                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>{beneish_status}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{beneish_status}</div>
             </div>
 
             <div class='interactive-tile'>
                 <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong>Microstructure Flow (Delivery Volume)</strong>
-                    <span class='{"tile-status-safe" if micro.delivery_valid else "tile-status-caution"}'>{micro.delivery_pct:.1f}%</span>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Microstructure Flow (Delivery Volume)</strong>
+                    <span class='{"tile-status-safe" if micro.delivery_valid else "tile-status-caution"} mono-data' style='font-size: 1.05rem;'>{micro.delivery_pct:.1f}%</span>
                 </div>
-                <div style='font-size: 0.85rem; color: #94A3B8; margin-top: 4px;'>{micro.delivery_status_msg}</div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{micro.delivery_status_msg}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -2037,17 +2398,17 @@ if audit_results and audit_results[0] is not None:
                 st.metric("Session Mode", "Authenticated Admin")
                 st.caption("Note: Root policy overrides and emergency cash locks are strictly restricted to Global Administrator (nikhil875171).")
 else:
-    st.markdown("<div style='margin: 40px auto; max-width: 750px; text-align: center; padding: 32px; background: rgba(30, 41, 59, 0.4); border: 1px dashed #334155; border-radius: 14px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 48px auto; max-width: 720px; text-align: center; padding: 36px 32px; background: linear-gradient(145deg, rgba(14, 19, 30, 0.8) 0%, rgba(9, 12, 18, 0.95) 100%); border: 1px solid var(--border-medium); border-top: 1px solid var(--border-specular); border-radius: var(--radius-xl); box-shadow: var(--shadow-elevated);'>", unsafe_allow_html=True)
     st.markdown("### 🔍 **Stock Not Found or Market Mismatch**")
     st.write(f"AlphaShield was unable to retrieve market candle history for `{ticker_to_run}` on the active exchange.")
-    st.markdown("<p style='color: #94A3B8; font-size: 0.95rem;'>Verify the ticker symbol or pick one of the verified institutional equities below:</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #94A3B8; font-size: 0.90rem; margin-top: 6px;'>Verify the ticker symbol or pick one of the verified institutional equities below:</p>", unsafe_allow_html=True)
     eq_c1, eq_c2, eq_c3 = st.columns(3)
     sample_picks = ["RELIANCE", "HEROMOTORS", "TCS"] if is_indian else ["NVDA", "AAPL", "MSFT"]
     for i, s_pick in enumerate(sample_picks):
         with [eq_c1, eq_c2, eq_c3][i]:
-            if st.button(f"👉 Analyze {s_pick}", key=f"empty_fallback_{s_pick}", use_container_width=True):
+            if st.button(f"Analyze {s_pick}", key=f"empty_fallback_{s_pick}", use_container_width=True):
                 st.session_state["active_ticker"] = f"{s_pick}.NS" if is_indian else s_pick
                 st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Quantitative & Thematic Intelligence Platform | Capital Preservation & Macro Systems</div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 56px; margin-bottom: 24px; text-align: center; color: #475569; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;'>AlphaShield Quantitative & Thematic Intelligence Platform • Capital Preservation & Macro Systems</div>", unsafe_allow_html=True)

@@ -157,3 +157,4 @@ def check_dual_exchange_fallback(symbol: str) -> Optional[Tuple[str, str]]:
         pass
 
     return None
+

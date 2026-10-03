@@ -387,8 +387,8 @@ def render_interactive_network_graph(highlight_ticker: Optional[str] = None) -> 
             showlegend=False,
             hovermode="closest",
             margin=dict(b=20, l=20, r=20, t=50),
-            paper_bgcolor="#0A0E1A",
-            plot_bgcolor="#111827",
+            paper_bgcolor="#08090C",
+            plot_bgcolor="#0E141E",
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             height=500

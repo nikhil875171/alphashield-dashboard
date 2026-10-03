@@ -161,20 +161,26 @@ def render_login_gate():
     if is_authenticated():
         return True
 
-    # Center-aligned login container
-    col_l, col_center, col_r = st.columns([1, 1.8, 1])
+    # Center-aligned executive luxury login container
+    col_l, col_center, col_r = st.columns([1, 1.6, 1])
 
     with col_center:
-        st.markdown("<div style='text-align: center; margin-top: 40px;'>", unsafe_allow_html=True)
-        st.markdown("## 🛡️ **AlphaShield Gate**")
-        st.markdown("<p style='color: #94A3B8;'>Institutional Market Intelligence & Capital Preservation</p>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='text-align: center; margin-top: 50px; margin-bottom: 24px;'>
+            <div style='display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(30, 58, 138, 0.22) 100%); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 24px -4px rgba(56, 189, 248, 0.25); font-size: 1.8rem; margin-bottom: 14px;'>
+                🛡️
+            </div>
+            <div style='font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; color: #F8FAFC;'>AlphaShield</div>
+            <div style='font-size: 0.86rem; color: #94A3B8; margin-top: 4px; letter-spacing: -0.01em;'>Institutional Market Intelligence & Capital Preservation</div>
+        </div>
+        """, unsafe_allow_html=True)
 
         with st.form("alphashield_login_form"):
-            st.markdown("##### 🔐 **Authorized Personnel Sign In**")
-            input_user = st.text_input("Username / ID", placeholder="e.g. nkk_user, nkk_admin, nikhil875171").strip()
+            st.markdown("<div style='font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8; margin-bottom: 12px;'>🔐 Authorized Personnel Verification</div>", unsafe_allow_html=True)
+            input_user = st.text_input("Operator Username / ID", placeholder="e.g. nkk_user, nkk_admin, nikhil875171").strip()
             input_pass = st.text_input("Security Passphrase", type="password", placeholder="••••••••••••")
-            submit_btn = st.form_submit_button("Unlock Dashboard", use_container_width=True, type="primary")
+            st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+            submit_btn = st.form_submit_button("Unlock Intelligence Terminal", use_container_width=True, type="primary")
 
             if submit_btn:
                 if not input_user or not input_pass:
@@ -193,10 +199,10 @@ def render_login_gate():
                         st.error("Authentication failed: Invalid credentials.")
 
         st.markdown("""
-        <div style='background-color: #151B26; padding: 14px; border-radius: 8px; border: 1px solid #232D3F; margin-top: 15px;'>
-            <p style='color: #64748B; font-size: 0.8rem; margin: 0; text-align: center;'>
-                🔒 <strong>Restricted Institutional Access</strong><br/>
-                All queries and algorithmic suggestions are logged for risk governance.
+        <div style='background: linear-gradient(145deg, rgba(16, 22, 34, 0.70) 0%, rgba(11, 15, 23, 0.85) 100%); padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.065); margin-top: 18px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);'>
+            <p style='color: #64748B; font-size: 0.78rem; margin: 0; text-align: center; line-height: 1.5;'>
+                🔒 <strong>Restricted Quantitative Environment</strong><br/>
+                All queries and algorithmic portfolio risk suggestions are audited for institutional governance.
             </p>
         </div>
         """, unsafe_allow_html=True)

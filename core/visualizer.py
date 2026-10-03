@@ -196,12 +196,12 @@ def build_interactive_chart(
         # 30 Oversold line
         fig.add_hline(y=30, line_dash="dash", line_color="#34D399", line_width=1, row=3, col=1)
 
-    # Dark Obsidian / Slate Institutional Theme Styling
+    # Tier-1 Luxury Obsidian Chart Styling
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0A0E1A",
-        plot_bgcolor="#111827",
-        font=dict(family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", color="#CBD5E1", size=11),
+        paper_bgcolor="#08090C",
+        plot_bgcolor="#0E141E",
+        font=dict(family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color="#CBD5E1", size=11),
         xaxis_rangeslider_visible=False,
         height=720,
         margin=dict(l=40, r=60, t=40, b=20),
@@ -209,9 +209,9 @@ def build_interactive_chart(
         hovermode="x unified",
     )
 
-    # Update axes styling
-    fig.update_xaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.06)")
-    fig.update_yaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.06)")
+    # Update axes styling with hair-thin translucent grids
+    fig.update_xaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.05)")
+    fig.update_yaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.05)")
     fig.update_yaxes(title_text=f"Price ({currency_symbol})", row=1, col=1)
     fig.update_yaxes(title_text="Volume", row=2, col=1)
     fig.update_yaxes(title_text="RSI", range=[10, 90], row=3, col=1)
@@ -492,12 +492,12 @@ def build_institutional_radar_chart(
                 showline=False,
             ),
             angularaxis=dict(
-                tickfont=dict(size=11, color="#CBD5E1", family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"),
-                gridcolor="rgba(255, 255, 255, 0.08)",
-                linecolor="rgba(255, 255, 255, 0.12)",
+                tickfont=dict(size=11, color="#CBD5E1", family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"),
+                gridcolor="rgba(255, 255, 255, 0.06)",
+                linecolor="rgba(255, 255, 255, 0.10)",
                 direction="clockwise",
             ),
-            bgcolor="rgba(15, 23, 42, 0.65)",
+            bgcolor="rgba(14, 20, 30, 0.75)",
         ),
         margin=dict(l=35, r=35, t=30, b=30),
         height=350,
