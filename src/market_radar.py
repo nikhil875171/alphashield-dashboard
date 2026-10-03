@@ -419,6 +419,14 @@ def scan_live_market_radar(is_indian: bool = True, use_full_nse: bool = True) ->
                             "rel_volume": rel_v,
                             "volatility": volatility_5d,
                         }
+                    elif len(s_close) == 1:
+                        last_p = float(s_close.iloc[-1])
+                        live_metrics[sym] = {
+                            "price": last_p,
+                            "change_pct": 0.0,
+                            "rel_volume": 1.0,
+                            "volatility": 1.5,
+                        }
             except Exception:
                 continue
 

@@ -48,14 +48,15 @@ def is_priced_in_rumor(df: pd.DataFrame, catalyst_date: Optional[str] = None) ->
     Detects Priced-in Rumors / 'Buy the Rumor, Sell the News':
     Flag if stock has run > 20% in the 20 trading sessions prior to an expected announcement.
     """
-    if df.empty or len(df) < 20:
+    if df.empty or len(df) < 3:
         return False, "Normal momentum window."
 
     c = df["Close"]
-    runup_20d = ((c.iloc[-1] - c.iloc[-20]) / c.iloc[-20]) * 100.0
+    lookback = min(20, len(c))
+    runup_window = ((c.iloc[-1] - c.iloc[-lookback]) / c.iloc[-lookback]) * 100.0
 
-    if runup_20d >= 20.0:
-        reason = f"PRICED-IN RUMOR RISK: Asset has already surged +{runup_20d:.1f}% in the last 20 sessions; high vulnerability to 'sell-the-news' profit taking."
+    if runup_window >= 20.0:
+        reason = f"PRICED-IN RUMOR RISK: Asset has already surged +{runup_window:.1f}% in the last {lookback} sessions; high vulnerability to 'sell-the-news' profit taking."
         return True, reason
 
     return False, "Pre-catalyst runup within balanced bounds."

@@ -236,6 +236,9 @@ def evaluate_factor_model(symbol: str, df: pd.DataFrame, info: Optional[dict] = 
     close_s = df["Close"] if not df.empty and "Close" in df else pd.Series([100.0])
     if len(close_s) >= 60:
         roc_3m = ((close_s.iloc[-1] - close_s.iloc[-60]) / close_s.iloc[-60]) * 100.0
+    elif len(close_s) > 1:
+        # Scale return for newly listed IPOs based on available history
+        roc_3m = ((close_s.iloc[-1] - close_s.iloc[0]) / close_s.iloc[0]) * 100.0
     else:
         roc_3m = 0.0
 

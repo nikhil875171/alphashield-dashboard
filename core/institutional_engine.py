@@ -5,8 +5,11 @@ from core.schemas import InstitutionalSnapshot
 
 def audit_institutional_positioning(symbol: str) -> InstitutionalSnapshot:
     """Ingests smart money metrics: institutional holding %, insider ownership, and short interest."""
-    ticker = yf.Ticker(symbol)
-    info = ticker.info or {}
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info or {}
+    except Exception:
+        info = {}
 
     inst_pct = info.get("heldPercentInstitutions")
     if inst_pct is not None:

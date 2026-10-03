@@ -996,7 +996,7 @@ def run_full_audit(ticker: str):
             tech, df = compute_technical_snapshot(ticker, period="1y", interval="1d")
             if df.empty:
                 st.error(f"Could not retrieve market data for '{ticker}'. Please verify the symbol.")
-                return None, None, None, None, None, None, None, None, None, None, None
+                return None, None, None, None, None, None, None, None, None, None, None, {}
 
             # 2. Company Info
             try:

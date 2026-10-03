@@ -42,7 +42,7 @@ def calculate_risk_parameters(
 
     # If position exceeds total account size (no leverage assumption), cap it
     if total_allocated > account_size:
-        shares = int(math.floor(account_size / current_price))
+        shares = int(math.floor(account_size / max(current_price, 0.01)))
         total_allocated = round(shares * current_price, 2)
 
     portfolio_alloc_pct = round((total_allocated / max(account_size, 1.0)) * 100.0, 2)
