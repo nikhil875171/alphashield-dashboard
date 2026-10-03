@@ -65,6 +65,7 @@ from src.stock_universe import (
     infer_cap_tier,
     get_ticker_sector_map,
 )
+from src.symbol_resolver import resolve_ticker_symbol, check_dual_exchange_fallback
 
 load_dotenv()
 
@@ -715,13 +716,16 @@ with st.sidebar:
         "Enter Stock Ticker",
         value=st.session_state["active_ticker"],
         help=f"Type any stock symbol (e.g. {quick_tickers[0]} or {quick_tickers[1]})."
-    ).strip().upper()
+    )
 
-    # Automatically append .NS for Indian stocks if user omitted it
-    if is_indian and user_ticker and not (user_ticker.endswith(".NS") or user_ticker.endswith(".BO")):
-        user_ticker = f"{user_ticker}.NS"
+    resolved_ticker, alias_notice, mismatch_market = resolve_ticker_symbol(user_ticker, is_indian=is_indian)
+    if alias_notice:
+        st.info(f"ℹ️ {alias_notice}")
+    if mismatch_market:
+        target_mkt = "United States (NYSE/NASDAQ)" if mismatch_market == "US" else "India (NSE/BSE)"
+        st.warning(f"💡 Detected {mismatch_market} Equity (`{user_ticker.strip().upper()}`). Switch the top market toggle to **{target_mkt}** to audit this stock.")
 
-    st.session_state["active_ticker"] = user_ticker
+    st.session_state["active_ticker"] = resolved_ticker
 
     st.markdown("---")
     st.markdown("#### 💰 **Your Investment Budget**")
@@ -992,8 +996,20 @@ ticker_to_run = st.session_state["active_ticker"]
 def run_full_audit(ticker: str):
     with st.spinner(f"Auditing company health, secular horizons, and supply chain ripple for {ticker}..."):
         try:
-            # 1. Technical Data
-            tech, df = compute_technical_snapshot(ticker, period="1y", interval="1d")
+            # 1. Technical Data (with dual-exchange fallback for BSE/NSE)
+            try:
+                tech, df = compute_technical_snapshot(ticker, period="1y", interval="1d")
+            except Exception as e_tech:
+                fallback = check_dual_exchange_fallback(ticker)
+                if fallback:
+                    alt_ticker, fallback_msg = fallback
+                    st.info(f"ℹ️ {fallback_msg}")
+                    ticker = alt_ticker
+                    st.session_state["active_ticker"] = alt_ticker
+                    tech, df = compute_technical_snapshot(alt_ticker, period="1y", interval="1d")
+                else:
+                    raise e_tech
+
             if df.empty:
                 st.error(f"Could not retrieve market data for '{ticker}'. Please verify the symbol.")
                 return None, None, None, None, None, None, None, None, None, None, None, {}
@@ -2020,5 +2036,18 @@ if audit_results and audit_results[0] is not None:
             with a_col2:
                 st.metric("Session Mode", "Authenticated Admin")
                 st.caption("Note: Root policy overrides and emergency cash locks are strictly restricted to Global Administrator (nikhil875171).")
+else:
+    st.markdown("<div style='margin: 40px auto; max-width: 750px; text-align: center; padding: 32px; background: rgba(30, 41, 59, 0.4); border: 1px dashed #334155; border-radius: 14px;'>", unsafe_allow_html=True)
+    st.markdown("### 🔍 **Stock Not Found or Market Mismatch**")
+    st.write(f"AlphaShield was unable to retrieve market candle history for `{ticker_to_run}` on the active exchange.")
+    st.markdown("<p style='color: #94A3B8; font-size: 0.95rem;'>Verify the ticker symbol or pick one of the verified institutional equities below:</p>", unsafe_allow_html=True)
+    eq_c1, eq_c2, eq_c3 = st.columns(3)
+    sample_picks = ["RELIANCE", "HEROMOTORS", "TCS"] if is_indian else ["NVDA", "AAPL", "MSFT"]
+    for i, s_pick in enumerate(sample_picks):
+        with [eq_c1, eq_c2, eq_c3][i]:
+            if st.button(f"👉 Analyze {s_pick}", key=f"empty_fallback_{s_pick}", use_container_width=True):
+                st.session_state["active_ticker"] = f"{s_pick}.NS" if is_indian else s_pick
+                st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<div style='margin-top: 40px; text-align: center; color: #64748B; font-size: 0.8rem;'>AlphaShield Quantitative & Thematic Intelligence Platform | Capital Preservation & Macro Systems</div>", unsafe_allow_html=True)
