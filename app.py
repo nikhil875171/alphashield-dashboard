@@ -1594,8 +1594,9 @@ if audit_results and audit_results[0] is not None:
         with c_mode_col:
             selected_dim_view = st.segmented_control(
                 "Dimension View Mode",
-                options=["✨ 360° Matrix & Cards", "🕸️ Interactive Spider Radar", "🎯 Single Pillar Spotlight"],
+                options=["✨ 360° Matrix & Cards", "🔬 Complete Dossiers (All 6)", "🕸️ Interactive Spider Radar"],
                 default="✨ 360° Matrix & Cards",
+                key="tab1_dim_view_selector",
                 label_visibility="collapsed",
             )
             if not selected_dim_view:
@@ -1857,87 +1858,101 @@ if audit_results and audit_results[0] is not None:
                 st.info("💡 **Institutional Benchmark Rule:** Top-tier quantitative managers require at least 4 of 6 dimensions to score ≥ 60/100 before committing growth capital.")
 
         # -------------------------------------------------------------------------
-        # VIEW 3: SINGLE PILLAR SPOTLIGHT
+        # -------------------------------------------------------------------------
+        # VIEW 3: ALL 6 INSTITUTIONAL DOSSIERS (SHOW EVERYTHING DIRECTLY)
         # -------------------------------------------------------------------------
         else:
-            pillar_names = list(dim_scores.keys())
-            selected_pillar = st.pills("Select Dimension to Inspect in Deep-Dive Mode:", pillar_names, default=pillar_names[1])
-            if not selected_pillar:
-                selected_pillar = pillar_names[1]
+            st.markdown("### 🔬 **Complete Institutional Analytical Dossiers (All 6 Dimensions)**")
+            st.caption("All 6 institutional forensic dossiers displayed simultaneously with zero manual clicking required.")
 
-            sp_data = dim_scores[selected_pillar]
-            st.markdown(f"### {selected_pillar} — Institutional Analytical Dossier")
+            intuitions = {
+                "Market Mood": "Think of market mood like flying an airplane. When VIX is low, skies are smooth. When volatility spikes, you're flying into a storm.",
+                "Company Health": "Does this company generate real cash from customers, or are they borrowing money or inflating accounting numbers just to look profitable?",
+                "Price Trend": "Are more buyers rushing in, or are investors quietly heading for the exits? Moving averages reveal the institutional money footprint.",
+                "Smart Money": "Institutional 'whales' buy and hold shares in their vaults. Delivery % proves real accumulation vs speculative day-trading churn.",
+                "Secular Horizon": thematic.plain_english_takeaway,
+                "Safety Gauge": "Never take a trade where the upside isn't at least 2.5x larger than the risk. Protect capital first, profits come second.",
+            }
 
-            sp_col1, sp_col2 = st.columns([1.2, 1.8])
-            with sp_col1:
-                render_clean_html(f"""
-                <div class='dimension-card'>
-                    <div class='dim-card-body'>
-                        <div class='dim-card-header'>
-                            <span class='dim-title'>{selected_pillar}</span>
-                            <span class='tile-status-{sp_data["class"]}'>{sp_data["status"]}</span>
-                        </div>
-                        <div class='dim-meter-track'>
-                            <div class='dim-meter-fill-{sp_data["class"]}' style='width: {sp_data["score"]}%;'></div>
-                        </div>
-                        <div class='mono-data' style='font-size: 2.2rem; font-weight: 800; color: #38BDF8; margin: 10px 0;'>{sp_data["score"]} / 100</div>
-                        <div class='dim-metric-sub'>Key Metric: <strong>{sp_data["metric"]}</strong></div>
-                        <div class='eli5-callout'>
-                            <div class='eli5-label'>💡 Plain English Intuition</div>
-                            <div class='eli5-text'>Institutional investors use this pillar to rigorously test corporate reality against public sentiment.</div>
+            p_list = list(dim_scores.items())
+            for p_idx, (p_name, sp_data) in enumerate(p_list):
+                st.markdown(f"#### {p_name} — Institutional Analytical Dossier")
+
+                sp_col1, sp_col2 = st.columns([1.1, 1.9])
+                with sp_col1:
+                    intuition_text = intuitions.get(p_name, "Institutional forensic gate paired with real-world market intelligence.")
+                    render_clean_html(f"""
+                    <div class='dimension-card' style='min-height: 220px;'>
+                        <div class='dim-card-body'>
+                            <div class='dim-card-header'>
+                                <span class='dim-title'>{p_name}</span>
+                                <span class='tile-status-{sp_data["class"]}'>{sp_data["status"]}</span>
+                            </div>
+                            <div class='dim-meter-track'>
+                                <div class='dim-meter-fill-{sp_data["class"]}' style='width: {sp_data["score"]}%;'></div>
+                            </div>
+                            <div class='mono-data' style='font-size: 2.2rem; font-weight: 800; color: #38BDF8; margin: 8px 0;'>{sp_data["score"]} / 100</div>
+                            <div class='dim-metric-sub'>Key Metric: <strong>{sp_data["metric"]}</strong></div>
+                            <div class='eli5-callout' style='margin-top: 8px;'>
+                                <div class='eli5-label'>💡 Plain English Intuition</div>
+                                <div class='eli5-text'>{intuition_text}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                """)
-            with sp_col2:
-                if selected_pillar == "Company Health":
-                    st.markdown("#### 🔬 **Forensic Solvency & Earnings Quality Matrix**")
-                    st.markdown(f"""
-                    - **Altman Z-Score:** `{z_score:.2f}` (Distress Threshold: `< 1.81`, Grey Zone: `1.81 – 2.99`, Safe Zone: `> 2.99`)
-                    - **Piotroski F-Score:** `{f_score} / 9` (Operating quality, profitability, and leverage improvements)
-                    - **Sloan Accruals Ratio:** `{sloan_val * 100:.1f}%` (Values `< 10%` confirm earnings are backed by hard cash flow)
-                    - **Beneish M-Score:** `{beneish_val:.2f}` ({beneish_note})
-                    - **Solvency Status:** **{plan.solvency_status}**
                     """)
-                elif selected_pillar == "Market Mood":
-                    st.markdown("#### 🌡️ **Macro Volatility Transmission**")
-                    st.markdown(f"""
-                    - **Market VIX:** `{macro.vix:.1f}`
-                    - **Macro Regime:** `{macro.regime.value if hasattr(macro, "regime") else "NORMAL"}`
-                    - **Transmission Rationale:** {macro.market_mood_desc}
-                    """)
-                elif selected_pillar == "Price Trend":
-                    st.markdown("#### 🚀 **Technical Momentum & Moving Average Ribbons**")
-                    st.markdown(f"""
-                    - **Current Price:** `{currency_sym}{tech.current_price:,.2f}`
-                    - **20-Day Fast EMA:** `{currency_sym}{tech.ema_20:,.2f}`
-                    - **50-Day Baseline EMA:** `{currency_sym}{tech.ema_50:,.2f}`
-                    - **200-Day Structural EMA:** `{currency_sym}{tech.ema_200:,.2f}`
-                    - **14-Day RSI:** `{tech.rsi_14:.1f}`
-                    """)
-                elif selected_pillar == "Smart Money":
-                    st.markdown("#### 🐋 **Delivery Microstructure & Vault Accumulation**")
-                    st.markdown(f"""
-                    - **Delivery Percentage:** `{micro.delivery_pct:.1f}%`
-                    - **Flow Verification:** `{'Accumulation Confirmed' if micro.delivery_valid else 'Speculative Day-Trading'}`
-                    - **Details:** {micro.delivery_status_msg}
-                    """)
-                elif selected_pillar == "Secular Horizon":
-                    st.markdown("#### ⏳ **Secular Wave & Supply Chain Scarcity**")
-                    st.markdown(f"""
-                    - **Horizon Wave:** `{thematic.horizon_title}` ({thematic.timeframe})
-                    - **Core Driver:** {thematic.thematic_driver}
-                    - **Scarcity Bottleneck Exposure:** `{thematic.resource_scarcity_exposure}`
-                    - **Plain-English Takeaway:** {thematic.plain_english_takeaway}
-                    """)
-                else:  # Safety Gauge
-                    st.markdown("#### 🛡️ **Asymmetric Risk-Reward & Capital Preservation**")
-                    st.markdown(f"""
-                    - **Reward-to-Risk Ratio:** `{odds_disp}` (Minimum threshold: `2.5x`)
-                    - **Algorithmic Hard Stop:** `{currency_sym}{plan.algorithmic_stop_loss}`
-                    - **Max Equity at Risk:** `{currency_sym}{risk.max_equity_at_risk:,.2f}` ({risk.risk_pct:.1f}% of capital)
-                    - **Calculated Allocation:** `{alloc_disp}`
-                    """)
+                with sp_col2:
+                    if p_name == "Company Health":
+                        st.markdown("##### 🔬 **Forensic Solvency & Earnings Quality Matrix**")
+                        st.markdown(f"""
+                        - **Altman Z-Score:** `{z_score:.2f}` (Distress Threshold: `< 1.81`, Grey Zone: `1.81 – 2.99`, Safe Zone: `> 2.99`)
+                        - **Piotroski F-Score:** `{f_score} / 9` (Operating quality, profitability, and leverage improvements)
+                        - **Sloan Accruals Ratio:** `{sloan_val * 100:.1f}%` (Values `< 10%` confirm earnings are backed by hard cash flow)
+                        - **Beneish M-Score:** `{beneish_val:.2f}` ({beneish_note})
+                        - **Solvency Status:** **{plan.solvency_status}**
+                        """)
+                    elif p_name == "Market Mood":
+                        st.markdown("##### 🌡️ **Macro Volatility Transmission**")
+                        st.markdown(f"""
+                        - **Market VIX:** `{macro.vix:.1f}`
+                        - **Macro Regime:** `{macro.regime.value if hasattr(macro, "regime") else "NORMAL"}`
+                        - **Transmission Rationale:** {macro.market_mood_desc}
+                        - **Position Sizing Scale:** `{int(macro.position_scale_factor * 100)}%`
+                        """)
+                    elif p_name == "Price Trend":
+                        st.markdown("##### 🚀 **Technical Momentum & Moving Average Ribbons**")
+                        st.markdown(f"""
+                        - **Current Price:** `{currency_sym}{tech.current_price:,.2f}`
+                        - **20-Day Fast EMA:** `{currency_sym}{tech.ema_20:,.2f}`
+                        - **50-Day Baseline EMA:** `{currency_sym}{tech.ema_50:,.2f}`
+                        - **200-Day Structural EMA:** `{currency_sym}{tech.ema_200:,.2f}`
+                        - **14-Day RSI:** `{tech.rsi_14:.1f}`
+                        """)
+                    elif p_name == "Smart Money":
+                        st.markdown("##### 🐋 **Delivery Microstructure & Vault Accumulation**")
+                        st.markdown(f"""
+                        - **Delivery Percentage:** `{micro.delivery_pct:.1f}%`
+                        - **Flow Verification:** `{'Accumulation Confirmed' if micro.delivery_valid else 'Speculative Day-Trading'}`
+                        - **Details:** {micro.delivery_status_msg}
+                        """)
+                    elif p_name == "Secular Horizon":
+                        st.markdown("##### ⏳ **Secular Wave & Supply Chain Scarcity**")
+                        st.markdown(f"""
+                        - **Horizon Wave:** `{thematic.horizon_title}` ({thematic.timeframe})
+                        - **Core Driver:** {thematic.thematic_driver}
+                        - **Scarcity Bottleneck Exposure:** `{thematic.resource_scarcity_exposure}`
+                        - **Plain-English Takeaway:** {thematic.plain_english_takeaway}
+                        """)
+                    else:  # Safety Gauge
+                        st.markdown("##### 🛡️ **Asymmetric Risk-Reward & Capital Preservation**")
+                        st.markdown(f"""
+                        - **Reward-to-Risk Ratio:** `{odds_disp}` (Minimum threshold: `2.5x`)
+                        - **Algorithmic Hard Stop:** `{currency_sym}{plan.algorithmic_stop_loss}`
+                        - **Max Equity at Risk:** `{currency_sym}{risk.max_equity_at_risk:,.2f}` ({risk.risk_pct:.1f}% of capital)
+                        - **Calculated Allocation:** `{alloc_disp}`
+                        """)
+
+                if p_idx < len(p_list) - 1:
+                    st.markdown("<hr style='margin: 18px 0; border-color: rgba(255,255,255,0.06);'>", unsafe_allow_html=True)
 
     # =========================================================================
     # TAB 2: FORENSIC QUALITY, SOLVENCY & RISK TRAPS
