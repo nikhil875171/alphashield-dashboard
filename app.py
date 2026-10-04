@@ -1,5 +1,6 @@
 import os
 import math
+import re
 from typing import Dict, List
 import streamlit as st
 import pandas as pd
@@ -1458,6 +1459,7 @@ def render_clean_html(html_str: str):
     Prevents CommonMark from mistakenly interpreting indented lines as <pre><code> blocks,
     which otherwise breaks DOM hierarchy, causes unclosed tags, and unaligns grid cards.
     """
+    import re
     cleaned = re.sub(r'^[ \t]+', '', html_str.strip(), flags=re.MULTILINE)
     st.markdown(cleaned, unsafe_allow_html=True)
 
