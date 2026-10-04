@@ -9,7 +9,8 @@ def build_interactive_chart(
     df: pd.DataFrame,
     tech: TechnicalSnapshot,
     rec: Any,
-    currency_symbol: Optional[str] = None
+    currency_symbol: Optional[str] = None,
+    is_light_mode: bool = False,
 ) -> go.Figure:
     """
     Constructs an institutional 3-tier Plotly chart:
@@ -196,12 +197,18 @@ def build_interactive_chart(
         # 30 Oversold line
         fig.add_hline(y=30, line_dash="dash", line_color="#34D399", line_width=1, row=3, col=1)
 
-    # Tier-1 Luxury Obsidian Chart Styling
+    # Tier-1 Luxury Chart Styling (Adaptive Dark/Light Mode)
+    t_template = "plotly_white" if is_light_mode else "plotly_dark"
+    p_bg = "#FFFFFF" if is_light_mode else "#08090C"
+    pl_bg = "#F8FAFC" if is_light_mode else "#0E141E"
+    f_color = "#334155" if is_light_mode else "#CBD5E1"
+    grid_col = "rgba(0, 0, 0, 0.06)" if is_light_mode else "rgba(255, 255, 255, 0.05)"
+
     fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="#08090C",
-        plot_bgcolor="#0E141E",
-        font=dict(family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color="#CBD5E1", size=11),
+        template=t_template,
+        paper_bgcolor=p_bg,
+        plot_bgcolor=pl_bg,
+        font=dict(family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color=f_color, size=11),
         xaxis_rangeslider_visible=False,
         height=720,
         margin=dict(l=40, r=60, t=40, b=20),
@@ -210,8 +217,8 @@ def build_interactive_chart(
     )
 
     # Update axes styling with hair-thin translucent grids
-    fig.update_xaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.05)")
-    fig.update_yaxes(showgrid=True, gridcolor="rgba(255, 255, 255, 0.05)")
+    fig.update_xaxes(showgrid=True, gridcolor=grid_col)
+    fig.update_yaxes(showgrid=True, gridcolor=grid_col)
     fig.update_yaxes(title_text=f"Price ({currency_symbol})", row=1, col=1)
     fig.update_yaxes(title_text="Volume", row=2, col=1)
     fig.update_yaxes(title_text="RSI", range=[10, 90], row=3, col=1)
@@ -417,6 +424,7 @@ def compute_institutional_dimension_scores(
 def build_institutional_radar_chart(
     dimension_scores: dict,
     ticker: str = "ASSET",
+    is_light_mode: bool = False,
 ) -> go.Figure:
     """
     Constructs an institutional 6-axis Plotly Polar Radar Chart displaying
@@ -476,8 +484,15 @@ def build_institutional_radar_chart(
         )
     )
 
+    r_template = "plotly_white" if is_light_mode else "plotly_dark"
+    r_p_bg = "rgba(241, 245, 249, 0.85)" if is_light_mode else "rgba(14, 20, 30, 0.75)"
+    r_ang_col = "#1E293B" if is_light_mode else "#CBD5E1"
+    r_grid_col = "rgba(0, 0, 0, 0.08)" if is_light_mode else "rgba(255, 255, 255, 0.07)"
+    r_line_col = "rgba(0, 0, 0, 0.12)" if is_light_mode else "rgba(255, 255, 255, 0.10)"
+    r_leg_col = "#475569" if is_light_mode else "#94A3B8"
+
     fig.update_layout(
-        template="plotly_dark",
+        template=r_template,
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         polar=dict(
@@ -487,17 +502,17 @@ def build_institutional_radar_chart(
                 tickvals=[20, 40, 60, 80, 100],
                 ticktext=["20", "40", "60", "80", "100"],
                 tickfont=dict(size=8, color="#64748B"),
-                gridcolor="rgba(255, 255, 255, 0.07)",
-                linecolor="rgba(255, 255, 255, 0.10)",
+                gridcolor=r_grid_col,
+                linecolor=r_line_col,
                 showline=False,
             ),
             angularaxis=dict(
-                tickfont=dict(size=11, color="#CBD5E1", family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"),
-                gridcolor="rgba(255, 255, 255, 0.06)",
-                linecolor="rgba(255, 255, 255, 0.10)",
+                tickfont=dict(size=11, color=r_ang_col, family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"),
+                gridcolor=r_grid_col,
+                linecolor=r_line_col,
                 direction="clockwise",
             ),
-            bgcolor="rgba(14, 20, 30, 0.75)",
+            bgcolor=r_p_bg,
         ),
         margin=dict(l=35, r=35, t=30, b=30),
         height=350,
@@ -508,7 +523,7 @@ def build_institutional_radar_chart(
             y=-0.16,
             xanchor="center",
             x=0.5,
-            font=dict(size=10, color="#94A3B8"),
+            font=dict(size=10, color=r_leg_col),
         ),
     )
 

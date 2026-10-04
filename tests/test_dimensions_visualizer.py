@@ -144,14 +144,22 @@ class TestDimensionsVisualizer(unittest.TestCase):
             self.thematic_safe,
             self.risk_safe,
         )
-        fig = build_institutional_radar_chart(scores, ticker="TATASTEEL.NS")
-        self.assertIsNotNone(fig)
-        self.assertEqual(len(fig.data), 2)
-        # Trace 0: Benchmark, Trace 1: Company Profile
-        self.assertIn("Benchmark", fig.data[0].name)
-        self.assertIn("TATASTEEL.NS", fig.data[1].name)
+        # Test Dark Mode (default)
+        fig_dark = build_institutional_radar_chart(scores, ticker="TATASTEEL.NS", is_light_mode=False)
+        self.assertIsNotNone(fig_dark)
+        self.assertEqual(len(fig_dark.data), 2)
+        self.assertIn("Benchmark", fig_dark.data[0].name)
+        self.assertIn("TATASTEEL.NS", fig_dark.data[1].name)
+        self.assertEqual(fig_dark.layout.polar.bgcolor, "rgba(14, 20, 30, 0.75)")
+
+        # Test Light Mode
+        fig_light = build_institutional_radar_chart(scores, ticker="TATASTEEL.NS", is_light_mode=True)
+        self.assertIsNotNone(fig_light)
+        self.assertEqual(len(fig_light.data), 2)
+        self.assertEqual(fig_light.layout.polar.bgcolor, "rgba(241, 245, 249, 0.85)")
 
 
 if __name__ == "__main__":
     unittest.main()
+
 

@@ -90,8 +90,13 @@ st.set_page_config(
     }
 )
 
-# Initialize session state for role-based security
+# Initialize session state for role-based security & theme
 init_session_state()
+
+if "theme_mode" not in st.session_state:
+    st.session_state["theme_mode"] = "dark"
+
+is_light_mode = (st.session_state.get("theme_mode", "dark") == "light")
 
 # RBAC Enforcement: Hide GitHub Icon, Edit options, and Streamlit Cloud toolbar unless user is Global Admin
 if not is_global_admin():
@@ -166,14 +171,60 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-# Custom Executive-Grade Luxury Theme CSS (Tier-1 Design System)
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+# Custom Executive-Grade Luxury Theme CSS (Tier-1 Design System - Night / Light Adaptive)
+if is_light_mode:
+    theme_tokens = """
+    :root {
+        /* Light Luxury Bone / Ivory Canvas Ramp */
+        --canvas-bg: #F8FAFC;
+        --surface-0: #FFFFFF;
+        --surface-1: #F1F5F9;
+        --surface-2: #E2E8F0;
+        --surface-3: #CBD5E1;
+        --surface-glass: rgba(255, 255, 255, 0.88);
+        --surface-highlight: rgba(0, 0, 0, 0.025);
 
-    /* =========================================================================
-       DESIGN TOKEN SYSTEM: TIER-1 LUXURY PALETTE & SPATIAL DISCIPLINE
-       ========================================================================= */
+        /* Translucent Borders */
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --border-medium: rgba(0, 0, 0, 0.12);
+        --border-specular: rgba(0, 0, 0, 0.05);
+        --border-accent: rgba(2, 132, 199, 0.35);
+
+        /* Text Contrast Tiers */
+        --text-primary: #0F172A;
+        --text-secondary: #475569;
+        --text-tertiary: #64748B;
+        --text-muted: #94A3B8;
+
+        /* Functional Accents */
+        --accent-cyan: #0284C7;
+        --accent-blue: #2563EB;
+        --safe-mint: #059669;
+        --caution-amber: #D97706;
+        --danger-rose: #E11D48;
+        --orbit-lilac: #7C3AED;
+
+        /* Multi-Layered Diffused Ambient Depth */
+        --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 8px 24px -4px rgba(0, 0, 0, 0.06);
+        --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 16px 32px -4px rgba(0, 0, 0, 0.08);
+
+        --space-1: 8px;
+        --space-2: 16px;
+        --space-3: 24px;
+        --space-4: 32px;
+        --space-6: 48px;
+
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+
+        --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    """
+else:
+    theme_tokens = """
     :root {
         /* Obsidian & Slate Canvas Ramp */
         --canvas-bg: #08090C;
@@ -209,22 +260,29 @@ st.markdown("""
         --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px -2px rgba(0, 0, 0, 0.28), 0 20px 40px -10px rgba(0, 0, 0, 0.45);
         --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.35), 0 16px 36px -4px rgba(0, 0, 0, 0.45), 0 32px 64px -12px rgba(0, 0, 0, 0.55);
 
-        /* 8-Point Spatial Grid */
         --space-1: 8px;
         --space-2: 16px;
         --space-3: 24px;
         --space-4: 32px;
         --space-6: 48px;
 
-        /* Component Radii */
         --radius-sm: 8px;
         --radius-md: 12px;
         --radius-lg: 16px;
         --radius-xl: 20px;
 
-        /* Transitions */
         --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
     }
+    """
+
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    /* =========================================================================
+       DESIGN TOKEN SYSTEM: TIER-1 LUXURY PALETTE & SPATIAL DISCIPLINE
+       ========================================================================= */
+    {theme_tokens}
 
     /* Base Body & Application Canvas */
     .stApp {
@@ -1001,6 +1059,244 @@ st.markdown("""
         margin-top: 3px;
         line-height: 1.35;
     }
+    """ + ("""
+    /* =========================================================================
+       LIGHT MODE LUXURY PALETTE OVERRIDES (EX-STRIPE / LINEAR DESIGN SYSTEM)
+       ========================================================================= */
+    .stApp {
+        background-color: #F8FAFC !important;
+        background-image: 
+            radial-gradient(1200px circle at 50% -120px, rgba(14, 165, 233, 0.06) 0%, transparent 65%),
+            radial-gradient(800px circle at 85% 150px, rgba(99, 102, 241, 0.03) 0%, transparent 55%),
+            radial-gradient(900px circle at 15% 450px, rgba(16, 185, 129, 0.03) 0%, transparent 50%) !important;
+        color: #0F172A !important;
+    }
+    section[data-testid="stSidebar"] {
+        background-color: #F1F5F9 !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] h5,
+    section[data-testid="stSidebar"] h6,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label {
+        color: #0F172A !important;
+    }
+    .brand-headline {
+        background: linear-gradient(180deg, #0F172A 0%, #334155 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+    }
+    .brand-subline {
+        color: #64748B !important;
+    }
+    .brand-icon-badge {
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(37, 99, 235, 0.16) 100%) !important;
+        border: 1px solid rgba(2, 132, 199, 0.25) !important;
+        box-shadow: 0 0 16px -2px rgba(2, 132, 199, 0.18) !important;
+    }
+    .brand-tag-intel {
+        background: rgba(2, 132, 199, 0.08) !important;
+        border: 1px solid rgba(2, 132, 199, 0.22) !important;
+        color: #0284C7 !important;
+    }
+    .macro-ribbon {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    .macro-item-label {
+        color: #64748B !important;
+    }
+    .macro-item-value {
+        color: #0F172A !important;
+    }
+    .macro-item-sub {
+        color: #94A3B8 !important;
+    }
+    .blueprint-card {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .blueprint-card:hover {
+        border-color: rgba(2, 132, 199, 0.3) !important;
+        box-shadow: 0 6px 18px -4px rgba(2, 132, 199, 0.12) !important;
+    }
+    .blueprint-card-label {
+        color: #64748B !important;
+    }
+    .blueprint-card-val {
+        color: #0284C7 !important;
+    }
+    .blueprint-card-sub {
+        color: #64748B !important;
+    }
+    .bottom-line-container {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    .interactive-tile {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .tile-header {
+        color: #64748B !important;
+    }
+    .radar-card {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .dimension-card {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .dim-title {
+        color: #475569 !important;
+    }
+    .dim-metric-sub {
+        color: #64748B !important;
+    }
+    .dim-overview-banner {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    .eli5-callout {
+        background: rgba(2, 132, 199, 0.05) !important;
+        border: 1px solid rgba(2, 132, 199, 0.18) !important;
+        border-left: 3px solid #0284C7 !important;
+    }
+    .eli5-text {
+        color: #1E293B !important;
+    }
+    .verdict-box {
+        color: #334155 !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    div[data-testid="stTabs"] > div > div[role="tablist"] {
+        background: #F1F5F9 !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        color: #64748B !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover {
+        color: #0F172A !important;
+        background: rgba(0, 0, 0, 0.04) !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #0284C7 !important;
+        background: #FFFFFF !important;
+        border: 1px solid rgba(2, 132, 199, 0.25) !important;
+        box-shadow: inset 0 -2px 0 0 #0284C7, 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+        font-weight: 700 !important;
+    }
+    .envato-session-badge {
+        background: #F1F5F9 !important;
+        border: 1px solid rgba(0, 0, 0, 0.09) !important;
+        color: #0F172A !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    .envato-tier3-strip {
+        background: #F1F5F9 !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    button[kind="secondary"] {
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    button[kind="secondary"]:hover {
+        background: #F8FAFC !important;
+        border-color: rgba(0, 0, 0, 0.22) !important;
+        color: #0F172A !important;
+    }
+    div[data-baseweb="input"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    }
+    div[data-baseweb="input"] input {
+        color: #0F172A !important;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #0F172A !important;
+    }
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
+        background: #F1F5F9 !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    div[data-testid="stRadio"] label span {
+        color: #0F172A !important;
+    }
+    div[data-testid="stMetric"] {
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    div[data-testid="stMetricLabel"] p {
+        color: #64748B !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #0F172A !important;
+    }
+    div[data-testid="stDataFrame"] {
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .pastel-pill {
+        background: rgba(15, 23, 42, 0.06) !important;
+        color: #334155 !important;
+        border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    }
+    .pastel-pill-mint {
+        background: rgba(5, 150, 105, 0.08) !important;
+        color: #047857 !important;
+        border: 1px solid rgba(5, 150, 105, 0.22) !important;
+    }
+    .pastel-pill-amber {
+        background: rgba(217, 119, 6, 0.08) !important;
+        color: #B45309 !important;
+        border: 1px solid rgba(217, 119, 6, 0.22) !important;
+    }
+    .pastel-pill-rose {
+        background: rgba(225, 29, 72, 0.08) !important;
+        color: #BE123C !important;
+        border: 1px solid rgba(225, 29, 72, 0.22) !important;
+    }
+    .pastel-pill-lilac {
+        background: rgba(124, 58, 237, 0.08) !important;
+        color: #6D28D9 !important;
+        border: 1px solid rgba(124, 58, 237, 0.22) !important;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15) !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.28) !important;
+    }
+    """ if is_light_mode else "") + """
 </style>
 """, unsafe_allow_html=True)
 
@@ -1021,7 +1317,7 @@ def render_clean_html(html_str: str):
 
 
 # --- 2. TIER 1: GLOBAL BRAND & SESSION UTILITIES BAR ---
-col_brand, col_market_selector, col_user_status = st.columns([1.5, 1.15, 0.75])
+col_brand, col_market_selector, col_theme_toggle, col_user_status = st.columns([1.40, 1.15, 0.45, 0.70])
 
 with col_brand:
     render_clean_html("""
@@ -1049,6 +1345,14 @@ with col_market_selector:
         label_visibility="collapsed",
         help="Instantly reloads currency ($ vs ₹), benchmark index (S&P 500 vs Nifty 50), and market telemetry."
     )
+
+with col_theme_toggle:
+    cur_theme = st.session_state.get("theme_mode", "dark")
+    theme_btn_label = "☀️ Light" if cur_theme == "dark" else "🌙 Night"
+    theme_btn_help = "Switch to Light Mode" if cur_theme == "dark" else "Switch to Night Mode (Dark)"
+    if st.button(theme_btn_label, key="tier1_theme_toggle_btn", help=theme_btn_help, use_container_width=True):
+        st.session_state["theme_mode"] = "light" if cur_theme == "dark" else "dark"
+        st.rerun()
 
 with col_user_status:
     auth_user = st.session_state.get("username") or "Analyst"
@@ -1212,6 +1516,19 @@ def get_unified_market_universe(is_ind: bool) -> List[ThematicStockItem]:
 # --- SIDEBAR: CONTROLS & BEGINNER CAPITAL ALLOCATION ---
 with st.sidebar:
     render_user_profile_sidebar()
+
+    # Theme Mode Quick Switcher in Sidebar
+    cur_theme = st.session_state.get("theme_mode", "dark")
+    sb_theme_col1, sb_theme_col2 = st.columns([1.3, 1.7])
+    with sb_theme_col1:
+        st.markdown(f"<div style='font-size: 0.82rem; font-weight: 600; line-height: 2.3; color: {'#334155' if is_light_mode else '#94A3B8'};'>🌗 Mode: <strong>{'Night' if cur_theme == 'dark' else 'Light'}</strong></div>", unsafe_allow_html=True)
+    with sb_theme_col2:
+        sb_btn_txt = "☀️ Light Mode" if cur_theme == "dark" else "🌙 Night Mode"
+        if st.button(sb_btn_txt, key="sidebar_theme_toggle_btn", use_container_width=True):
+            st.session_state["theme_mode"] = "light" if cur_theme == "dark" else "dark"
+            st.rerun()
+
+    st.markdown("---")
 
     st.markdown(f"### 📍 **Active Market: {'India (NSE)' if is_indian else 'United States (NYSE)'}**")
 
@@ -1725,7 +2042,7 @@ if audit_results and audit_results[0] is not None:
             # Top Visual Strip: Interactive Radar on Left, 6-Pillar Health Meters on Right
             vis_r1, vis_r2 = st.columns([1.15, 1.45])
             with vis_r1:
-                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker)
+                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker, is_light_mode=is_light_mode)
                 st.plotly_chart(radar_fig, use_container_width=True, config={"displayModeBar": False})
             with vis_r2:
                 st.markdown("<div style='font-size: 0.85rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; margin-bottom: 8px;'>Pillar Readiness vs Institutional Threshold (60)</div>", unsafe_allow_html=True)
@@ -1919,7 +2236,7 @@ if audit_results and audit_results[0] is not None:
         elif selected_dim_view == "🕸️ Interactive Spider Radar":
             col_rad_large, col_rad_table = st.columns([1.3, 1.2])
             with col_rad_large:
-                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker)
+                radar_fig = build_institutional_radar_chart(dim_scores, ticker=plan.ticker, is_light_mode=is_light_mode)
                 radar_fig.update_layout(height=480)
                 st.plotly_chart(radar_fig, use_container_width=True, config={"displayModeBar": True})
             with col_rad_table:
@@ -2169,7 +2486,7 @@ if audit_results and audit_results[0] is not None:
         tc5.metric("RSI Momentum", f"{tech.rsi_14:.1f}", delta=f"ATR: {currency_sym}{tech.atr_14:.2f}")
 
         # Interactive 3-Tier Plotly Chart
-        fig = build_interactive_chart(df, tech, plan, currency_symbol=currency_sym)
+        fig = build_interactive_chart(df, tech, plan, currency_symbol=currency_sym, is_light_mode=is_light_mode)
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "scrollZoom": True})
 
         # Plain-English Indicator Explanations for Beginners
