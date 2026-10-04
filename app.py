@@ -872,12 +872,117 @@ st.markdown("""
         overflow: hidden;
         box-shadow: var(--shadow-card);
     }
+
+    /* =========================================================================
+       EXECUTIVE MACRO TELEMETRY RIBBON
+       ========================================================================= */
+    .macro-ribbon {
+        background: linear-gradient(145deg, rgba(16, 22, 34, 0.75) 0%, rgba(10, 14, 22, 0.85) 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-lg);
+        padding: 12px 20px;
+        margin-bottom: var(--space-3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-card);
+        backdrop-filter: blur(12px);
+    }
+    .macro-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 125px;
+    }
+    .macro-item-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.06em;
+    }
+    .macro-item-value {
+        font-size: 1.12rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .macro-item-sub {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    /* =========================================================================
+       INSTITUTIONAL EXECUTION BLUEPRINT CARDS
+       ========================================================================= */
+    .blueprint-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        margin-bottom: var(--space-3);
+    }
+    .blueprint-card {
+        background: radial-gradient(circle at 90% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 60%),
+                    linear-gradient(145deg, #101624 0%, #0B0F18 100%);
+        border: 1px solid var(--border-subtle);
+        border-top: 1px solid var(--border-specular);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        box-shadow: var(--shadow-card);
+        transition: all 0.20s var(--ease-luxury);
+    }
+    .blueprint-card:hover {
+        border-color: rgba(56, 189, 248, 0.3);
+        border-top-color: rgba(56, 189, 248, 0.5);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-card), 0 6px 18px -4px rgba(56, 189, 248, 0.10);
+    }
+    .blueprint-card-label {
+        font-size: 0.70rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .blueprint-card-val {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--accent-cyan);
+        letter-spacing: -0.02em;
+    }
+    .blueprint-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+        line-height: 1.35;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # --- 1. ENFORCE ROLE-BASED AUTHENTICATION GATE ---
 if not render_login_gate():
     st.stop()
+
+
+def render_clean_html(html_str: str):
+    """
+    Renders custom HTML in Streamlit while stripping leading indentation.
+    Prevents CommonMark from mistakenly interpreting indented lines as <pre><code> blocks,
+    which otherwise breaks DOM hierarchy, causes unclosed tags, and unaligns grid cards.
+    """
+    import re
+    cleaned = re.sub(r'^[ \t]+', '', html_str.strip(), flags=re.MULTILINE)
+    st.markdown(cleaned, unsafe_allow_html=True)
 
 
 # --- 2. TOP GLOBAL MARKET & EXCHANGE SELECTOR ---
@@ -1135,228 +1240,65 @@ with st.sidebar:
         st.success("🟢 Gemini Pro Decision AI Active", icon="✅")
 
 
-# --- TOP BENCHMARK & MACRO STRIP ---
+# --- TOP BENCHMARK & MACRO TELEMETRY RIBBON ---
 with st.spinner("Synchronizing real-time market telemetry..."):
     macro = fetch_macro_cached(is_indian)
 
-m_col1, m_col2, m_col3, m_col4, m_col5 = st.columns(5)
+bench_delta_class = "pastel-pill-mint" if macro.benchmark_change_pct >= 0 else "pastel-pill-rose"
+bench_delta_sym = "▲" if macro.benchmark_change_pct >= 0 else "▼"
+bench_delta_str = f"{bench_delta_sym} {abs(macro.benchmark_change_pct):.2f}%"
 
-with m_col1:
-    bench_delta = f"{macro.benchmark_change_pct:+.2f}% Today"
-    st.metric(
-        f"{macro.benchmark_name} Index",
-        f"{macro.benchmark_price:,.2f}",
-        delta=bench_delta,
-        delta_color="normal" if macro.benchmark_change_pct >= 0 else "inverse"
-    )
+mood_pill_class = "pastel-pill-mint" if macro.market_mood_color == "green" else ("pastel-pill-amber" if macro.market_mood_color == "amber" else "pastel-pill-rose")
+vol_pill_class = "pastel-pill-mint" if macro.position_scale_factor >= 1.0 else "pastel-pill-amber"
 
-with m_col2:
-    st.metric(
-        "Market Weather",
-        macro.market_mood_label,
-        delta="Normal Liquidity" if macro.position_scale_factor >= 1.0 else "Cautionary Sizing",
-        delta_color="normal" if macro.market_mood_color == "green" else "inverse"
-    )
+vix_name = "India VIX" if is_indian else "CBOE VIX"
+yield_curve_pill = "pastel-pill-mint" if macro.yield_spread >= 0 else "pastel-pill-rose"
+crude_pill = "pastel-pill-mint" if not macro.crude_demand_destruction else "pastel-pill-rose"
+crude_sub = "Stable Demand" if not macro.crude_demand_destruction else "Oil Shock Alert"
 
-with m_col3:
-    vix_name = "India VIX" if is_indian else "CBOE VIX"
-    st.metric(
-        f"Volatility ({vix_name})",
-        f"{macro.vix:.2f}",
-        delta=f"Safety Budget: {int(macro.position_scale_factor * 100)}%",
-        delta_color="normal" if macro.position_scale_factor >= 1.0 else "inverse"
-    )
-
-with m_col4:
-    st.metric(
-        "10Y Government Yield",
-        f"{macro.yield_10y:.2f}%",
-        delta=macro.yield_curve_state,
-        delta_color="normal" if macro.yield_spread >= 0 else "inverse"
-    )
-
-with m_col5:
-    st.metric(
-        "Crude Oil (WTI)",
-        f"${macro.crude_oil:.2f}",
-        delta="Demand Stable" if not macro.crude_demand_destruction else "Oil Price Shock!",
-        delta_color="normal" if not macro.crude_demand_destruction else "inverse"
-    )
-
-st.markdown("<hr style='margin: 14px 0; border-color: #232D3F;'>", unsafe_allow_html=True)
-
-# =============================================================================
-# MODULE 11.2: INTERACTIVE SECTOR UNIVERSE EXPLORER TERMINAL
-# =============================================================================
-with st.expander("📊 **Explore Market Universe by Cap & Sector** (Click to Expand / Browse Categories)", expanded=False):
-    # Fetch live radar data for category counts
-    radar_data = fetch_radar_cached_v2(is_indian)
-    count_penny = len(radar_data.get("penny", []))
-    count_safe = len(radar_data.get("safe", []))
-    count_new = len(radar_data.get("new", []))
-    count_trending = len(radar_data.get("trending", []))
-    count_future = len(radar_data.get("future", []))
-
-    # Fetch unified market universe with sectors and cap tiers
-    all_universe_stocks = get_unified_market_universe(is_indian)
-
-    category_options = [
-        f"All Categories ({len(all_universe_stocks):,} Stocks)",
-        f"🪙 Small-Priced ({count_penny:,})",
-        f"🏰 Safe Havens ({count_safe:,})",
-        f"🌱 New & Emerging ({count_new:,})",
-        f"🔥 Trending Today ({count_trending:,})",
-        f"🚀 Future Supercycles ({count_future:,})",
-    ]
-
-    col_cat, col_cap, col_sec, col_search = st.columns([1.5, 1.0, 1.4, 1.3])
-
-    with col_cat:
-        selected_cat_str = st.selectbox(
-            "Filter by Category",
-            options=category_options,
-            index=0,
-            key="sector_explorer_cat"
-        )
-
-    with col_cap:
-        selected_cap = st.selectbox(
-            "Filter by Market Cap",
-            options=get_all_cap_tiers(),
-            index=0,
-            key="sector_explorer_cap"
-        )
-
-    with col_sec:
-        market_str = "INDIA" if is_indian else "US"
-        available_sectors = ["All Sectors"] + get_all_sectors(market=market_str)
-        selected_sector = st.selectbox(
-            "Filter by Sector",
-            options=available_sectors,
-            index=0,
-            key="sector_explorer_sec"
-        )
-
-    with col_search:
-        sec_query = st.text_input(
-            "Quick Filter",
-            "",
-            placeholder="e.g. Tata, 5G, Defense, Bank, Solar...",
-            key="sector_explorer_query"
-        ).strip().lower()
-
-    # Apply category filter
-    if "Small-Priced" in selected_cat_str:
-        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "penny"]
-    elif "Safe Havens" in selected_cat_str:
-        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "safe"]
-    elif "New & Emerging" in selected_cat_str:
-        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "new"]
-    elif "Trending Today" in selected_cat_str:
-        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "trending"]
-    elif "Future Supercycles" in selected_cat_str:
-        filtered_stocks = [s for s in all_universe_stocks if s.category_id == "future"]
-    else:
-        filtered_stocks = all_universe_stocks
-
-    # Apply cap tier filter
-    if selected_cap != "All Caps":
-        filtered_stocks = [s for s in filtered_stocks if getattr(s, "market_cap_tier", "Mid-Cap") == selected_cap]
-
-    # Apply sector filter
-    if selected_sector != "All Sectors":
-        filtered_stocks = [s for s in filtered_stocks if getattr(s, "sector", "") == selected_sector]
-
-    # Apply text search filter
-    if sec_query:
-        filtered_stocks = [
-            s for s in filtered_stocks
-            if sec_query in s.ticker.lower()
-            or sec_query in s.name.lower()
-            or sec_query in getattr(s, "sector", "").lower()
-            or sec_query in getattr(s, "market_cap_tier", "").lower()
-            or sec_query in s.catalyst_driver.lower()
-            or sec_query in s.why_it_matters.lower()
-        ]
-
-    if not filtered_stocks:
-        st.info("No companies found matching the selected category, cap tier, and sector criteria.")
-    else:
-        # Build tabular DataFrame
-        table_rows = []
-        for s in filtered_stocks:
-            cat_label = (
-                "🪙 Small-Priced" if s.category_id == "penny"
-                else ("🏰 Safe Haven" if s.category_id == "safe"
-                else ("🌱 Emerging" if s.category_id == "new"
-                else ("🔥 Trending" if s.category_id == "trending"
-                else "🚀 Supercycle")))
-            )
-            chg_val = getattr(s, "change_pct", 0.0)
-            rel_vol = getattr(s, "volume_multiple", 1.0)
-            table_rows.append({
-                "Ticker": s.ticker,
-                "Company Name": s.name,
-                "Category": cat_label,
-                "Sector": getattr(s, "sector", "General Equities"),
-                "Cap Tier": getattr(s, "market_cap_tier", "Mid-Cap"),
-                "Live Price": s.approx_price,
-                "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
-                "Volume Multiple": f"{rel_vol:.1f}x ADV",
-                "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
-                "Live Catalyst": s.catalyst_driver,
-            })
-        table_df = pd.DataFrame(table_rows)
-
-        col_hint, col_quick_sel = st.columns([2.8, 1.4])
-        with col_hint:
-            clean_cat_title = selected_cat_str.split('(')[0].strip()
-            st.caption(f"Showing **{len(filtered_stocks):,}** stocks in `{selected_sector}` ({selected_cap}) matching `{clean_cat_title}`. Click any row below to open its profile popup and run an immediate audit.")
-        with col_quick_sel:
-            sel_sym = st.selectbox(
-                "Quick Inspect:",
-                options=[s.ticker for s in filtered_stocks],
-                format_func=lambda t: f"{t} — {next((s.name for s in filtered_stocks if s.ticker == t), t)[:20]}",
-                key="select_inspect_universe_drawer",
-                label_visibility="collapsed",
-            )
-
-        # Interactive Scrollable Table with Row Selection
-        table_event = st.dataframe(
-            table_df,
-            use_container_width=True,
-            hide_index=True,
-            height=440,
-            on_select="rerun",
-            selection_mode="single-row",
-            column_config={
-                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
-                "Category": st.column_config.TextColumn("Category", width="small"),
-                "Sector": st.column_config.TextColumn("Sector", width="medium"),
-                "Cap Tier": st.column_config.TextColumn("Cap Tier", width="small"),
-                "Live Price": st.column_config.TextColumn("Live Price", width="small"),
-                "Change %": st.column_config.TextColumn("Change %", width="small"),
-                "Volume Multiple": st.column_config.TextColumn("Volume Multiple", width="small"),
-                "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
-                "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
-            },
-            key="sector_universe_table",
-        )
-
-        # Open modal popup if a row is clicked
-        if table_event and table_event.selection and len(table_event.selection.rows) > 0:
-            clicked_idx = table_event.selection.rows[0]
-            if 0 <= clicked_idx < len(filtered_stocks):
-                show_stock_inspection_modal(filtered_stocks[clicked_idx])
-
-        # Action button for quick select
-        if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key="btn_quick_inspect_universe_drawer", use_container_width=True):
-            matched_stock = next((s for s in filtered_stocks if s.ticker == sel_sym), None)
-            if matched_stock:
-                show_stock_inspection_modal(matched_stock)
-
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+render_clean_html(f"""
+<div class='macro-ribbon'>
+    <div class='macro-item'>
+        <div class='macro-item-label'>Benchmark Index</div>
+        <div class='macro-item-value'>
+            <span class='mono-data'>{macro.benchmark_name}</span>
+            <span class='{bench_delta_class}' style='font-size: 0.70rem; padding: 2px 7px;'>{bench_delta_str}</span>
+        </div>
+        <div class='macro-item-sub mono-data'>{macro.benchmark_price:,.2f}</div>
+    </div>
+    <div class='macro-item'>
+        <div class='macro-item-label'>Market Weather</div>
+        <div class='macro-item-value'>
+            <span class='{mood_pill_class}' style='font-size: 0.74rem;'>✦ {macro.market_mood_label}</span>
+        </div>
+        <div class='macro-item-sub'>{'Normal Liquidity' if macro.position_scale_factor >= 1.0 else 'Cautionary Sizing'}</div>
+    </div>
+    <div class='macro-item'>
+        <div class='macro-item-label'>Volatility ({vix_name})</div>
+        <div class='macro-item-value'>
+            <span class='mono-data'>{macro.vix:.2f}</span>
+            <span class='{vol_pill_class}' style='font-size: 0.70rem; padding: 2px 7px;'>Scale: {int(macro.position_scale_factor * 100)}%</span>
+        </div>
+        <div class='macro-item-sub'>Zero-Ruin Sizing Buffer</div>
+    </div>
+    <div class='macro-item'>
+        <div class='macro-item-label'>10Y Gov Yield</div>
+        <div class='macro-item-value'>
+            <span class='mono-data'>{macro.yield_10y:.2f}%</span>
+            <span class='{yield_curve_pill}' style='font-size: 0.70rem; padding: 2px 7px;'>{macro.yield_curve_state}</span>
+        </div>
+        <div class='macro-item-sub'>Spread: {macro.yield_spread:+.2f}%</div>
+    </div>
+    <div class='macro-item'>
+        <div class='macro-item-label'>Crude Oil (WTI)</div>
+        <div class='macro-item-value'>
+            <span class='mono-data'>${macro.crude_oil:.2f}</span>
+            <span class='{crude_pill}' style='font-size: 0.70rem; padding: 2px 7px;'>{crude_sub}</span>
+        </div>
+        <div class='macro-item-sub'>Supply Constraint Filter</div>
+    </div>
+</div>
+""")
 
 # --- MAIN PIPELINE EXECUTION ---
 ticker_to_run = st.session_state["active_ticker"]
@@ -1453,28 +1395,17 @@ def run_full_audit(ticker: str):
             return None, None, None, None, None, None, None, None, None, None, None, {}
 
 
-def render_clean_html(html_str: str):
-    """
-    Renders custom HTML in Streamlit while stripping leading indentation.
-    Prevents CommonMark from mistakenly interpreting indented lines as <pre><code> blocks,
-    which otherwise breaks DOM hierarchy, causes unclosed tags, and unaligns grid cards.
-    """
-    import re
-    cleaned = re.sub(r'^[ \t]+', '', html_str.strip(), flags=re.MULTILINE)
-    st.markdown(cleaned, unsafe_allow_html=True)
-
-
 audit_results = run_full_audit(ticker_to_run)
 if audit_results and audit_results[0] is not None:
     tech, df, factors, micro, traps, spill, risk, plan, thematic, ripple, ancillary, info = audit_results
 
     # --- TOP-LEVEL SEGMENTED MENU BAR ---
     tab_names = [
-        "📊 Executive Summary",
+        "📊 Executive Action & Trade Plan",
+        "🔬 Forensic Quality & Risk Traps",
         "📈 Interactive Chart Terminal",
-        "🧭 Thematic Market Radar",
         "🔗 Supply Chain & Ripple Graph",
-        "🛡️ Solvency, Traps & Execution",
+        "🧭 Market Discovery & Sector Radar",
     ]
 
     if is_global_admin():
@@ -1485,7 +1416,7 @@ if audit_results and audit_results[0] is not None:
     tabs = st.tabs(tab_names)
 
     # =========================================================================
-    # TAB 1: EXECUTIVE SUMMARY (30s BOTTOM-LINE & ELI5 TILES)
+    # TAB 1: EXECUTIVE ACTION & TRADE PLAN (THE DECISION & BLUEPRINT)
     # =========================================================================
     with tabs[0]:
         # Company Profile & Identity Header
@@ -1589,6 +1520,61 @@ if audit_results and audit_results[0] is not None:
         </div>
         """, unsafe_allow_html=True)
 
+        # Precalculate shared metrics & resilient safeguards
+        rr = getattr(risk, "risk_reward_ratio", 0.0) if risk else 0.0
+        if rr is None or math.isnan(rr) or rr <= 0:
+            odds_disp = "0.0x (Risk Gate Tripped)"
+            alloc_disp = f"0 shares ({currency_sym}0.00 — Protected)"
+        else:
+            odds_disp = f"{rr:.1f}x"
+            alloc_cap = getattr(risk, "allocated_capital", 0.0)
+            alloc_cap_str = f"{currency_sym}{alloc_cap:,.2f}" if (alloc_cap and not math.isnan(alloc_cap)) else f"{currency_sym}0.00"
+            alloc_disp = f"{plan.calculated_shares:,} shares ({alloc_cap_str})"
+
+        z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
+        is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+        beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+        f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+        sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+        beneish_note = "⚠️ Forensic Warning" if is_manip else "✅ Clean Accounting"
+
+        # =========================================================================
+        # INSTITUTIONAL EXECUTION BLUEPRINT (IMMEDIATE ACTION GUIDANCE)
+        # =========================================================================
+        st.markdown("#### 🎯 **Institutional Execution Blueprint**")
+        st.caption(f"Zero-guesswork trade execution: safe buy zone, algorithmic stop-loss, and multi-tier scaling ladder for **{plan.ticker}**.")
+
+        t_ladder_str = " • ".join([f"T{i+1}: {currency_sym}{t}" for i, t in enumerate(plan.target_ladder)]) if plan.target_ladder else "Discretionary Targets"
+
+        render_clean_html(f"""
+        <div class='blueprint-grid'>
+            <div class='blueprint-card'>
+                <div class='blueprint-card-label'>🎯 Target Accumulation Zone</div>
+                <div class='blueprint-card-val mono-data'>{currency_sym}{plan.entry_price_range[0]} – {currency_sym}{plan.entry_price_range[1]}</div>
+                <div class='blueprint-card-sub'>Institutional accumulation pocket. Do not chase above upper bound.</div>
+            </div>
+            <div class='blueprint-card'>
+                <div class='blueprint-card-label'>🛡️ Algorithmic Hard Stop</div>
+                <div class='blueprint-card-val mono-data' style='color: #FDA4AF;'>{currency_sym}{plan.algorithmic_stop_loss}</div>
+                <div class='blueprint-card-sub'>Capped strictly to {currency_sym}{risk.max_equity_at_risk:,.2f} ({risk.risk_pct:.1f}% equity).</div>
+            </div>
+            <div class='blueprint-card'>
+                <div class='blueprint-card-label'>📈 Profit Scaling Ladder</div>
+                <div class='blueprint-card-val mono-data' style='font-size: 1.05rem; color: #6EE7B7;'>{t_ladder_str}</div>
+                <div class='blueprint-card-sub'>T1 (Lock 1/3) ➔ T2 (Lock 1/3 + breakeven) ➔ T3 (Runner).</div>
+            </div>
+            <div class='blueprint-card'>
+                <div class='blueprint-card-label'>💰 Position Sizing & Allocation</div>
+                <div class='blueprint-card-val mono-data'>{alloc_disp}</div>
+                <div class='blueprint-card-sub'>Reward-to-Risk: <strong>{odds_disp}</strong> • Asymmetry: <strong>{'PASS (≥2.5x)' if risk.asymmetric_rr_passed else 'REJECTED'}</strong></div>
+            </div>
+        </div>
+        """)
+
+        if plan.execution_kill_switches:
+            kill_chips = " ".join([f"<span class='pastel-pill-rose' style='margin-right: 6px; margin-top: 4px;'>🔴 {ks}</span>" for ks in plan.execution_kill_switches])
+            st.markdown(f"<div style='margin-bottom: 16px;'><strong style='color: #FDA4AF; font-size: 0.85rem;'>🚨 Active Execution Kill-Switches:</strong> {kill_chips}</div>", unsafe_allow_html=True)
+
         # =========================================================================
         # 360° INSTITUTIONAL MULTI-FACTOR MATRIX (ZERO-CLICK ELI5 & RADAR)
         # =========================================================================
@@ -1648,24 +1634,6 @@ if audit_results and audit_results[0] is not None:
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-        # Precalculate shared data & resilient NaN safeguards
-        rr = getattr(risk, "risk_reward_ratio", 0.0) if risk else 0.0
-        if rr is None or math.isnan(rr) or rr <= 0:
-            odds_disp = "0.0x (Risk Gate Tripped)"
-            alloc_disp = "0 shares (₹0.00 — Capital Protected)"
-        else:
-            odds_disp = f"{rr:.1f}x"
-            alloc_cap = getattr(risk, "allocated_capital", 0.0)
-            alloc_cap_str = f"{currency_sym}{alloc_cap:,.2f}" if (alloc_cap and not math.isnan(alloc_cap)) else f"{currency_sym}0.00"
-            alloc_disp = f"{plan.calculated_shares} shares ({alloc_cap_str})"
-
-        z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
-        is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
-        beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
-        f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
-        sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
-        beneish_note = "⚠️ Forensic Warning" if is_manip else "✅ Clean Accounting"
 
         # -------------------------------------------------------------------------
         # VIEW 1: 360° MATRIX & CARDS (DEFAULT)
@@ -1972,9 +1940,126 @@ if audit_results and audit_results[0] is not None:
                     """)
 
     # =========================================================================
-    # TAB 2: INTERACTIVE CHART TERMINAL
+    # TAB 2: FORENSIC QUALITY, SOLVENCY & RISK TRAPS
     # =========================================================================
     with tabs[1]:
+        st.markdown(f"### 🔬 **Forensic Solvency & Quantitative Risk Traps — {plan.ticker}**")
+        st.caption("Rigorous forensic balance sheet integrity checks, earnings manipulation sieve, microstructure delivery flow, and automated amateur trap guards.")
+
+        sol_col, trap_col = st.columns([1.1, 1.1])
+
+        with sol_col:
+            st.markdown("#### 🏥 **Forensic Solvency & Earnings Quality**")
+            z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
+            f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
+            sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
+            beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
+            is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+
+            z_status = "Safe Zone (> 2.99)" if z_score >= 2.99 else ("Grey Zone (1.81 - 2.99)" if z_score >= 1.81 else "Distress Risk (< 1.81)")
+            beneish_status = "⚠️ Forensic Warning: Potential Distortion" if is_manip else "✅ Clean Financials (M < -1.78)"
+
+            render_clean_html(f"""
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Altman Z-Score (Bankruptcy Probability)</strong>
+                    <span class='{"tile-status-safe" if z_score >= 2.99 else ("tile-status-caution" if z_score >= 1.81 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{z_score:.2f}</span>
+                </div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Status: {z_status}</div>
+            </div>
+
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Piotroski F-Score (Operational Quality)</strong>
+                    <span class='{"tile-status-safe" if f_score >= 7 else ("tile-status-caution" if f_score >= 5 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{f_score} / 9</span>
+                </div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Evaluates profitability, leverage, and operating efficiency gains.</div>
+            </div>
+
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Sloan Accruals Ratio (Cash vs Paper Earnings)</strong>
+                    <span class='{"tile-status-safe" if abs(sloan_val) < 0.10 else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{sloan_val * 100:.1f}%</span>
+                </div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Accruals &lt; 10% confirms reported earnings are backed by hard cash flow.</div>
+            </div>
+
+            <div class='interactive-tile' style='margin-bottom: 12px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Beneish M-Score (Accounting Distortion Sieve)</strong>
+                    <span class='{"tile-status-safe" if not is_manip else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{beneish_val:.2f}</span>
+                </div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{beneish_status}</div>
+            </div>
+
+            <div class='interactive-tile'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Microstructure Flow (Delivery Volume %)</strong>
+                    <span class='{"tile-status-safe" if micro.delivery_valid else "tile-status-caution"} mono-data' style='font-size: 1.05rem;'>{micro.delivery_pct:.1f}%</span>
+                </div>
+                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{micro.delivery_status_msg}</div>
+            </div>
+            """)
+
+        with trap_col:
+            st.markdown("#### 🪤 **Automated Quantitative Trap Guards**")
+            exh = any("EXHAUSTION" in t for t in traps)
+            rumor = any("PRICED-IN" in t for t in traps)
+            cyc = any("CYCLICAL" in t for t in traps)
+            geo = any("GEOPOLITICAL" in t for t in traps)
+
+            render_clean_html(f"""
+            <div class='radar-card' style='margin-bottom: 12px;'>
+                <div style='font-size: 1.00rem; font-weight: 700; color: {"#FDA4AF" if exh else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Exhaustion FOMO" if exh else "✅ SAFE: Healthy Volume Expansion"}
+                </div>
+                <div style='font-size: 0.86rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it guards:</strong> Buying after an extended rally when volume dries up traps late retail buyers at the absolute top.
+                </div>
+            </div>
+
+            <div class='radar-card' style='margin-bottom: 12px;'>
+                <div style='font-size: 1.00rem; font-weight: 700; color: {"#FDA4AF" if rumor else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Priced-in Rumor" if rumor else "✅ SAFE: Balanced Valuation & Catalyst"}
+                </div>
+                <div style='font-size: 0.86rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it guards:</strong> 'Buy the rumor, sell the news'. If a stock rallied +20% right before an earnings or product event, smart money distributes.
+                </div>
+            </div>
+
+            <div class='radar-card' style='margin-bottom: 12px;'>
+                <div style='font-size: 1.00rem; font-weight: 700; color: {"#FDA4AF" if cyc else "#6EE7B7"};'>
+                    {"🚨 TRAP ALERT: Cheap Value Illusion" if cyc else "✅ SAFE: Sustainable Margin Profile"}
+                </div>
+                <div style='font-size: 0.86rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it guards:</strong> Commodity and cyclical companies look artificially 'cheap' on P/E right when commodity prices peak, before earnings plunge.
+                </div>
+            </div>
+
+            <div class='radar-card'>
+                <div style='font-size: 1.00rem; font-weight: 700; color: {"#93C5FD" if geo else "#6EE7B7"};'>
+                    {"ℹ️ V-BOTTOM OPPORTUNITY: Headline Overreaction" if geo else "✅ SAFE: Normal Market Flow"}
+                </div>
+                <div style='font-size: 0.86rem; color: #94A3B8; margin-top: 4px;'>
+                    <strong>What it guards:</strong> Transitory geopolitical headlines create temporary discounts in fundamentally sound companies.
+                </div>
+            </div>
+            """)
+
+        st.markdown("---")
+        render_clean_html(f"""
+        <div style='background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.18); border-radius: var(--radius-md); padding: 14px 18px;'>
+            <div style='font-weight: 700; color: #38BDF8; font-size: 0.90rem; margin-bottom: 4px;'>🏛️ Institutional Zero-Ruin Protection Mandate</div>
+            <div style='font-size: 0.85rem; color: #CBD5E1; line-height: 1.5;'>
+                Every company analyzed by AlphaShield undergoes automated forensic sieves before reaching the decision engine. If a stock trips the Altman Z distress boundary (&lt; 1.81) or Beneish earnings manipulation sieve, position sizing is automatically reduced or rejected to preserve equity.
+            </div>
+        </div>
+        """)
+
+    # =========================================================================
+    # TAB 3: INTERACTIVE CHART TERMINAL
+    # =========================================================================
+    with tabs[2]:
         st.markdown(f"### 📈 **Institutional Technical Terminal — {plan.ticker}**")
         st.caption("Visualizing price action with 20/50/200 EMA ribbons, shaded entry/stop zones, volume ADV, and RSI.")
 
@@ -1994,148 +2079,32 @@ if audit_results and audit_results[0] is not None:
         st.markdown("#### 💡 **Technical Signals Explained in Plain English**")
         ch_e1, ch_e2, ch_e3 = st.columns(3)
         with ch_e1:
-            st.markdown(f"""
+            render_clean_html(f"""
             <div class='interactive-tile'>
                 <div class='tile-header'>📈 Moving Average Ribbons (20 / 50 / 200)</div>
                 <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
                     When the price trades above the 20 (blue) and 50 (amber) day averages, big institutional money is actively accumulating. If the price falls below the 200 EMA (purple), the stock is in a long-term decline.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         with ch_e2:
-            st.markdown(f"""
+            render_clean_html(f"""
             <div class='interactive-tile'>
                 <div class='tile-header'>⚡ Average True Range (ATR: {currency_sym}{tech.atr_14:.2f})</div>
                 <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
                     ATR measures how much this stock typically swings on a normal day. We automatically place your hard stop-loss at 1.8x ATR so normal daily wiggles won't knock you out of a winning investment.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         with ch_e3:
-            st.markdown(f"""
+            render_clean_html(f"""
             <div class='interactive-tile'>
                 <div class='tile-header'>🎯 RSI Momentum ({tech.rsi_14:.1f})</div>
                 <div style='font-size: 0.90rem; color: #CBD5E1; line-height: 1.5; margin-top: 6px;'>
                     RSI between 45 and 65 is the sweet spot for steady gains. If RSI shoots above 70, the stock is 'overheated'—never chase buying at this level. If RSI drops below 30, it is heavily oversold.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-
-    # =========================================================================
-    # TAB 3: THEMATIC MARKET RADAR (100% LIVE DYNAMIC QUANTITATIVE SCREENER)
-    # =========================================================================
-    with tabs[2]:
-        col_rad_head, col_rad_act = st.columns([2.8, 1.2])
-
-        with col_rad_head:
-            market_label = "National Stock Exchange of India (NSE Full Market - 2,500+ Equities)" if is_indian else "US Markets"
-            st.markdown(f"### 🧭 **Live Institutional Market Radar ({market_label})**")
-            st.caption("100% dynamic quantitative screening across all listed exchange securities without hardcoding. High-density data tables with scrollbars, live keyword search, and 1-click inspection popup modals.")
-
-        with col_rad_act:
-            if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
-                fetch_radar_cached_v2.clear()
-                st.rerun()
-
-        with st.spinner("Connecting to official exchange feeds & scanning full market..."):
-            radar_data = fetch_radar_cached_v2(is_indian)
-
-        total_screened = sum(len(stocks) for stocks in radar_data.values())
-
-        # Search / Filter Bar inside the Radar
-        radar_search = st.text_input(
-            "🔎 Filter live screened stocks by name, ticker, or catalyst keyword:",
-            "",
-            placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV, Bank...",
-            key="radar_filter_input"
-        ).strip().lower()
-
-        r_tabs = st.tabs([
-            f"🪙 Small-Priced ({len(radar_data.get('penny', []))})",
-            f"🏰 Safe Havens ({len(radar_data.get('safe', []))})",
-            f"🌱 New & Emerging ({len(radar_data.get('new', []))})",
-            f"🔥 Trending Today ({len(radar_data.get('trending', []))})",
-            f"🚀 Future Supercycles ({len(radar_data.get('future', []))})",
-        ])
-
-        categories = ["penny", "safe", "new", "trending", "future"]
-
-        for c_idx, cat_key in enumerate(categories):
-            with r_tabs[c_idx]:
-                raw_list = radar_data.get(cat_key, [])
-                if radar_search:
-                    stock_list = [
-                        s for s in raw_list
-                        if radar_search in s.ticker.lower()
-                        or radar_search in s.name.lower()
-                        or radar_search in s.catalyst_driver.lower()
-                        or radar_search in s.why_it_matters.lower()
-                    ]
-                else:
-                    stock_list = raw_list
-
-                if not stock_list:
-                    st.info(f"No live stocks found matching '{radar_search}' in this category.")
-                else:
-                    # Build tabular DataFrame for scrollable display
-                    table_rows = []
-                    for s in stock_list:
-                        chg_val = getattr(s, "change_pct", 0.0)
-                        rel_vol = getattr(s, "volume_multiple", 1.0)
-                        table_rows.append({
-                            "Ticker": s.ticker,
-                            "Company Name": s.name,
-                            "Live Price": s.approx_price,
-                            "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
-                            "Volume Surge": f"{rel_vol:.1f}x ADV",
-                            "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
-                            "Live Catalyst": s.catalyst_driver,
-                        })
-                    table_df = pd.DataFrame(table_rows)
-
-                    col_hint, col_quick_sel = st.columns([2.8, 1.4])
-                    with col_hint:
-                        st.caption("💡 **Tip:** Click any row in the table below to open its full profile popup window and run an immediate 1-click audit.")
-                    with col_quick_sel:
-                        sel_sym = st.selectbox(
-                            "Quick Inspect:",
-                            options=[s.ticker for s in stock_list],
-                            format_func=lambda t: f"{t} — {next((s.name for s in stock_list if s.ticker == t), t)[:20]}",
-                            key=f"select_inspect_{cat_key}",
-                            label_visibility="collapsed",
-                        )
-
-                    # Interactive Scrollable Table with Row Selection
-                    table_event = st.dataframe(
-                        table_df,
-                        use_container_width=True,
-                        hide_index=True,
-                        height=440,
-                        on_select="rerun",
-                        selection_mode="single-row",
-                        column_config={
-                            "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                            "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
-                            "Live Price": st.column_config.TextColumn("Live Price", width="small"),
-                            "Change %": st.column_config.TextColumn("Change %", width="small"),
-                            "Volume Surge": st.column_config.TextColumn("Volume Multiple", width="small"),
-                            "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
-                            "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
-                        },
-                        key=f"radar_table_{cat_key}",
-                    )
-
-                    # Open modal popup if a row is clicked
-                    if table_event and table_event.selection and len(table_event.selection.rows) > 0:
-                        clicked_idx = table_event.selection.rows[0]
-                        if 0 <= clicked_idx < len(stock_list):
-                            show_stock_inspection_modal(stock_list[clicked_idx])
-
-                    # Action button for quick select
-                    if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key=f"btn_quick_inspect_{cat_key}", use_container_width=True):
-                        matched_stock = next((s for s in stock_list if s.ticker == sel_sym), None)
-                        if matched_stock:
-                            show_stock_inspection_modal(matched_stock)
+            """)
 
     # =========================================================================
     # TAB 4: SUPPLY CHAIN & RIPPLE GRAPH
@@ -2181,145 +2150,290 @@ if audit_results and audit_results[0] is not None:
                 st.markdown(f"• **{d}**")
 
     # =========================================================================
-    # TAB 5: SOLVENCY, TRAPS & EXECUTION
+    # TAB 5: MARKET DISCOVERY & SECTOR RADAR
     # =========================================================================
     with tabs[4]:
-        st.markdown("### 🛡️ **Forensic Solvency, Microstructure & Algorithmic Execution**")
-        st.caption(f"Comprehensive forensic health audit, institutional order flow verification, and beginner execution checklist for **{plan.ticker}**.")
+        col_rad_head, col_rad_act = st.columns([2.8, 1.2])
 
-        sol_col, exe_col = st.columns([1.1, 1.1])
+        with col_rad_head:
+            market_label = "National Stock Exchange of India (NSE - 2,500+ Equities)" if is_indian else "US Markets (NYSE / NASDAQ)"
+            st.markdown(f"### 🧭 **Market Discovery & Thematic Radar ({market_label})**")
+            st.caption("Live quantitative screening across all listed exchange securities. Seamlessly toggle between multi-factor universe screening and live thematic momentum baskets.")
 
-        with sol_col:
-            st.markdown("#### 🏥 **Forensic Solvency & Earnings Quality**")
-            z_score = getattr(factors, "altman_z_score", 2.5) if factors else 2.5
-            f_score = getattr(factors, "piotroski_f_score", 6) if factors else 6
-            sloan_val = getattr(factors, "sloan_accrual_ratio", 0.0) if factors else 0.0
-            beneish_val = getattr(factors, "beneish_m_score", -2.45) if factors else -2.45
-            is_manip = getattr(factors, "beneish_manipulation_risk", False) if factors else False
+        with col_rad_act:
+            if st.button("🔄 Re-Scan Live Market", key="btn_rescan_market_radar", use_container_width=True):
+                fetch_radar_cached_v2.clear()
+                get_unified_market_universe.clear()
+                st.rerun()
 
-            z_status = "Safe Zone (> 2.99)" if z_score >= 2.99 else ("Grey Zone (1.81 - 2.99)" if z_score >= 1.81 else "Distress Risk (< 1.81)")
-            beneish_status = "⚠️ Forensic Warning: Potential Distortion" if is_manip else "✅ Clean Financials (M < -1.78)"
+        discovery_mode = st.segmented_control(
+            "Discovery Screener View",
+            options=["🌐 Cap & Sector Screener (Universe)", "⚡ Live Thematic Baskets (Radar)"],
+            default="🌐 Cap & Sector Screener (Universe)",
+            key="discovery_screener_mode",
+            label_visibility="collapsed"
+        )
+        if not discovery_mode:
+            discovery_mode = "🌐 Cap & Sector Screener (Universe)"
 
-            st.markdown(f"""
-            <div class='interactive-tile' style='margin-bottom: 12px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Altman Z-Score (Bankruptcy Risk)</strong>
-                    <span class='{"tile-status-safe" if z_score >= 2.99 else ("tile-status-caution" if z_score >= 1.81 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{z_score:.2f}</span>
-                </div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Status: {z_status}</div>
-            </div>
+        if discovery_mode == "🌐 Cap & Sector Screener (Universe)":
+            # Fetch live radar data for category counts
+            radar_data = fetch_radar_cached_v2(is_indian)
+            count_penny = len(radar_data.get("penny", []))
+            count_safe = len(radar_data.get("safe", []))
+            count_new = len(radar_data.get("new", []))
+            count_trending = len(radar_data.get("trending", []))
+            count_future = len(radar_data.get("future", []))
 
-            <div class='interactive-tile' style='margin-bottom: 12px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Piotroski F-Score (Operational Quality)</strong>
-                    <span class='{"tile-status-safe" if f_score >= 7 else ("tile-status-caution" if f_score >= 5 else "tile-status-danger")} mono-data' style='font-size: 1.05rem;'>{f_score} / 9</span>
-                </div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Evaluates profitability, leverage, and operating efficiency.</div>
-            </div>
+            # Fetch unified market universe with sectors and cap tiers
+            all_universe_stocks = get_unified_market_universe(is_indian)
 
-            <div class='interactive-tile' style='margin-bottom: 12px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Sloan Accruals Ratio (Cash vs Paper Earnings)</strong>
-                    <span class='{"tile-status-safe" if abs(sloan_val) < 0.10 else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{sloan_val * 100:.1f}%</span>
-                </div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>Accruals &lt; 10% indicates earnings are backed by hard cash flow.</div>
-            </div>
+            category_options = [
+                f"All Categories ({len(all_universe_stocks):,} Stocks)",
+                f"🪙 Small-Priced ({count_penny:,})",
+                f"🏰 Safe Havens ({count_safe:,})",
+                f"🌱 New & Emerging ({count_new:,})",
+                f"🔥 Trending Today ({count_trending:,})",
+                f"🚀 Future Supercycles ({count_future:,})",
+            ]
 
-            <div class='interactive-tile' style='margin-bottom: 12px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Beneish M-Score (Forensic Manipulation Sieve)</strong>
-                    <span class='{"tile-status-safe" if not is_manip else "tile-status-danger"} mono-data' style='font-size: 1.05rem;'>{beneish_val:.2f}</span>
-                </div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{beneish_status}</div>
-            </div>
+            col_cat, col_cap, col_sec, col_search = st.columns([1.5, 1.0, 1.4, 1.3])
 
-            <div class='interactive-tile'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <strong style='font-size: 0.90rem; color: #F1F5F9;'>Microstructure Flow (Delivery Volume)</strong>
-                    <span class='{"tile-status-safe" if micro.delivery_valid else "tile-status-caution"} mono-data' style='font-size: 1.05rem;'>{micro.delivery_pct:.1f}%</span>
-                </div>
-                <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 4px;'>{micro.delivery_status_msg}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            with col_cat:
+                selected_cat_str = st.selectbox(
+                    "Filter by Category",
+                    options=category_options,
+                    index=0,
+                    key="sector_explorer_cat"
+                )
 
-        with exe_col:
-            st.markdown("#### 📖 **Execution Checklist & Profit Targets**")
-            st.markdown(f"""
-            1. **Step 1: Check Safe Entry Range**
-               - Target Buy Zone: **{currency_sym}{plan.entry_price_range[0]} – {currency_sym}{plan.entry_price_range[1]}**
-               - *Do not chase price if it has already spiked past the upper boundary.*
+            with col_cap:
+                selected_cap = st.selectbox(
+                    "Filter by Market Cap",
+                    options=get_all_cap_tiers(),
+                    index=0,
+                    key="sector_explorer_cap"
+                )
 
-            2. **Step 2: Set Algorithmic Hard Stop-Loss**
-               - Hard Stop Price: **{currency_sym}{plan.algorithmic_stop_loss}**
-               - *Place this stop in your brokerage terminal immediately after order execution.*
+            with col_sec:
+                market_str = "INDIA" if is_indian else "US"
+                available_sectors = ["All Sectors"] + get_all_sectors(market=market_str)
+                selected_sector = st.selectbox(
+                    "Filter by Sector",
+                    options=available_sectors,
+                    index=0,
+                    key="sector_explorer_sec"
+                )
 
-            3. **Step 3: Scaling Out (The 3-Target Profit Ladder)**
-               - **Target 1 ({currency_sym}{plan.target_ladder[0] if len(plan.target_ladder) > 0 else 'N/A'})**: Sell 1/3 to lock in initial gains.
-               - **Target 2 ({currency_sym}{plan.target_ladder[1] if len(plan.target_ladder) > 1 else 'N/A'})**: Sell 1/3 and move stop-loss to breakeven.
-               - **Target 3 ({currency_sym}{plan.target_ladder[2] if len(plan.target_ladder) > 2 else 'N/A'})**: Let the final 1/3 run with a trailing stop.
+            with col_search:
+                sec_query = st.text_input(
+                    "Quick Filter",
+                    "",
+                    placeholder="e.g. Tata, 5G, Defense, Bank, Solar...",
+                    key="sector_explorer_query"
+                ).strip().lower()
 
-            4. **Step 4: Position Sizing & Capital Allocation**
-               - Max Sizing: **{plan.calculated_shares:,} shares** (Total Capital: {currency_sym}{risk.allocated_capital:,.2f}).
-            """)
+            # Apply category filter
+            if "Small-Priced" in selected_cat_str:
+                filtered_stocks = [s for s in all_universe_stocks if s.category_id == "penny"]
+            elif "Safe Havens" in selected_cat_str:
+                filtered_stocks = [s for s in all_universe_stocks if s.category_id == "safe"]
+            elif "New & Emerging" in selected_cat_str:
+                filtered_stocks = [s for s in all_universe_stocks if s.category_id == "new"]
+            elif "Trending Today" in selected_cat_str:
+                filtered_stocks = [s for s in all_universe_stocks if s.category_id == "trending"]
+            elif "Future Supercycles" in selected_cat_str:
+                filtered_stocks = [s for s in all_universe_stocks if s.category_id == "future"]
+            else:
+                filtered_stocks = all_universe_stocks
 
-            st.markdown("#### 🚨 **Emergency Kill-Switches**")
-            for ks in plan.execution_kill_switches:
-                st.markdown(f"- 🔴 `{ks}`")
+            # Apply cap tier filter
+            if selected_cap != "All Caps":
+                filtered_stocks = [s for s in filtered_stocks if getattr(s, "market_cap_tier", "Mid-Cap") == selected_cap]
 
-        st.markdown("---")
-        st.markdown("#### 🪤 **Automated Trap Guards Checked**")
-        st.caption("Our automated quantitative sieves verify that you are not walking into common amateur pitfalls:")
+            # Apply sector filter
+            if selected_sector != "All Sectors":
+                filtered_stocks = [s for s in filtered_stocks if getattr(s, "sector", "") == selected_sector]
 
-        tr1, tr2 = st.columns(2)
-        with tr1:
-            exh = any("EXHAUSTION" in t for t in traps)
-            st.markdown(f"""
-            <div class='radar-card'>
-                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if exh else "#6EE7B7"};'>
-                    {"🚨 TRAP ALERT: Exhaustion FOMO" if exh else "✅ SAFE: Healthy Volume Expansion"}
-                </div>
-                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Buying after an extended rally when volume dries up often traps late buyers at the exact top.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Apply text search filter
+            if sec_query:
+                filtered_stocks = [
+                    s for s in filtered_stocks
+                    if sec_query in s.ticker.lower()
+                    or sec_query in s.name.lower()
+                    or sec_query in getattr(s, "sector", "").lower()
+                    or sec_query in getattr(s, "market_cap_tier", "").lower()
+                    or sec_query in s.catalyst_driver.lower()
+                    or sec_query in s.why_it_matters.lower()
+                ]
 
-            rumor = any("PRICED-IN" in t for t in traps)
-            st.markdown(f"""
-            <div class='radar-card'>
-                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if rumor else "#6EE7B7"};'>
-                    {"🚨 TRAP ALERT: Priced-in Rumor" if rumor else "✅ SAFE: Balanced Valuation & News"}
-                </div>
-                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> 'Buy the rumor, sell the news'. If a stock rallied +20% right before an earnings or product event, smart money will exit.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            if not filtered_stocks:
+                st.info("No companies found matching the selected category, cap tier, and sector criteria.")
+            else:
+                table_rows = []
+                for s in filtered_stocks:
+                    cat_label = (
+                        "🪙 Small-Priced" if s.category_id == "penny"
+                        else ("🏰 Safe Haven" if s.category_id == "safe"
+                        else ("🌱 Emerging" if s.category_id == "new"
+                        else ("🔥 Trending" if s.category_id == "trending"
+                        else "🚀 Supercycle")))
+                    )
+                    chg_val = getattr(s, "change_pct", 0.0)
+                    rel_vol = getattr(s, "volume_multiple", 1.0)
+                    table_rows.append({
+                        "Ticker": s.ticker,
+                        "Company Name": s.name,
+                        "Category": cat_label,
+                        "Sector": getattr(s, "sector", "General Equities"),
+                        "Cap Tier": getattr(s, "market_cap_tier", "Mid-Cap"),
+                        "Live Price": s.approx_price,
+                        "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
+                        "Volume Multiple": f"{rel_vol:.1f}x ADV",
+                        "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
+                        "Live Catalyst": s.catalyst_driver,
+                    })
+                table_df = pd.DataFrame(table_rows)
 
-        with tr2:
-            cyc = any("CYCLICAL" in t for t in traps)
-            st.markdown(f"""
-            <div class='radar-card'>
-                <div style='font-size: 1.02rem; font-weight: 700; color: {"#FDA4AF" if cyc else "#6EE7B7"};'>
-                    {"🚨 TRAP ALERT: Cheap Value Illusion" if cyc else "✅ SAFE: Sustainable Margin Profile"}
-                </div>
-                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Commodity and cyclical companies look 'cheap' on P/E right when commodity prices peak, right before profits plunge.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                col_hint, col_quick_sel = st.columns([2.8, 1.4])
+                with col_hint:
+                    clean_cat_title = selected_cat_str.split('(')[0].strip()
+                    st.caption(f"Showing **{len(filtered_stocks):,}** stocks in `{selected_sector}` ({selected_cap}) matching `{clean_cat_title}`. Click any row below to open its profile popup and run an immediate audit.")
+                with col_quick_sel:
+                    sel_sym = st.selectbox(
+                        "Quick Inspect:",
+                        options=[s.ticker for s in filtered_stocks],
+                        format_func=lambda t: f"{t} — {next((s.name for s in filtered_stocks if s.ticker == t), t)[:20]}",
+                        key="select_inspect_universe_drawer",
+                        label_visibility="collapsed",
+                    )
 
-            geo = any("GEOPOLITICAL" in t for t in traps)
-            st.markdown(f"""
-            <div class='radar-card'>
-                <div style='font-size: 1.02rem; font-weight: 700; color: {"#93C5FD" if geo else "#6EE7B7"};'>
-                    {"ℹ️ V-BOTTOM OPPORTUNITY: Headline Overreaction" if geo else "✅ SAFE: Normal Market Flow"}
-                </div>
-                <div style='font-size: 0.88rem; color: #94A3B8; margin-top: 4px;'>
-                    <strong>What it means:</strong> Transitory geopolitical headlines create temporary discounts in fundamentally resilient companies.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                table_event = st.dataframe(
+                    table_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=440,
+                    on_select="rerun",
+                    selection_mode="single-row",
+                    column_config={
+                        "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                        "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
+                        "Category": st.column_config.TextColumn("Category", width="small"),
+                        "Sector": st.column_config.TextColumn("Sector", width="medium"),
+                        "Cap Tier": st.column_config.TextColumn("Cap Tier", width="small"),
+                        "Live Price": st.column_config.TextColumn("Live Price", width="small"),
+                        "Change %": st.column_config.TextColumn("Change %", width="small"),
+                        "Volume Multiple": st.column_config.TextColumn("Volume Multiple", width="small"),
+                        "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
+                        "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
+                    },
+                    key="sector_universe_table",
+                )
+
+                if table_event and table_event.selection and len(table_event.selection.rows) > 0:
+                    clicked_idx = table_event.selection.rows[0]
+                    if 0 <= clicked_idx < len(filtered_stocks):
+                        show_stock_inspection_modal(filtered_stocks[clicked_idx])
+
+                if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key="btn_quick_inspect_universe_drawer", use_container_width=True):
+                    matched_stock = next((s for s in filtered_stocks if s.ticker == sel_sym), None)
+                    if matched_stock:
+                        show_stock_inspection_modal(matched_stock)
+
+        else:
+            # View B: Live Thematic Momentum Baskets
+            with st.spinner("Connecting to official exchange feeds & scanning full market..."):
+                radar_data = fetch_radar_cached_v2(is_indian)
+
+            radar_search = st.text_input(
+                "🔎 Filter live screened stocks by name, ticker, or catalyst keyword:",
+                "",
+                placeholder="e.g. Tata, Defense, Nuclear, AI, Hydro, Solar, EV, Bank...",
+                key="radar_filter_input"
+            ).strip().lower()
+
+            r_tabs = st.tabs([
+                f"🪙 Small-Priced ({len(radar_data.get('penny', []))})",
+                f"🏰 Safe Havens ({len(radar_data.get('safe', []))})",
+                f"🌱 New & Emerging ({len(radar_data.get('new', []))})",
+                f"🔥 Trending Today ({len(radar_data.get('trending', []))})",
+                f"🚀 Future Supercycles ({len(radar_data.get('future', []))})",
+            ])
+
+            categories = ["penny", "safe", "new", "trending", "future"]
+
+            for c_idx, cat_key in enumerate(categories):
+                with r_tabs[c_idx]:
+                    raw_list = radar_data.get(cat_key, [])
+                    if radar_search:
+                        stock_list = [
+                            s for s in raw_list
+                            if radar_search in s.ticker.lower()
+                            or radar_search in s.name.lower()
+                            or radar_search in s.catalyst_driver.lower()
+                            or radar_search in s.why_it_matters.lower()
+                        ]
+                    else:
+                        stock_list = raw_list
+
+                    if not stock_list:
+                        st.info(f"No live stocks found matching '{radar_search}' in this category.")
+                    else:
+                        table_rows = []
+                        for s in stock_list:
+                            chg_val = getattr(s, "change_pct", 0.0)
+                            rel_vol = getattr(s, "volume_multiple", 1.0)
+                            table_rows.append({
+                                "Ticker": s.ticker,
+                                "Company Name": s.name,
+                                "Live Price": s.approx_price,
+                                "Change %": getattr(s, "change_str", f"{chg_val:+.2f}%"),
+                                "Volume Surge": f"{rel_vol:.1f}x ADV",
+                                "Risk Rating": getattr(s, "risk_badge", "🟢 Normal"),
+                                "Live Catalyst": s.catalyst_driver,
+                            })
+                        table_df = pd.DataFrame(table_rows)
+
+                        col_hint, col_quick_sel = st.columns([2.8, 1.4])
+                        with col_hint:
+                            st.caption("💡 **Tip:** Click any row in the table below to open its full profile popup window and run an immediate 1-click audit.")
+                        with col_quick_sel:
+                            sel_sym = st.selectbox(
+                                "Quick Inspect:",
+                                options=[s.ticker for s in stock_list],
+                                format_func=lambda t: f"{t} — {next((s.name for s in stock_list if s.ticker == t), t)[:20]}",
+                                key=f"select_inspect_{cat_key}",
+                                label_visibility="collapsed",
+                            )
+
+                        table_event = st.dataframe(
+                            table_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            height=440,
+                            on_select="rerun",
+                            selection_mode="single-row",
+                            column_config={
+                                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                                "Company Name": st.column_config.TextColumn("Company Name", width="medium"),
+                                "Live Price": st.column_config.TextColumn("Live Price", width="small"),
+                                "Change %": st.column_config.TextColumn("Change %", width="small"),
+                                "Volume Surge": st.column_config.TextColumn("Volume Multiple", width="small"),
+                                "Risk Rating": st.column_config.TextColumn("Risk Rating", width="small"),
+                                "Live Catalyst": st.column_config.TextColumn("Live News & Catalyst", width="large"),
+                            },
+                            key=f"radar_table_{cat_key}",
+                        )
+
+                        if table_event and table_event.selection and len(table_event.selection.rows) > 0:
+                            clicked_idx = table_event.selection.rows[0]
+                            if 0 <= clicked_idx < len(stock_list):
+                                show_stock_inspection_modal(stock_list[clicked_idx])
+
+                        if st.button(f"🔍 Inspect {sel_sym} & Run Audit", key=f"btn_quick_inspect_{cat_key}", use_container_width=True):
+                            matched_stock = next((s for s in stock_list if s.ticker == sel_sym), None)
+                            if matched_stock:
+                                show_stock_inspection_modal(matched_stock)
 
     # =========================================================================
     # TAB 6: GLOBAL GOVERNANCE / ADMIN TELEMETRY (RESTRICTED RBAC)
