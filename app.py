@@ -342,50 +342,81 @@ st.markdown("""
     }
 
     /* =========================================================================
-       SEGMENTED CONTROLS & TAB NAVIGATION (DOCK SYSTEM)
+       TIER 2: PRIMARY NAVIGATION RIBBON (ENVATO / THEMEFOREST STYLE)
        ========================================================================= */
     div[data-testid="stTabs"] > div > div[role="tablist"] {
         display: flex;
-        gap: 6px;
-        background: rgba(15, 20, 30, 0.80);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        padding: 6px;
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--border-subtle);
-        box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        margin-bottom: var(--space-3);
-        overflow-x: auto;
+        gap: 4px;
+        background: #0B0F17 !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        padding: 6px 8px !important;
+        border-radius: var(--radius-lg) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        margin-top: 6px !important;
+        margin-bottom: var(--space-4) !important;
+        overflow-x: auto !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
-        background: transparent;
-        color: var(--text-secondary);
-        border-radius: var(--radius-md);
-        padding: 10px 18px;
-        font-weight: 600;
-        font-size: 0.88rem;
-        letter-spacing: -0.01em;
-        border: 1px solid transparent;
-        transition: all 0.20s var(--ease-luxury);
-        white-space: nowrap;
+        background: transparent !important;
+        color: #94A3B8 !important;
+        border-radius: var(--radius-md) !important;
+        padding: 10px 18px !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+        letter-spacing: -0.01em !important;
+        border: 1px solid transparent !important;
+        transition: all 0.20s var(--ease-luxury) !important;
+        white-space: nowrap !important;
+        position: relative !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:hover {
-        color: var(--text-primary);
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.06);
+        color: #F8FAFC !important;
+        background: rgba(255, 255, 255, 0.045) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:active {
-        transform: scale(0.985);
+        transform: scale(0.985) !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #FFFFFF !important;
-        background: linear-gradient(145deg, #1A2232 0%, #121824 100%) !important;
-        border: 1px solid rgba(56, 189, 248, 0.28) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+        color: #38BDF8 !important;
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.03) 100%) !important;
+        border: 1px solid rgba(56, 189, 248, 0.35) !important;
+        box-shadow: inset 0 -2px 0 0 #38BDF8, 0 4px 14px rgba(2, 132, 199, 0.22) !important;
+        font-weight: 700 !important;
     }
     div[data-testid="stTabs"] [data-baseweb="tab-highlight"],
     div[data-testid="stTabs"] [data-baseweb="tab-border"] {
         display: none !important;
+    }
+
+    /* Envato Session Utilities Badge */
+    .envato-session-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 0.75rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    }
+    .envato-tier3-strip {
+        background: rgba(14, 19, 29, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius-md);
+        padding: 8px 14px;
+        margin-bottom: var(--space-3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        backdrop-filter: blur(12px);
     }
 
     /* =========================================================================
@@ -803,12 +834,12 @@ st.markdown("""
         background: linear-gradient(145deg, #0284C7 0%, #0369A1 100%) !important;
         color: #FFFFFF !important;
         font-weight: 600 !important;
-        font-size: 0.90rem !important;
+        font-size: 0.88rem !important;
         border-radius: var(--radius-md) !important;
         border: 1px solid rgba(56, 189, 248, 0.4) !important;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
         transition: all 0.20s var(--ease-luxury) !important;
-        padding: 8px 18px !important;
+        padding: 6px 14px !important;
     }
     button[kind="primary"]:hover {
         background: linear-gradient(145deg, #0369A1 0%, #075985 100%) !important;
@@ -825,9 +856,10 @@ st.markdown("""
         color: var(--text-primary) !important;
         border: 1px solid var(--border-subtle) !important;
         border-radius: var(--radius-md) !important;
-        font-size: 0.88rem !important;
+        font-size: 0.84rem !important;
         font-weight: 500 !important;
         transition: all 0.20s var(--ease-luxury) !important;
+        padding: 6px 14px !important;
     }
     button[kind="secondary"]:hover {
         background: rgba(255, 255, 255, 0.065) !important;
@@ -861,8 +893,11 @@ st.markdown("""
         background: rgba(15, 20, 30, 0.75);
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-lg);
-        padding: 4px 8px;
+        padding: 4px 10px;
         backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     /* Dataframe Styling */
@@ -985,11 +1020,11 @@ def render_clean_html(html_str: str):
     st.markdown(cleaned, unsafe_allow_html=True)
 
 
-# --- 2. TOP GLOBAL MARKET & EXCHANGE SELECTOR ---
-col_brand, col_market_selector = st.columns([1.6, 1.4])
+# --- 2. TIER 1: GLOBAL BRAND & SESSION UTILITIES BAR ---
+col_brand, col_market_selector, col_user_status = st.columns([1.5, 1.15, 0.75])
 
 with col_brand:
-    st.markdown("""
+    render_clean_html("""
     <div class='brand-masthead'>
         <div class='brand-icon-badge'>🛡️</div>
         <div class='brand-title-group'>
@@ -1000,19 +1035,32 @@ with col_brand:
             <div class='brand-subline'>Quantitative Risk Architecture • Multi-Horizon Scarcity • Supply Chain Spillover</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 with col_market_selector:
     if "is_indian" not in st.session_state:
         st.session_state["is_indian"] = True
 
     selected_market = st.radio(
-        "Select Stock Market Exchange",
+        "Exchange Market",
         options=["🇮🇳 Indian Markets (NSE / BSE)", "🇺🇸 US Markets (NYSE / NASDAQ)"],
         index=0 if st.session_state.get("is_indian", True) else 1,
         horizontal=True,
+        label_visibility="collapsed",
         help="Instantly reloads currency ($ vs ₹), benchmark index (S&P 500 vs Nifty 50), and market telemetry."
     )
+
+with col_user_status:
+    auth_user = st.session_state.get("username") or "Analyst"
+    auth_badge = st.session_state.get("user_badge") or "👤 Standard Analyst"
+    render_clean_html(f"""
+    <div style='display: flex; flex-direction: column; align-items: flex-end; justify-content: center; height: 100%; padding-top: 4px;'>
+        <div style='font-size: 0.65rem; text-transform: uppercase; color: #94A3B8; font-weight: 700; letter-spacing: 0.06em;'>Active Session</div>
+        <div class='envato-session-badge' style='margin-top: 3px;'>
+            {auth_badge}
+        </div>
+    </div>
+    """)
 
 is_indian = "Indian" in selected_market
 st.session_state["is_indian"] = is_indian
@@ -1299,6 +1347,40 @@ render_clean_html(f"""
     </div>
 </div>
 """)
+
+# =============================================================================
+# TIER 3: CONTEXTUAL SUB-NAVIGATION & INSTANT WATCHLIST STRIP (ENVATO STYLE)
+# =============================================================================
+quick_tickers = (
+    ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "SUZLON.NS", "BEL.NS"]
+    if is_indian
+    else ["NVDA", "AAPL", "MSFT", "TSLA", "PLTR", "AMZN"]
+)
+
+t3_left, t3_chips = st.columns([1.0, 3.0])
+
+with t3_left:
+    render_clean_html(f"""
+    <div style='display: flex; align-items: center; gap: 8px; height: 100%; padding-top: 5px;'>
+        <span style='font-size: 0.70rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em;'>Active Ticker:</span>
+        <span class='pastel-pill-mint' style='font-weight: 700; font-size: 0.82rem; letter-spacing: 0.02em;'>🎯 {st.session_state["active_ticker"]}</span>
+    </div>
+    """)
+
+with t3_chips:
+    chip_cols = st.columns(len(quick_tickers) + 1)
+    with chip_cols[0]:
+        st.markdown("<div style='font-size: 0.70rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; line-height: 2.5; text-align: right;'>⚡ Watchlist:</div>", unsafe_allow_html=True)
+    for idx, q_sym in enumerate(quick_tickers):
+        with chip_cols[idx + 1]:
+            disp_label = q_sym.replace(".NS", "")
+            is_active = (q_sym == st.session_state["active_ticker"])
+            btn_type = "primary" if is_active else "secondary"
+            if st.button(disp_label, key=f"t3_chip_{q_sym}", type=btn_type, use_container_width=True):
+                st.session_state["active_ticker"] = q_sym
+                st.rerun()
+
+st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
 
 # --- MAIN PIPELINE EXECUTION ---
 ticker_to_run = st.session_state["active_ticker"]
